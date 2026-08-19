@@ -1,0 +1,21 @@
+{
+  "name": "chordal",
+  "version": "0.1.0",
+  "description": "A tunable, zero-audio-file sonic design system for the web, powered by the Web Audio API.",
+  "type": "module",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "size": "npm run build && gzip -c dist/index.js | wc -c",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}
