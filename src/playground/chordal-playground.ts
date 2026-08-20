@@ -43,6 +43,7 @@ const STYLES = `
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 22px;
+    --border-width: 0.8px;
     --font-body: Mulish, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
 
@@ -71,7 +72,7 @@ const STYLES = `
   .studio {
     display: grid;
     grid-template-columns: 13rem 1fr 16rem;
-    gap: 1px;
+    gap: var(--border-width);
     background: var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
@@ -107,8 +108,8 @@ const STYLES = `
 
   .test-area { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
   .test-btn {
-    font-family: var(--font-body); font-weight: var(--weight-regular); font-size: var(--text-body);
-    border: 1px solid var(--border); background: var(--page-bg);
+    font-family: var(--font-body); font-weight: var(--weight-regular); font-size: var(--text-small);
+    border: var(--border-width) solid var(--border); background: var(--page-bg);
     color: var(--text-primary); border-radius: var(--radius-sm);
     padding: 0.55rem 0.9rem; cursor: pointer;
   }
@@ -125,12 +126,12 @@ const STYLES = `
   .mute-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
   .mute-row button {
     font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular);
-    border: 1px solid var(--border); background: var(--surface);
+    border: var(--border-width) solid var(--border); background: var(--surface);
     border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
   }
 
   .code-export {
-    margin-top: 1.25rem; background: var(--page-bg); border: 1px solid var(--border);
+    margin-top: 1.25rem; background: var(--page-bg); border: var(--border-width) solid var(--border);
     border-radius: var(--radius-md); padding: 0.85rem;
     font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular); color: var(--text-primary);
     white-space: pre; overflow-x: auto;
@@ -210,7 +211,7 @@ export class ChordalPlayground extends HTMLElement {
       x += slice;
     }
     ctx2d.strokeStyle = FAMILY_ACCENTS[this.family];
-    ctx2d.lineWidth = 2;
+    ctx2d.lineWidth = 1.5;
     ctx2d.stroke();
   };
 
