@@ -4,11 +4,12 @@
  */
 
 import * as engine from './engine';
+import type { SynthParams } from './engine';
 import {
   PRESETS,
+  FAMILY_RECIPES,
   SOUND_FAMILIES,
   SOUND_INSTANCES,
-  getPitchRange,
   resolveNoteParams,
   resolveToggleTuning,
   type InstanceTuning,
@@ -80,25 +81,83 @@ export function play(instance: SoundInstance, options: PlayOptions = {}): void {
   scheduleGesture(family, instance, tuning, base.notes);
 }
 
+// Major pentatonic scale (equal-tempered), spanning about 1.5 octaves — quantizes slider
+// drag into discrete, musical steps instead of a continuous frequency sweep, which is
+// what made it sound like a siren/mechanical sweep rather than an instrument.
+const PENTATONIC_RATIOS = [1, 1.1225, 1.2599, 1.4983, 1.6818, 2, 2.245];
+
+const SLIDER_DEBOUNCE_MS = 20;
+let lastSliderTriggerAt = 0;
+let lastSliderRatio: number | null = null;
+let lastSliderTimestamp = 0;
+
+function now(): number {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
 /**
- * Continuous pitch mapping for range sliders: inherits the active family's `hover`
- * shape and shifts pitch by valueRatio (0–1) across that family's pitch range.
- * Call this on every 'input' event while dragging — each call fires a short hover-length
- * voice at the newly computed pitch, and the engine's own throttle/ducking (keyed
- * separately from plain hover) blends rapid successive calls into a continuous sweep.
+ * Continuous pitch mapping for range sliders — a dedicated dual-layer "tick" rather than
+ * inheriting the active family's own (sometimes harsh/electronic) waveform:
+ *   - Layer 1: a 5ms pink-noise burst for tactile click. Pink, not white — energy falls
+ *     off toward high frequencies, so it reads as a soft tap rather than a hiss.
+ *   - Layer 2: a lowpass sine for body, with a closing-filter decay tail (the cutoff
+ *     sweeps down over the note instead of holding a fixed brightness) and a random
+ *     ±10¢ detune per tick so repeated notes don't sound identically robotic.
+ * Pitch is quantized to a pentatonic scale anchored on the family's own register, not
+ * swept continuously. A 20ms hard debounce plus a 2-voice cap per layer (fast exponential
+ * fade on the older voice — see engine.ts's playVoice `maxVoices`) keep rapid dragging
+ * from overlapping into clipping. Movement speed (how fast the ratio is changing between
+ * calls) nudges the body's filter brightness — fast drags open up, slow ones stay soft —
+ * for a gesture-responsive feel instead of a fixed timbre regardless of how it's played.
  */
 export function playContinuous(action: 'slider', valueRatio: number, options: { family?: SoundFamily } = {}): void {
   if (action !== 'slider') return;
+
+  const t = now();
+  if (t - lastSliderTriggerAt < SLIDER_DEBOUNCE_MS) return;
+
+  const ratio = Math.min(Math.max(valueRatio, 0), 1);
+  let speed = 0;
+  if (lastSliderRatio !== null && lastSliderTimestamp) {
+    const dtSeconds = Math.max((t - lastSliderTimestamp) / 1000, 0.001);
+    speed = Math.min(Math.abs(ratio - lastSliderRatio) / dtSeconds / 4, 1);
+  }
+  lastSliderRatio = ratio;
+  lastSliderTimestamp = t;
+  lastSliderTriggerAt = t;
+
   const family = options.family ?? activeFamily;
   const base = PRESETS[family].hover;
-  const [lo, hi] = getPitchRange(family);
-  const ratio = Math.min(Math.max(valueRatio, 0), 1);
-  const pitch = base.pitch * (lo + ratio * (hi - lo));
+  const root = FAMILY_RECIPES[family].baseFrequency;
+  const stepIndex = Math.round(ratio * (PENTATONIC_RATIOS.length - 1));
+  const frequency = root * (PENTATONIC_RATIOS[stepIndex] ?? 1);
+  const detuneCents = Math.random() * 20 - 10;
+  const bodyCutoff = 700 + speed * 2600;
+  const bodyLength = Math.max(base.length * 1.4, 0.02);
 
-  const tuning: InstanceTuning = { volume: base.volume, pitch, length: base.length, tone: base.tone };
-  const note = base.notes[0] ?? FALLBACK_NOTE;
-  const params = resolveNoteParams(family, tuning, note);
-  engine.playVoice(`${family}:slider`, params);
+  const body: SynthParams = {
+    waveform: 'sine',
+    frequency,
+    filterType: 'lowpass',
+    filterCutoff: bodyCutoff,
+    filterCutoffEnd: bodyCutoff * 0.35,
+    filterQ: 0.9,
+    volume: base.volume * 0.75,
+    length: bodyLength,
+    detuneCents,
+  };
+  engine.playVoice(`${family}:slider-body`, body, 0, { maxVoices: 2 });
+
+  const click: SynthParams = {
+    waveform: 'pink-noise',
+    frequency: 0,
+    filterType: 'lowpass',
+    filterCutoff: 2600 + speed * 2000,
+    filterQ: 1,
+    volume: base.volume * 0.35,
+    length: 0.005,
+  };
+  engine.playVoice(`${family}:slider-click`, click, 0, { maxVoices: 2 });
 }
 
 interface BindingConfig {

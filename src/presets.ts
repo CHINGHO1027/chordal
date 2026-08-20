@@ -196,8 +196,13 @@ const tinySparkleCongratsNotes: Note[] = [
   { offsetFraction: 0.44, lengthFraction: 0.4, pitchMultiplier: 1.6, volumeMultiplier: 1 },
 ];
 
-// snap: single-hit family by nature — congrats is just a longer, louder version of the
-// same hit, not a melodic run (reuses singleNote).
+// snap: a single unchanging pitch didn't read as "complete" — a quick double-snap that
+// resolves upward on the second hit gives it somewhere to land, while staying snappy
+// and transient rather than becoming a melodic run.
+const snapCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 0.85 },
+  { offsetFraction: 0.3, lengthFraction: 0.5, pitchMultiplier: 1.35, volumeMultiplier: 1 },
+];
 
 export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
   'soft-bubble': {
@@ -348,7 +353,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   snap: {
     hover: preset(0.37, 0.019, 0.68, 'hover', singleNote),
     press: preset(0.49, 0.032, 0.68, 'press', pressNotes),
-    congrats: preset(0.57, 0.131, 0.72, 'congrats', singleNote),
+    congrats: preset(0.57, 0.131, 0.72, 'congrats', snapCongratsNotes),
     error: preset(0.45, 0.085, 0.41, 'error', errorNotes),
     toggle: preset(0.45, 0.035, 0.68, 'toggle', singleNote),
   },

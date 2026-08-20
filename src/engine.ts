@@ -3,7 +3,7 @@
  * Zero audio files — every sound is built from native Web Audio nodes at play time.
  */
 
-export type Waveform = OscillatorType | 'noise';
+export type Waveform = OscillatorType | 'noise' | 'pink-noise';
 
 export interface SynthParams {
   waveform: Waveform;
@@ -13,6 +13,9 @@ export interface SynthParams {
   endFrequency?: number;
   filterType?: BiquadFilterType;
   filterCutoff?: number;
+  /** Optional target the filter cutoff sweeps down to over `length` — a closing-filter
+   *  decay tail, so a note darkens as it fades instead of cutting off at a fixed brightness. */
+  filterCutoffEnd?: number;
   filterQ?: number;
   /** 0–1 */
   volume: number;
@@ -60,6 +63,7 @@ let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 let muted = false;
 let noiseBuffer: AudioBuffer | null = null;
+let pinkNoiseBuffer: AudioBuffer | null = null;
 
 const voicePools = new Map<string, Voice[]>();
 const throttleStates = new Map<string, ThrottleState>();
@@ -140,6 +144,30 @@ function getNoiseBuffer(context: AudioContext): AudioBuffer {
 }
 
 /**
+ * Pink noise (Paul Kellett's "economy" filter) — energy falls off toward high frequencies,
+ * unlike white noise's flat spectrum, so it reads as soft/tactile rather than hissy or harsh.
+ * Used for click/transient layers that shouldn't sound mechanical.
+ */
+function getPinkNoiseBuffer(context: AudioContext): AudioBuffer {
+  if (pinkNoiseBuffer) return pinkNoiseBuffer;
+  const durationSeconds = 1;
+  const buffer = context.createBuffer(1, context.sampleRate * durationSeconds, context.sampleRate);
+  const data = buffer.getChannelData(0);
+  let b0 = 0;
+  let b1 = 0;
+  let b2 = 0;
+  for (let i = 0; i < data.length; i++) {
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99765 * b0 + white * 0.099046;
+    b1 = 0.963 * b1 + white * 0.2965164;
+    b2 = 0.57 * b2 + white * 1.0526913;
+    data[i] = (b0 + b1 + b2 + white * 0.1848) * 0.11;
+  }
+  pinkNoiseBuffer = buffer;
+  return buffer;
+}
+
+/**
  * Builds and plays one synthesis voice: source → envelope → (filter) → (delay) → output.
  * `startOffset` (seconds from now) is scheduled against the AudioContext's own clock via
  * `source.start()`, not a JS timer — so a multi-note gesture's notes land sample-accurately
@@ -148,13 +176,14 @@ function getNoiseBuffer(context: AudioContext): AudioBuffer {
  */
 function synthesize(context: AudioContext, output: AudioNode, params: SynthParams, startOffset: number): Voice {
   const startTime = context.currentTime + Math.max(startOffset, 0);
-  const { waveform, frequency, endFrequency, filterType, filterCutoff, filterQ, volume, length, detuneCents = 0, delay } = params;
+  const { waveform, frequency, endFrequency, filterType, filterCutoff, filterCutoffEnd, filterQ, volume, length, detuneCents = 0, delay } =
+    params;
 
   const nodes: AudioNode[] = [];
   let source: OscillatorNode | AudioBufferSourceNode;
-  if (waveform === 'noise') {
+  if (waveform === 'noise' || waveform === 'pink-noise') {
     const bufferSource = context.createBufferSource();
-    bufferSource.buffer = getNoiseBuffer(context);
+    bufferSource.buffer = waveform === 'pink-noise' ? getPinkNoiseBuffer(context) : getNoiseBuffer(context);
     bufferSource.loop = true;
     source = bufferSource;
   } else {
@@ -185,6 +214,9 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
     nodes.push(filter);
     filter.type = filterType;
     filter.frequency.setValueAtTime(filterCutoff ?? 2000, startTime);
+    if (filterCutoffEnd !== undefined) {
+      filter.frequency.exponentialRampToValueAtTime(Math.max(filterCutoffEnd, 20), startTime + length);
+    }
     filter.Q.setValueAtTime(filterQ ?? 1, startTime);
     chainEnd.connect(filter);
     chainEnd = filter;
@@ -227,9 +259,12 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
   const stop = (fadeMs = 5): void => {
     clearTimeout(naturalCleanupTimer);
     const t = context.currentTime;
+    // Exponential decay reads as a natural fade rather than an abrupt linear cutoff —
+    // matches how the envelope's own release already ramps out.
+    const currentGain = Math.max(envelope.gain.value, 0.0001);
     envelope.gain.cancelScheduledValues(t);
-    envelope.gain.setValueAtTime(envelope.gain.value, t);
-    envelope.gain.linearRampToValueAtTime(0, t + fadeMs / 1000);
+    envelope.gain.setValueAtTime(currentGain, t);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, t + fadeMs / 1000);
     try {
       source.stop(t + fadeMs / 1000 + 0.01);
     } catch {
@@ -274,7 +309,7 @@ function applyThrottle(context: AudioContext, instanceKey: string, params: Synth
  * used to lay out a multi-note gesture's notes in one pass against one AudioContext clock read.
  * A no-op before the page's first user gesture, in SSR, and when Web Audio is unavailable.
  */
-export function playVoice(instanceKey: string, params: SynthParams, startOffset = 0): void {
+export function playVoice(instanceKey: string, params: SynthParams, startOffset = 0, options?: { maxVoices?: number }): void {
   if (typeof navigator !== 'undefined' && navigator.userActivation?.hasBeenActive === false) return;
 
   const context = getContext();
@@ -284,8 +319,9 @@ export function playVoice(instanceKey: string, params: SynthParams, startOffset 
   const now = context.currentTime;
   const pool = voicePools.get(instanceKey) ?? [];
   const live = pool.filter((voice) => voice.endsAt > now);
+  const cap = options?.maxVoices ?? MAX_VOICES_PER_INSTANCE;
 
-  if (live.length >= MAX_VOICES_PER_INSTANCE) {
+  if (live.length >= cap) {
     const oldest = live.shift();
     oldest?.stop(5);
   }
