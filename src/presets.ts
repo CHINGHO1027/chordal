@@ -323,14 +323,20 @@ const tinySparklePressNotes: Note[] = [
   { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 0.5 },
 ];
 
-// congrats: a quick 4-note ascending twinkle (root, third, fifth, octave) — the same
-// "several fast ascending notes with short individual decays" logic behind a real twinkle
-// gesture, applied at tiny-sparkle's own register rather than any literal reference numbers.
+// congrats: tuned toward Cuelume's own sparkle recipe — root/third/fifth/octave was
+// already our interval choice, and it turns out to be exactly theirs too (1760/2217/
+// 2637/3520Hz reduce to the same 1/1.26/1.5/2 ratios). Two things weren't: their notes
+// enter on even 45ms spacing with each note's own decay actually growing (90/90/100/120ms)
+// rather than our proportionally-fixed fractions, and — the real character difference —
+// they diminuendo (first note loudest, each next one quieter: 1.0/0.89/0.84/0.71). Ours
+// crescendo'd toward the octave, which reads as "building up" rather than Cuelume's "one
+// clear hit scattering into shimmer." offsetFraction/lengthFraction below are solved
+// against a 280ms total so the raw timing matches their real ms values.
 const tinySparkleCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.7 },
-  { offsetFraction: 0.22, lengthFraction: 0.3, pitchMultiplier: 1.26, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.44, lengthFraction: 0.32, pitchMultiplier: 1.5, volumeMultiplier: 0.9 },
-  { offsetFraction: 0.66, lengthFraction: 0.34, pitchMultiplier: 2, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.3214, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.1607, lengthFraction: 0.3214, pitchMultiplier: 1.26, volumeMultiplier: 0.89 },
+  { offsetFraction: 0.3214, lengthFraction: 0.3571, pitchMultiplier: 1.5, volumeMultiplier: 0.84 },
+  { offsetFraction: 0.4821, lengthFraction: 0.4286, pitchMultiplier: 2, volumeMultiplier: 0.71 },
 ];
 
 // error: a quick, quiet descending dim rather than a harsh cutoff.
@@ -426,7 +432,10 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'highpass',
     filterCutoffRange: [1040, 2240],
     qRange: [1, 7],
-    delay: { time: 0.05, feedback: 0.24, wet: 0.24, lowpass: 4800 },
+    // Nudged toward Cuelume's own sparkle shimmer (delay 0.07/feedback 0.35/wet 0.22/
+    // lowpass 6000) — denser, brighter repeats than our other families' shimmer, matching
+    // how much more aggressively they shape sparkle's tail than chime's.
+    delay: { time: 0.06, feedback: 0.32, wet: 0.22, lowpass: 5600 },
   },
   snap: {
     waveform: 'triangle',
@@ -522,9 +531,13 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   'tiny-sparkle': {
     hover: preset(0.15, 0.008, 0.2, 'hover', singleNote),
     press: preset(0.22, 0.02, 0.2, 'press', tinySparklePressNotes),
-    // 200ms for 4 fast-ascending notes — still the quickest congrats of any family, just
-    // enough room for each note to read as distinct rather than blurring together.
-    congrats: preset(0.28, 0.2, 0.32, 'congrats', tinySparkleCongratsNotes),
+    // 280ms — matches Cuelume's own sparkle's real total span (last note starts at 135ms,
+    // decays 120ms, ≈255ms) now that the notes carry their real individual decay times
+    // instead of a compressed fixed fraction. Volume kept in family (still the loudest of
+    // tiny-sparkle's own 5 instances, same as every other family's congrats) rather than
+    // matching Cuelume's sparkle-is-half-as-loud-as-their-chime ratio — that ratio compares
+    // two different Cuelume recipes, not analogous to congrats vs. its own family's hover.
+    congrats: preset(0.28, 0.28, 0.32, 'congrats', tinySparkleCongratsNotes),
     error: preset(0.2, 0.042, 0.12, 'error', tinySparkleErrorNotes),
     toggle: preset(0.2, 0.022, 0.2, 'toggle', tinySparkleToggleNotes),
   },
