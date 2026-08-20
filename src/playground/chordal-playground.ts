@@ -10,23 +10,15 @@ import { PRESETS, type InstanceTuning } from '../presets';
 import type { SoundFamily, SoundInstance } from '../presets';
 
 const FAMILY_ACCENTS: Record<SoundFamily, string> = {
-  'minimal-wood': '#B86829',
-  'cyber-electric': '#3B6FE0',
   'soft-bubble': '#E0668E',
   'glass-crystal': '#4FA8A0',
   'paper-snap': '#5B6472',
   'metallic-tact': '#6E7A8A',
-  'neo-pop': '#8452D5',
-  'soft-pop': '#E0916B',
   chime: '#D4A72E',
   'digital-blip': '#2E8FBD',
   spring: '#6FB238',
-  'glass-tap': '#7FB8DD',
   'tiny-sparkle': '#C77DD1',
-  click: '#64707D',
   snap: '#A85A2E',
-  thud: '#4A3F38',
-  pop: '#E15A4F',
 };
 
 const WAVEFORM_BG = '#FAF7F3';

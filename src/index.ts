@@ -23,7 +23,7 @@ export { mute, unmute, isMuted } from './engine';
 
 const FALLBACK_NOTE: Note = { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 };
 
-let activeFamily: SoundFamily = 'minimal-wood';
+let activeFamily: SoundFamily = 'soft-bubble';
 
 export function setFamily(family: SoundFamily): void {
   activeFamily = family;

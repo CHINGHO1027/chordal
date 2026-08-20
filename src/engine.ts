@@ -268,7 +268,7 @@ function applyThrottle(context: AudioContext, instanceKey: string, params: Synth
 }
 
 /**
- * Plays one voice for a given instance (e.g. "cyber-electric:hover"), applying the
+ * Plays one voice for a given instance (e.g. "glass-crystal:hover"), applying the
  * throttle/ducking rule and enforcing the 8-voice polyphony cap via oldest-voice stealing.
  * `startOffset` (seconds) schedules the voice sample-accurately instead of firing immediately —
  * used to lay out a multi-note gesture's notes in one pass against one AudioContext clock read.
