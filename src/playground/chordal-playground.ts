@@ -116,6 +116,8 @@ const STYLES = `
   .test-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .test-btn.active { border-color: var(--accent); color: var(--accent); }
   input[type="range"].slider-demo { width: 12rem; accent-color: var(--accent); }
+  input[type="range"]::-webkit-slider-runnable-track { border: var(--border-width) solid var(--border); border-radius: 999px; }
+  input[type="range"]::-moz-range-track { border: var(--border-width) solid var(--border); border-radius: 999px; }
 
   .sliders { display: flex; flex-direction: column; gap: 1rem; }
   .slider-row .top { display: flex; justify-content: space-between; font-size: var(--text-body); margin-bottom: 0.3rem; }
