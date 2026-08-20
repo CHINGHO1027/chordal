@@ -329,9 +329,10 @@ export class ChordalPlayground extends HTMLElement {
     });
     this.refreshSliders();
     this.refreshCodeExport();
-    // Preview the family immediately — hover is the shortest, least intrusive instance,
-    // so browsing families doesn't require moving to the test area to hear each one.
-    this.triggerTest('hover');
+    // Preview the family immediately using whatever instance is currently selected —
+    // don't force it back to hover, or switching families would silently discard the
+    // user's instance selection every time.
+    this.triggerTest(this.instance);
   }
 
   /**

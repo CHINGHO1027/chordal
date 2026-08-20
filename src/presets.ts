@@ -217,7 +217,12 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     waveform: 'sine',
     baseFrequency: 1046, // C6
     filterType: 'highpass',
-    filterCutoffRange: [1800, 5200],
+    // Was [1800, 5200] — always above the 1046Hz fundamental, so the highpass filter
+    // was cutting nearly all of a pure sine's energy (a sine has nothing above its own
+    // fundamental for a highpass to pass through) regardless of the volume value. Kept
+    // below the fundamental across the practical pitch range so it actually gets heard;
+    // qRange still adds a resonant color near the cutoff as tone rises.
+    filterCutoffRange: [500, 950],
     qRange: [1, 8],
     delay: { time: 0.13, feedback: 0.35, wet: 0.4, lowpass: 5000 },
     pitchRange: [0.7, 1.8],
@@ -302,11 +307,11 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     toggle: preset(0.48, 0.05, 0.5, 'toggle', singleNote),
   },
   'glass-crystal': {
-    hover: preset(0.38, 0.022, 0.75, 'hover', singleNote),
-    press: preset(0.5, 0.035, 0.7, 'press', pressNotes),
-    congrats: preset(0.6, 0.2, 0.85, 'congrats', glassCrystalCongratsNotes),
-    error: preset(0.45, 0.1, 0.4, 'error', errorNotes),
-    toggle: preset(0.48, 0.04, 0.7, 'toggle', singleNote),
+    hover: preset(0.5, 0.022, 0.75, 'hover', singleNote),
+    press: preset(0.62, 0.035, 0.7, 'press', pressNotes),
+    congrats: preset(0.72, 0.2, 0.85, 'congrats', glassCrystalCongratsNotes),
+    error: preset(0.58, 0.1, 0.4, 'error', errorNotes),
+    toggle: preset(0.6, 0.04, 0.7, 'toggle', singleNote),
   },
   'paper-snap': {
     hover: preset(0.35, 0.015, 0.55, 'hover', singleNote),
