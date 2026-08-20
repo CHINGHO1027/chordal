@@ -121,12 +121,12 @@ const STYLES = `
     background: linear-gradient(to right, var(--accent) 0 var(--fill, 50%), var(--border) var(--fill, 50%) 100%);
   }
   input[type="range"].slider-demo::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 0.875rem; height: 0.875rem; border-radius: 50%;
-    background: var(--accent); margin-top: -0.375rem; cursor: pointer;
+    -webkit-appearance: none; width: 0.625rem; height: 0.625rem; border-radius: 50%;
+    background: var(--accent); margin-top: -0.25rem; cursor: pointer;
   }
   input[type="range"].slider-demo::-moz-range-track { height: 2px; border-radius: 999px; background: var(--border); }
   input[type="range"].slider-demo::-moz-range-progress { height: 2px; border-radius: 999px; background: var(--accent); }
-  input[type="range"].slider-demo::-moz-range-thumb { width: 0.875rem; height: 0.875rem; border: none; border-radius: 50%; background: var(--accent); cursor: pointer; }
+  input[type="range"].slider-demo::-moz-range-thumb { width: 0.625rem; height: 0.625rem; border: none; border-radius: 50%; background: var(--accent); cursor: pointer; }
 
   .sliders { display: flex; flex-direction: column; gap: 0.5rem; }
   .slider-row {
@@ -363,7 +363,7 @@ export class ChordalPlayground extends HTMLElement {
             <div class="status">idle</div>
           </div>
           <div class="test-area">
-            <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover card</button>
+            <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover</button>
             <button type="button" class="test-btn" data-test="press" data-instance-trigger="press">Press</button>
             <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Complete task</button>
             <button type="button" class="test-btn" data-test="toggle" data-instance-trigger="toggle" aria-pressed="false">Toggle switch</button>
