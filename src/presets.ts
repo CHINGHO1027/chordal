@@ -145,6 +145,42 @@ const congratsArpeggio: Note[] = [
   { offsetFraction: 0.44, lengthFraction: 0.52, pitchMultiplier: 1.5, volumeMultiplier: 1 },
 ];
 
+// --- chime: bespoke per-instance gestures, not the shared templates. Cuelume's own
+// chime is two clean unfiltered sine layers a fifth apart, spaced 90ms with 220-260ms
+// of individual decay each — the "bell" comes from real interval + room to ring, not
+// from more notes packed tighter. Applied here at chime's own register or without
+// literally copying their numbers.
+
+// press: down-stroke + a real-interval release lift (a minor third, not a token nudge) —
+// two distinct textures for the couplet, echoing how Cuelume's press/release are two
+// separate recipes rather than one sound scaled down.
+const chimePressNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 1.19, volumeMultiplier: 0.55 },
+];
+
+// congrats: a clean two-note bell, root to a real fifth, spaced far enough apart that
+// each note actually rings before the next arrives — not a 3-note arpeggio squeezed
+// into 170ms.
+const chimeCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 1, volumeMultiplier: 0.85 },
+  { offsetFraction: 0.32, lengthFraction: 0.68, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+];
+
+// error: a knock plus a genuine descending second note — a two-part "no," still muted
+// rather than harsh, instead of one lone pitch sweep.
+const chimeErrorNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.9, sweepTo: 0.94 },
+  { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 0.84, volumeMultiplier: 0.8 },
+];
+
+// toggle: a real two-part click-clack — a genuine step between the two notes, not a
+// barely-there wobble.
+const chimeToggleNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 0.82, volumeMultiplier: 0.75 },
+];
+
 // paper-snap: a real jump (not a semitone nudge) — the bandpass center shifts a fifth
 // up on the second tap, audible even without a true pitched fundamental.
 const paperSnapCongratsNotes: Note[] = [
@@ -222,10 +258,14 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
   chime: {
     waveform: 'sine',
     baseFrequency: 860,
-    filterType: 'bandpass',
-    filterCutoffRange: [860, 1540],
-    filterQ: 2,
-    delay: { time: 0.1, feedback: 0.25, wet: 0.2, lowpass: 3200 },
+    // Cuelume's own chime is completely unfiltered sine — filtering was adding nothing
+    // but a slight dulling. Widened well above anything chime ever plays (root through a
+    // fifth tops out at 1290Hz) so it stays essentially transparent at any tone value;
+    // `tone` keeps a token effect rather than being removed outright.
+    filterType: 'lowpass',
+    filterCutoffRange: [2400, 6000],
+    filterQ: 0.7,
+    delay: { time: 0.12, feedback: 0.25, wet: 0.2, lowpass: 3200 },
   },
   'digital-blip': {
     waveform: 'square',
@@ -305,11 +345,13 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     toggle: preset(0.4, 0.02, 0.45, 'toggle', toggleClickNotes),
   },
   chime: {
-    hover: preset(0.28, 0.01, 0.5, 'hover', singleNote),
-    press: preset(0.38, 0.018, 0.5, 'press', pressNotes),
-    congrats: preset(0.48, 0.17, 0.55, 'congrats', congratsArpeggio),
-    error: preset(0.35, 0.042, 0.3, 'error', errorNotes),
-    toggle: preset(0.36, 0.015, 0.5, 'toggle', singleNote),
+    hover: preset(0.3, 0.012, 0.5, 'hover', singleNote),
+    press: preset(0.4, 0.03, 0.5, 'press', chimePressNotes),
+    // 300ms — up from 170ms, so the fifth actually has room to ring like a real bell
+    // instead of being cut off mid-decay.
+    congrats: preset(0.5, 0.3, 0.55, 'congrats', chimeCongratsNotes),
+    error: preset(0.38, 0.09, 0.28, 'error', chimeErrorNotes),
+    toggle: preset(0.4, 0.028, 0.5, 'toggle', chimeToggleNotes),
   },
   'digital-blip': {
     hover: preset(0.26, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
