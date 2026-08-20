@@ -145,6 +145,67 @@ const congratsArpeggio: Note[] = [
   { offsetFraction: 0.44, lengthFraction: 0.52, pitchMultiplier: 1.5, volumeMultiplier: 1 },
 ];
 
+// --- soft-bubble: bespoke per-instance gestures. Leans on the family's existing
+// "gimmick" from resolveNoteParams — a sweepTo glide whose magnitude scales with `tone` —
+// for a genuine squeeze/bloop quality instead of a flat pitch.
+
+// press: a soft squeeze-down + a quieter spring-back lift — the sweep gives it real
+// physical "give" rather than a static click.
+const softBubblePressNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.92 },
+  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.12, volumeMultiplier: 0.4 },
+];
+
+// congrats: three bubbles blooping upward — root, major third, fifth — each with its own
+// gentle upward sweep, spaced with real room to ring rather than a flat 3-note run.
+const softBubbleCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.36, pitchMultiplier: 1, volumeMultiplier: 0.8, sweepTo: 1.05 },
+  { offsetFraction: 0.3, lengthFraction: 0.38, pitchMultiplier: 1.26, volumeMultiplier: 0.9, sweepTo: 1.05 },
+  { offsetFraction: 0.6, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.05 },
+];
+
+// error: a knock plus a genuine descending minor-third second note, still soft/muted.
+const softBubbleErrorNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 0.9, sweepTo: 0.85 },
+  { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 0.79, volumeMultiplier: 0.6 },
+];
+
+// toggle: two soft bubbles, a real minor-third step between them.
+const softBubbleToggleNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.95 },
+  { offsetFraction: 0.46, lengthFraction: 0.54, pitchMultiplier: 1.12, volumeMultiplier: 0.6 },
+];
+
+// --- glass-crystal: bespoke per-instance gestures, leaning into the family's resonant
+// highpass — real intervals given room so the resonance can actually ring, rather than
+// generic clicks riding on top of the brightness.
+
+// press: a sharp glassy tap + a brighter fourth-up release ring.
+const glassCrystalPressNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 1.33, volumeMultiplier: 0.4 },
+];
+
+// congrats: an ascending "ting-ting-TING" — root, fifth, octave — the biggest interval
+// jumps of any family's congrats, matching how far a glass resonance actually carries.
+const glassCrystalCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.34, pitchMultiplier: 1, volumeMultiplier: 0.75 },
+  { offsetFraction: 0.28, lengthFraction: 0.36, pitchMultiplier: 1.5, volumeMultiplier: 0.9 },
+  { offsetFraction: 0.56, lengthFraction: 0.44, pitchMultiplier: 2, volumeMultiplier: 1 },
+];
+
+// error: a sharp crack plus a muted descending second note.
+const glassCrystalErrorNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.45, pitchMultiplier: 1, volumeMultiplier: 0.9, sweepTo: 0.9 },
+  { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 0.75, volumeMultiplier: 0.65 },
+];
+
+// toggle: a real two-part crystalline click-clack, a genuine descending fourth.
+const glassCrystalToggleNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 0.78, volumeMultiplier: 0.7 },
+];
+
 // --- chime: bespoke per-instance gestures, not the shared templates. Cuelume's own
 // chime is two clean unfiltered sine layers a fifth apart, spaced 90ms with 220-260ms
 // of individual decay each — the "bell" comes from real interval + room to ring, not
@@ -220,6 +281,68 @@ const digitalBlipHoverNotes: Note[] = [
 const digitalBlipPressNotes: Note[] = [
   ...pressNotes,
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.32, useTexture: true },
+];
+
+// --- spring: bespoke per-instance gestures built around a real physical overshoot —
+// compress, then rebound past rest before settling — using sweepTo for the rebound rather
+// than a flat second pitch.
+
+// press: compress down, then rebound overshoots upward before it would settle — a genuine
+// spring release, not a static two-note click.
+const springPressNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82 },
+  { offsetFraction: 0.36, lengthFraction: 0.64, pitchMultiplier: 0.88, volumeMultiplier: 0.55, sweepTo: 1.15 },
+];
+
+// congrats: a bouncy ascending run (root, fourth, fifth) where the final note overshoots
+// upward before relaxing — the spring settling past its target, not a clean landing.
+const springCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.8 },
+  { offsetFraction: 0.26, lengthFraction: 0.34, pitchMultiplier: 1.33, volumeMultiplier: 0.85 },
+  { offsetFraction: 0.52, lengthFraction: 0.48, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.08 },
+];
+
+// error: a compressed "boing-down" — dips low, wobbles slightly on the way to rest.
+const springErrorNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.9, sweepTo: 0.8 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.86, volumeMultiplier: 0.6, sweepTo: 0.94 },
+];
+
+// toggle: click + a small springy rebound step.
+const springToggleNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.48, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.9 },
+  { offsetFraction: 0.44, lengthFraction: 0.56, pitchMultiplier: 1.19, volumeMultiplier: 0.55 },
+];
+
+// --- tiny-sparkle: bespoke per-instance gestures — quick, bright, and light, distinct
+// from every other family's timing by being genuinely fast rather than just quiet.
+
+// press: a very light two-part twinkle, a real fifth up on the (quiet) second note.
+const tinySparklePressNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.45, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 0.5 },
+];
+
+// congrats: a quick 4-note ascending twinkle (root, third, fifth, octave) — the same
+// "several fast ascending notes with short individual decays" logic behind a real twinkle
+// gesture, applied at tiny-sparkle's own register rather than any literal reference numbers.
+const tinySparkleCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.7 },
+  { offsetFraction: 0.22, lengthFraction: 0.3, pitchMultiplier: 1.26, volumeMultiplier: 0.8 },
+  { offsetFraction: 0.44, lengthFraction: 0.32, pitchMultiplier: 1.5, volumeMultiplier: 0.9 },
+  { offsetFraction: 0.66, lengthFraction: 0.34, pitchMultiplier: 2, volumeMultiplier: 1 },
+];
+
+// error: a quick, quiet descending dim rather than a harsh cutoff.
+const tinySparkleErrorNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.85, sweepTo: 0.9 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.75, volumeMultiplier: 0.55 },
+];
+
+// toggle: quick light click-clack, a real descending major third.
+const tinySparkleToggleNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.46, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.79, volumeMultiplier: 0.6 },
 ];
 
 // snap: a real fourth-ish jump on the second hit — still snappy, but with somewhere to land.
@@ -338,17 +461,19 @@ function preset(volume: number, length: number, tone: number, instance: SoundIns
 export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>> = {
   'soft-bubble': {
     hover: preset(0.18, 0.011, 0.45, 'hover', singleNote),
-    press: preset(0.24, 0.02, 0.42, 'press', pressNotes),
-    congrats: preset(0.3, 0.16, 0.5, 'congrats', congratsArpeggio),
-    error: preset(0.22, 0.045, 0.25, 'error', errorNotes),
-    toggle: preset(0.22, 0.016, 0.42, 'toggle', singleNote),
+    press: preset(0.24, 0.028, 0.42, 'press', softBubblePressNotes),
+    // 220ms, up from 160ms — 3 real-interval notes need more room than the old flat
+    // arpeggio timing gave them.
+    congrats: preset(0.3, 0.22, 0.5, 'congrats', softBubbleCongratsNotes),
+    error: preset(0.22, 0.055, 0.25, 'error', softBubbleErrorNotes),
+    toggle: preset(0.22, 0.026, 0.42, 'toggle', softBubbleToggleNotes),
   },
   'glass-crystal': {
     hover: preset(0.18, 0.009, 0.55, 'hover', singleNote),
-    press: preset(0.24, 0.017, 0.5, 'press', pressNotes),
-    congrats: preset(0.3, 0.15, 0.65, 'congrats', congratsArpeggio),
-    error: preset(0.22, 0.04, 0.3, 'error', errorNotes),
-    toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
+    press: preset(0.24, 0.024, 0.5, 'press', glassCrystalPressNotes),
+    congrats: preset(0.3, 0.22, 0.65, 'congrats', glassCrystalCongratsNotes),
+    error: preset(0.22, 0.05, 0.3, 'error', glassCrystalErrorNotes),
+    toggle: preset(0.23, 0.024, 0.5, 'toggle', glassCrystalToggleNotes),
   },
   'paper-snap': {
     hover: preset(0.17, 0.008, 0.5, 'hover', singleNote),
@@ -389,17 +514,19 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   spring: {
     hover: preset(0.18, 0.011, 0.45, 'hover', singleNote),
-    press: preset(0.24, 0.02, 0.42, 'press', pressNotes),
-    congrats: preset(0.3, 0.15, 0.48, 'congrats', congratsArpeggio),
-    error: preset(0.22, 0.045, 0.28, 'error', errorNotes),
-    toggle: preset(0.23, 0.017, 0.42, 'toggle', singleNote),
+    press: preset(0.24, 0.03, 0.42, 'press', springPressNotes),
+    congrats: preset(0.3, 0.22, 0.48, 'congrats', springCongratsNotes),
+    error: preset(0.22, 0.055, 0.28, 'error', springErrorNotes),
+    toggle: preset(0.23, 0.027, 0.42, 'toggle', springToggleNotes),
   },
   'tiny-sparkle': {
     hover: preset(0.15, 0.008, 0.2, 'hover', singleNote),
-    press: preset(0.22, 0.014, 0.2, 'press', pressNotes),
-    congrats: preset(0.28, 0.16, 0.32, 'congrats', congratsArpeggio),
-    error: preset(0.2, 0.032, 0.12, 'error', errorNotes),
-    toggle: preset(0.2, 0.012, 0.2, 'toggle', singleNote),
+    press: preset(0.22, 0.02, 0.2, 'press', tinySparklePressNotes),
+    // 200ms for 4 fast-ascending notes — still the quickest congrats of any family, just
+    // enough room for each note to read as distinct rather than blurring together.
+    congrats: preset(0.28, 0.2, 0.32, 'congrats', tinySparkleCongratsNotes),
+    error: preset(0.2, 0.042, 0.12, 'error', tinySparkleErrorNotes),
+    toggle: preset(0.2, 0.022, 0.2, 'toggle', tinySparkleToggleNotes),
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', singleNote),
