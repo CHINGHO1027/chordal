@@ -19,8 +19,13 @@ export interface SynthParams {
   /** Seconds */
   length: number;
   detuneCents?: number;
-  /** Short internal feedback delay, e.g. for the deep-space family's tail. */
-  delay?: { time: number; feedback: number };
+  /**
+   * Internal feedback delay — a shimmer/echo tail applied to this voice.
+   * `wet` (0–1, default 1) is the send level into the delay, independent of the dry
+   * signal already reaching `output` directly. `lowpass` (default 8000) darkens the
+   * feedback path so repeats don't stay full-brightness forever.
+   */
+  delay?: { time: number; feedback: number; wet?: number; lowpass?: number };
 }
 
 interface Voice {
@@ -42,6 +47,14 @@ const DETUNE_MAX_CENTS = 12;
 const MIN_COOLDOWN_MS = 20;
 const COOLDOWN_RATIO = 0.6;
 const CLEANUP_MARGIN_MS = 30;
+const INAUDIBLE_GAIN = 0.001;
+
+/** How long a delay's feedback repeats take to decay below INAUDIBLE_GAIN. */
+function shimmerTailSeconds(delay?: SynthParams['delay']): number {
+  if (!delay || delay.feedback <= 0) return 0;
+  const feedback = Math.min(delay.feedback, 0.999);
+  return delay.time * (1 + Math.ceil(Math.log(INAUDIBLE_GAIN) / Math.log(feedback)));
+}
 
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
@@ -181,14 +194,23 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
 
   if (delay) {
     const delayNode = context.createDelay(1);
-    const feedback = context.createGain();
-    nodes.push(delayNode, feedback);
+    const feedbackFilter = context.createBiquadFilter();
+    const feedbackGain = context.createGain();
+    const wetGain = context.createGain();
+    nodes.push(delayNode, feedbackFilter, feedbackGain, wetGain);
+
     delayNode.delayTime.value = delay.time;
-    feedback.gain.value = delay.feedback;
+    feedbackFilter.type = 'lowpass';
+    feedbackFilter.frequency.value = delay.lowpass ?? 8000;
+    feedbackGain.gain.value = delay.feedback;
+    wetGain.gain.value = delay.wet ?? 1;
+
     chainEnd.connect(delayNode);
-    delayNode.connect(feedback);
-    feedback.connect(delayNode);
-    delayNode.connect(output);
+    delayNode.connect(feedbackFilter);
+    feedbackFilter.connect(feedbackGain);
+    feedbackGain.connect(delayNode);
+    feedbackFilter.connect(wetGain);
+    wetGain.connect(output);
   }
 
   const stopAt = startTime + attack + release + 0.02;
@@ -198,7 +220,8 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
   const cleanup = (): void => {
     nodes.forEach((node) => node.disconnect());
   };
-  const naturalCleanupDelayMs = Math.max(0, (stopAt - context.currentTime) * 1000) + CLEANUP_MARGIN_MS;
+  const tailSeconds = shimmerTailSeconds(delay);
+  const naturalCleanupDelayMs = Math.max(0, (stopAt + tailSeconds - context.currentTime) * 1000) + CLEANUP_MARGIN_MS;
   const naturalCleanupTimer = setTimeout(cleanup, naturalCleanupDelayMs);
 
   const stop = (fadeMs = 5): void => {
