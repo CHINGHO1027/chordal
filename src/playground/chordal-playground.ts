@@ -44,7 +44,6 @@ const STYLES = `
     --radius-lg: 22px;
     --border-width: 0.8px;
     --font-body: Mulish, system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
 
     /* type tokens — three sizes, weight tops out at 500 and only pane titles use it */
     --text-heading: 0.8125rem;
@@ -101,7 +100,7 @@ const STYLES = `
   canvas { display: block; width: 100%; height: 9rem; }
   .status {
     position: absolute; top: 0.6rem; right: 0.75rem;
-    font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular);
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-regular);
     color: var(--accent); font-variant-numeric: tabular-nums;
   }
 
@@ -119,12 +118,12 @@ const STYLES = `
   .sliders { display: flex; flex-direction: column; gap: 1rem; }
   .slider-row .top { display: flex; justify-content: space-between; font-size: var(--text-body); margin-bottom: 0.3rem; }
   .slider-row .top .label { font-weight: var(--weight-regular); }
-  .slider-row .top .val { font-family: var(--font-mono); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .slider-row .top .val { font-family: var(--font-body); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .slider-row input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   .mute-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
   .mute-row button {
-    font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular);
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-regular);
     border: var(--border-width) solid var(--border); background: var(--surface);
     border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
   }
@@ -132,7 +131,7 @@ const STYLES = `
   .code-export {
     margin-top: 1.25rem; background: var(--page-bg); border: var(--border-width) solid var(--border);
     border-radius: var(--radius-md); padding: 0.85rem;
-    font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular); color: var(--text-primary);
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-regular); color: var(--text-primary);
     white-space: pre; overflow-x: auto;
   }
 `;
