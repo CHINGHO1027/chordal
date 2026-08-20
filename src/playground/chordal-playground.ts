@@ -5,7 +5,7 @@
  */
 
 import * as engine from '../engine';
-import { play, playContinuous, setFamily, getFamily, mute, unmute, isMuted, SOUND_FAMILIES, SOUND_INSTANCES } from '../index';
+import { play, playContinuous, setFamily, getFamily, mute, unmute, isMuted, SOUND_FAMILIES } from '../index';
 import { PRESETS, type InstanceTuning } from '../presets';
 import type { SoundFamily, SoundInstance } from '../presets';
 
@@ -54,14 +54,13 @@ const STYLES = `
     --weight-medium: 500;
 
     display: block;
-    background: var(--page-bg);
+    max-width: 60rem;
+    margin: 0 auto;
     color: var(--text-primary);
     font-family: var(--font-body);
     font-weight: var(--weight-regular);
     font-size: var(--text-body);
     line-height: 1.5;
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
     box-sizing: border-box;
   }
   * { box-sizing: border-box; }
@@ -76,6 +75,7 @@ const STYLES = `
     background: var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    box-shadow: 0 24px 48px -24px rgba(23, 17, 12, 0.28), 0 2px 8px rgba(23, 17, 12, 0.06);
   }
   .pane { background: var(--surface); padding: 1rem; }
   .pane-head {
@@ -85,14 +85,6 @@ const STYLES = `
     color: var(--text-primary);
     margin-bottom: 0.75rem;
   }
-  .sub-head {
-    font-family: var(--font-body);
-    font-size: var(--text-small);
-    font-weight: var(--weight-regular);
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-  }
-
   .family-list { display: flex; flex-direction: column; gap: 0.3rem; }
   .family-btn {
     display: flex; align-items: center; gap: 0.55rem;
@@ -104,16 +96,6 @@ const STYLES = `
   .family-btn .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--dot); flex-shrink: 0; }
   .family-btn[aria-pressed="true"] { background: var(--page-bg); color: var(--text-primary); }
   .family-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-
-  .instance-row { display: flex; gap: 0.35rem; margin-top: 1.25rem; flex-wrap: wrap; }
-  .instance-btn {
-    font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular);
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text-secondary); border-radius: 999px;
-    padding: 0.3rem 0.7rem; cursor: pointer;
-  }
-  .instance-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-  .instance-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   .waveform-wrap { background: var(--waveform-bg); border-radius: var(--radius-md); padding: 0.5rem; position: relative; }
   canvas { display: block; width: 100%; height: 9rem; }
@@ -131,7 +113,7 @@ const STYLES = `
     padding: 0.55rem 0.9rem; cursor: pointer;
   }
   .test-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .test-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .test-btn.active { border-color: var(--accent); color: var(--accent); }
   input[type="range"].slider-demo { width: 12rem; accent-color: var(--accent); }
   .error-form { display: flex; gap: 0.4rem; align-items: center; }
   .error-form input {
@@ -139,6 +121,7 @@ const STYLES = `
     border: 1px solid var(--border); border-radius: var(--radius-sm);
     padding: 0.5rem 0.6rem; width: 9rem;
   }
+  .error-form.active input { border-color: var(--accent); color: var(--accent); }
 
   .sliders { display: flex; flex-direction: column; gap: 1rem; }
   .slider-row .top { display: flex; justify-content: space-between; font-size: var(--text-body); margin-bottom: 0.3rem; }
@@ -249,6 +232,7 @@ export class ChordalPlayground extends HTMLElement {
   }
 
   private triggerTest(instance: SoundInstance, options: { state?: 'on' | 'off' } = {}): void {
+    this.setActiveInstance(instance);
     const key = `${this.family}:${instance}`;
     const override = this.overrides.get(key) ?? {};
     play(instance, { family: this.family, ...override, ...options });
@@ -300,10 +284,14 @@ export class ChordalPlayground extends HTMLElement {
     this.triggerTest('hover');
   }
 
-  private selectInstance(instance: SoundInstance): void {
+  /**
+   * Test elements double as the instance selector — triggering one both plays it and
+   * makes it what the Inspector's sliders are tuning. No separate Instance section.
+   */
+  private setActiveInstance(instance: SoundInstance): void {
     this.instance = instance;
-    this.shadow.querySelectorAll<HTMLElement>('.instance-btn').forEach((btn) => {
-      btn.setAttribute('aria-pressed', String(btn.dataset.instance === instance));
+    this.shadow.querySelectorAll<HTMLElement>('[data-instance-trigger]').forEach((el) => {
+      el.classList.toggle('active', el.dataset.instanceTrigger === instance);
     });
     this.refreshSliders();
     this.refreshCodeExport();
@@ -313,10 +301,6 @@ export class ChordalPlayground extends HTMLElement {
     const familyListHtml = SOUND_FAMILIES.map(
       (f) =>
         `<button type="button" class="family-btn" data-family="${f}" aria-pressed="${f === this.family}" style="--dot:${FAMILY_ACCENTS[f]}"><span class="dot"></span>${f}</button>`
-    ).join('');
-
-    const instanceRowHtml = SOUND_INSTANCES.map(
-      (i) => `<button type="button" class="instance-btn" data-instance="${i}" aria-pressed="${i === this.instance}">${i}</button>`
     ).join('');
 
     const slidersHtml = SLIDER_SPECS.map(
@@ -333,8 +317,6 @@ export class ChordalPlayground extends HTMLElement {
         <div class="pane">
           <div class="pane-head">Family</div>
           <div class="family-list">${familyListHtml}</div>
-          <div class="sub-head" style="margin-top:1.25rem;">Instance</div>
-          <div class="instance-row">${instanceRowHtml}</div>
           <div class="mute-row">
             <button type="button" class="mute-btn">${isMuted() ? 'Unmute' : 'Mute'}</button>
           </div>
@@ -346,11 +328,11 @@ export class ChordalPlayground extends HTMLElement {
             <div class="status">idle</div>
           </div>
           <div class="test-area">
-            <button type="button" class="test-btn primary" data-test="hover">Hover card</button>
-            <button type="button" class="test-btn" data-test="press">Press</button>
-            <button type="button" class="test-btn" data-test="congrats">Complete task</button>
-            <button type="button" class="test-btn" data-test="toggle" aria-pressed="false">Dark mode</button>
-            <form class="error-form" data-test="error-form">
+            <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover card</button>
+            <button type="button" class="test-btn" data-test="press" data-instance-trigger="press">Press</button>
+            <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Complete task</button>
+            <button type="button" class="test-btn" data-test="toggle" data-instance-trigger="toggle" aria-pressed="false">Toggle switch</button>
+            <form class="error-form" data-test="error-form" data-instance-trigger="error">
               <input type="text" required placeholder="Required field" />
               <button type="submit" class="test-btn">Submit</button>
             </form>
@@ -367,16 +349,12 @@ export class ChordalPlayground extends HTMLElement {
 
     this.wireEvents();
     this.style.setProperty('--accent', FAMILY_ACCENTS[this.family]);
-    this.refreshSliders();
-    this.refreshCodeExport();
+    this.setActiveInstance(this.instance);
   }
 
   private wireEvents(): void {
     this.shadow.querySelectorAll<HTMLElement>('.family-btn').forEach((btn) => {
       btn.addEventListener('click', () => this.selectFamily(btn.dataset.family as SoundFamily));
-    });
-    this.shadow.querySelectorAll<HTMLElement>('.instance-btn').forEach((btn) => {
-      btn.addEventListener('click', () => this.selectInstance(btn.dataset.instance as SoundInstance));
     });
 
     SLIDER_SPECS.forEach((spec) => {
