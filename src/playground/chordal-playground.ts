@@ -175,9 +175,12 @@ export class ChordalPlayground extends HTMLElement {
 
   private setupWaveform(): void {
     const context = engine.getContext();
+    const output = engine.getMasterGain();
+    if (!context || !output) return; // SSR or Web Audio unavailable — no scope to draw
+
     this.analyser = context.createAnalyser();
     this.analyser.fftSize = 1024;
-    engine.getMasterGain().connect(this.analyser);
+    output.connect(this.analyser);
     this.waveData = new Uint8Array(this.analyser.frequencyBinCount);
     this.drawWaveform();
   }

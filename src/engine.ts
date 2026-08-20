@@ -41,6 +41,7 @@ const DETUNE_STEP_CENTS = 2;
 const DETUNE_MAX_CENTS = 12;
 const MIN_COOLDOWN_MS = 20;
 const COOLDOWN_RATIO = 0.6;
+const CLEANUP_MARGIN_MS = 30;
 
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
@@ -50,25 +51,55 @@ let noiseBuffer: AudioBuffer | null = null;
 const voicePools = new Map<string, Voice[]>();
 const throttleStates = new Map<string, ThrottleState>();
 
-/** Lazily creates the singleton AudioContext and wires up auto-unlock on first gesture. */
-export function getContext(): AudioContext {
-  if (!ctx) {
-    ctx = new AudioContext();
-    masterGain = ctx.createGain();
-    masterGain.gain.value = muted ? 0 : 1;
-    masterGain.connect(ctx.destination);
-    if (ctx.state === 'suspended') {
-      attachAutoUnlock(ctx);
-    }
+function createAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  const Ctor =
+    window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctor) return null;
+  try {
+    return new Ctor();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lazily creates the singleton AudioContext and wires up auto-unlock on first gesture.
+ * Returns null in non-browser environments (SSR) or if Web Audio is unavailable —
+ * every caller in this module treats that as a silent no-op, never a throw.
+ */
+export function getContext(): AudioContext | null {
+  if (ctx) return ctx;
+
+  ctx = createAudioContext();
+  if (!ctx) return null;
+
+  masterGain = ctx.createGain();
+  masterGain.gain.value = muted ? 0 : 1;
+
+  // A shared limiter on the output bus — without it, the 8-voice polyphony cap can
+  // sum past 0dB and clip. Individual instance volumes stay as authored; this only
+  // catches the overlap case.
+  const compressor = ctx.createDynamicsCompressor();
+  compressor.threshold.value = -8;
+  compressor.knee.value = 6;
+  compressor.ratio.value = 12;
+  compressor.attack.value = 0.002;
+  compressor.release.value = 0.08;
+
+  masterGain.connect(compressor);
+  compressor.connect(ctx.destination);
+
+  if (ctx.state === 'suspended') {
+    attachAutoUnlock(ctx);
   }
   return ctx;
 }
 
 /** The single GainNode all voices route through — playground/analysis code can tap it. */
-export function getMasterGain(): GainNode {
+export function getMasterGain(): GainNode | null {
   getContext();
-  // getContext() always assigns masterGain before returning.
-  return masterGain as GainNode;
+  return masterGain;
 }
 
 function attachAutoUnlock(context: AudioContext): void {
@@ -95,11 +126,18 @@ function getNoiseBuffer(context: AudioContext): AudioBuffer {
   return buffer;
 }
 
-/** Builds and plays one synthesis voice: source → envelope → (filter) → (delay) → output. */
-function synthesize(context: AudioContext, output: AudioNode, params: SynthParams): Voice {
-  const now = context.currentTime;
+/**
+ * Builds and plays one synthesis voice: source → envelope → (filter) → (delay) → output.
+ * `startOffset` (seconds from now) is scheduled against the AudioContext's own clock via
+ * `source.start()`, not a JS timer — so a multi-note gesture's notes land sample-accurately
+ * regardless of event-loop jitter. All nodes are explicitly disconnected once the voice
+ * (and, if stopped early, its fade-out) has finished, instead of relying on GC alone.
+ */
+function synthesize(context: AudioContext, output: AudioNode, params: SynthParams, startOffset: number): Voice {
+  const startTime = context.currentTime + Math.max(startOffset, 0);
   const { waveform, frequency, endFrequency, filterType, filterCutoff, filterQ, volume, length, detuneCents = 0, delay } = params;
 
+  const nodes: AudioNode[] = [];
   let source: OscillatorNode | AudioBufferSourceNode;
   if (waveform === 'noise') {
     const bufferSource = context.createBufferSource();
@@ -109,29 +147,32 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
   } else {
     const osc = context.createOscillator();
     osc.type = waveform;
-    osc.frequency.setValueAtTime(Math.max(frequency, 1), now);
+    osc.frequency.setValueAtTime(Math.max(frequency, 1), startTime);
     if (endFrequency && endFrequency !== frequency) {
-      osc.frequency.exponentialRampToValueAtTime(Math.max(endFrequency, 1), now + length);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(endFrequency, 1), startTime + length);
     }
-    osc.detune.setValueAtTime(detuneCents, now);
+    osc.detune.setValueAtTime(detuneCents, startTime);
     source = osc;
   }
+  nodes.push(source);
 
   const envelope = context.createGain();
+  nodes.push(envelope);
   const attack = Math.min(0.005, length * 0.2);
   const release = Math.max(length - attack, 0.001);
-  envelope.gain.setValueAtTime(0, now);
-  envelope.gain.linearRampToValueAtTime(Math.max(volume, 0.0001), now + attack);
-  envelope.gain.exponentialRampToValueAtTime(0.0001, now + attack + release);
+  envelope.gain.setValueAtTime(0, startTime);
+  envelope.gain.linearRampToValueAtTime(Math.max(volume, 0.0001), startTime + attack);
+  envelope.gain.exponentialRampToValueAtTime(0.0001, startTime + attack + release);
 
   source.connect(envelope);
   let chainEnd: AudioNode = envelope;
 
   if (filterType) {
     const filter = context.createBiquadFilter();
+    nodes.push(filter);
     filter.type = filterType;
-    filter.frequency.setValueAtTime(filterCutoff ?? 2000, now);
-    filter.Q.setValueAtTime(filterQ ?? 1, now);
+    filter.frequency.setValueAtTime(filterCutoff ?? 2000, startTime);
+    filter.Q.setValueAtTime(filterQ ?? 1, startTime);
     chainEnd.connect(filter);
     chainEnd = filter;
   }
@@ -140,8 +181,9 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
 
   if (delay) {
     const delayNode = context.createDelay(1);
-    delayNode.delayTime.value = delay.time;
     const feedback = context.createGain();
+    nodes.push(delayNode, feedback);
+    delayNode.delayTime.value = delay.time;
     feedback.gain.value = delay.feedback;
     chainEnd.connect(delayNode);
     delayNode.connect(feedback);
@@ -149,11 +191,18 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
     delayNode.connect(output);
   }
 
-  const stopAt = now + attack + release + 0.02;
-  source.start(now);
+  const stopAt = startTime + attack + release + 0.02;
+  source.start(startTime);
   source.stop(stopAt);
 
+  const cleanup = (): void => {
+    nodes.forEach((node) => node.disconnect());
+  };
+  const naturalCleanupDelayMs = Math.max(0, (stopAt - context.currentTime) * 1000) + CLEANUP_MARGIN_MS;
+  const naturalCleanupTimer = setTimeout(cleanup, naturalCleanupDelayMs);
+
   const stop = (fadeMs = 5): void => {
+    clearTimeout(naturalCleanupTimer);
     const t = context.currentTime;
     envelope.gain.cancelScheduledValues(t);
     envelope.gain.setValueAtTime(envelope.gain.value, t);
@@ -163,6 +212,7 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
     } catch {
       // already scheduled to stop — nothing to do
     }
+    setTimeout(cleanup, fadeMs + CLEANUP_MARGIN_MS);
   };
 
   return { stop, endsAt: stopAt };
@@ -173,8 +223,7 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
  * window ducks volume (floor 0.3×) and nudges pitch (up to 12 cents), recovering once
  * 150ms passes without a retrigger.
  */
-function applyThrottle(instanceKey: string, params: SynthParams): { volume: number; detuneCents: number } {
-  const context = getContext();
+function applyThrottle(context: AudioContext, instanceKey: string, params: SynthParams): { volume: number; detuneCents: number } {
   const now = context.currentTime * 1000;
   const cooldownMs = Math.max(MIN_COOLDOWN_MS, params.length * 1000 * COOLDOWN_RATIO);
   const state = throttleStates.get(instanceKey);
@@ -198,12 +247,18 @@ function applyThrottle(instanceKey: string, params: SynthParams): { volume: numb
 /**
  * Plays one voice for a given instance (e.g. "cyber-electric:hover"), applying the
  * throttle/ducking rule and enforcing the 8-voice polyphony cap via oldest-voice stealing.
+ * `startOffset` (seconds) schedules the voice sample-accurately instead of firing immediately —
+ * used to lay out a multi-note gesture's notes in one pass against one AudioContext clock read.
+ * A no-op before the page's first user gesture, in SSR, and when Web Audio is unavailable.
  */
-export function playVoice(instanceKey: string, params: SynthParams): void {
+export function playVoice(instanceKey: string, params: SynthParams, startOffset = 0): void {
+  if (typeof navigator !== 'undefined' && navigator.userActivation?.hasBeenActive === false) return;
+
   const context = getContext();
   const output = getMasterGain();
-  const now = context.currentTime;
+  if (!context || !output) return;
 
+  const now = context.currentTime;
   const pool = voicePools.get(instanceKey) ?? [];
   const live = pool.filter((voice) => voice.endsAt > now);
 
@@ -212,8 +267,8 @@ export function playVoice(instanceKey: string, params: SynthParams): void {
     oldest?.stop(5);
   }
 
-  const { volume, detuneCents } = applyThrottle(instanceKey, params);
-  const voice = synthesize(context, output, { ...params, volume, detuneCents });
+  const { volume, detuneCents } = applyThrottle(context, instanceKey, params);
+  const voice = synthesize(context, output, { ...params, volume, detuneCents }, startOffset);
   live.push(voice);
   voicePools.set(instanceKey, live);
 }

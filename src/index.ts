@@ -46,18 +46,18 @@ export interface PlayOptions extends Partial<InstanceTuning> {
  * notes (e.g. congrats's ascending run) never duck each other via the engine's
  * anti-spam throttle. Repeating the *same* gesture too quickly still ducks correctly,
  * because each note-index slot is throttled against its own previous occurrence.
+ *
+ * All notes are submitted in one synchronous pass — each carries its own `startOffset`,
+ * which the engine schedules against the AudioContext's own clock rather than a JS timer,
+ * so a gesture's notes land sample-accurately regardless of event-loop jitter.
  */
 function scheduleGesture(family: SoundFamily, instance: SoundInstance, tuning: InstanceTuning, notes: Note[]): void {
   const activeNotes = notes.length > 0 ? notes : [FALLBACK_NOTE];
   activeNotes.forEach((note, index) => {
     const instanceKey = `${family}:${instance}:${index}`;
     const params = resolveNoteParams(family, tuning, note);
-    const delayMs = note.offsetFraction * tuning.length * 1000;
-    if (delayMs <= 0) {
-      engine.playVoice(instanceKey, params);
-    } else {
-      setTimeout(() => engine.playVoice(instanceKey, params), delayMs);
-    }
+    const startOffset = note.offsetFraction * tuning.length;
+    engine.playVoice(instanceKey, params, startOffset);
   });
 }
 
