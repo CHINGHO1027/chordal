@@ -118,9 +118,9 @@ const STYLES = `
   .sliders { display: flex; flex-direction: column; gap: 0.5rem; }
   .slider-row {
     position: relative; height: 1.75rem; border-radius: var(--radius-sm);
-    background: var(--page-bg); overflow: hidden;
+    background: var(--waveform-bg); overflow: hidden;
   }
-  .slider-row .fill { position: absolute; inset: 0; width: var(--fill, 0%); background: var(--waveform-bg); pointer-events: none; }
+  .slider-row .fill { position: absolute; inset: 0; width: var(--fill, 0%); background: var(--border); pointer-events: none; }
   .slider-row .thumb {
     position: absolute; top: 0.3rem; bottom: 0.3rem; left: var(--fill, 0%); width: 2px;
     background: var(--accent); transform: translateX(-1px); pointer-events: none;
