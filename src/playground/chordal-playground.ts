@@ -104,12 +104,31 @@ const STYLES = `
     color: var(--accent); font-variant-numeric: tabular-nums;
   }
 
-  .test-area { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+  .test-area { margin-top: 1rem; }
+  .instance-group-label { font-size: var(--text-small); color: var(--text-secondary); margin-bottom: 0.5rem; }
+  .instance-group { background: var(--waveform-bg); border-radius: var(--radius-sm); padding: 0.7rem; display: flex; flex-direction: column; gap: 0.7rem; }
+  .instance-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .instance-divider { height: var(--border-width); background: var(--border); }
+  .instance-ctrl-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .instance-ctrl-label { font-size: var(--text-small); color: var(--text-secondary); }
+  .instance-ctrl-label.active { color: var(--accent); }
+
+  .switch { position: relative; display: inline-flex; width: 2.1rem; height: 1.15rem; flex-shrink: 0; cursor: pointer; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+  .switch-track { position: absolute; inset: 0; border-radius: 999px; background: var(--border); transition: background 0.15s; }
+  .switch-knob {
+    position: absolute; top: 0.1rem; left: 0.1rem; width: 0.95rem; height: 0.95rem; border-radius: 50%;
+    background: var(--surface); box-shadow: 0 1px 3px rgba(23,17,12,0.28); transition: transform 0.15s;
+  }
+  .switch input:checked ~ .switch-track { background: var(--accent); }
+  .switch input:checked ~ .switch-track .switch-knob { transform: translateX(0.95rem); }
+  .switch input:focus-visible ~ .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
   .test-btn {
     font-family: var(--font-body); font-weight: var(--weight-regular); font-size: var(--text-small);
-    border: var(--border-width) solid var(--border); background: var(--page-bg);
-    color: var(--text-primary); border-radius: var(--radius-sm);
-    padding: 0.55rem 0.9rem; cursor: pointer;
+    border: var(--border-width) solid var(--border); background: var(--surface);
+    color: var(--text-primary); border-radius: 999px;
+    padding: 0.5rem 0.85rem; cursor: pointer;
   }
   .test-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .test-btn.active { border-color: var(--accent); color: var(--accent); }
@@ -363,12 +382,27 @@ export class ChordalPlayground extends HTMLElement {
             <div class="status">idle</div>
           </div>
           <div class="test-area">
-            <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover</button>
-            <button type="button" class="test-btn" data-test="press" data-instance-trigger="press">Press</button>
-            <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Complete task</button>
-            <button type="button" class="test-btn" data-test="toggle" data-instance-trigger="toggle" aria-pressed="false">Toggle switch</button>
-            <button type="button" class="test-btn" data-test="error" data-instance-trigger="error">Submit</button>
-            <input type="range" class="slider-demo" min="0" max="100" value="50" data-test="slider" />
+            <div class="instance-group-label">Instance</div>
+            <div class="instance-group">
+              <div class="instance-pills">
+                <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover</button>
+                <button type="button" class="test-btn" data-test="press" data-instance-trigger="press">Press</button>
+                <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Complete task</button>
+                <button type="button" class="test-btn" data-test="error" data-instance-trigger="error">Submit</button>
+              </div>
+              <div class="instance-divider"></div>
+              <div class="instance-ctrl-row">
+                <span class="instance-ctrl-label" data-instance-trigger="toggle">Toggle switch</span>
+                <label class="switch">
+                  <input type="checkbox" data-test="toggle" />
+                  <span class="switch-track"><span class="switch-knob"></span></span>
+                </label>
+              </div>
+              <div class="instance-ctrl-row">
+                <span class="instance-ctrl-label">Slider</span>
+                <input type="range" class="slider-demo" min="0" max="100" value="50" data-test="slider" />
+              </div>
+            </div>
           </div>
           <div class="code-export"></div>
         </div>
@@ -413,10 +447,9 @@ export class ChordalPlayground extends HTMLElement {
     const congratsBtn = this.shadow.querySelector<HTMLElement>('[data-test="congrats"]');
     congratsBtn?.addEventListener('click', () => this.triggerTest('congrats'));
 
-    const toggleBtn = this.shadow.querySelector<HTMLElement>('[data-test="toggle"]');
-    toggleBtn?.addEventListener('click', () => {
-      this.toggleState = this.toggleState === 'on' ? 'off' : 'on';
-      toggleBtn.setAttribute('aria-pressed', String(this.toggleState === 'on'));
+    const toggleInput = this.shadow.querySelector<HTMLInputElement>('[data-test="toggle"]');
+    toggleInput?.addEventListener('change', () => {
+      this.toggleState = toggleInput.checked ? 'on' : 'off';
       this.triggerTest('toggle', { state: this.toggleState });
     });
 
