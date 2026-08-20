@@ -113,7 +113,20 @@ const STYLES = `
   }
   .test-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .test-btn.active { border-color: var(--accent); color: var(--accent); }
-  input[type="range"].slider-demo { width: 12rem; accent-color: var(--accent); }
+  input[type="range"].slider-demo {
+    appearance: none; -webkit-appearance: none; width: 12rem; background: transparent; cursor: pointer;
+  }
+  input[type="range"].slider-demo::-webkit-slider-runnable-track {
+    height: 2px; border-radius: 999px;
+    background: linear-gradient(to right, var(--accent) 0 var(--fill, 50%), var(--border) var(--fill, 50%) 100%);
+  }
+  input[type="range"].slider-demo::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 0.875rem; height: 0.875rem; border-radius: 50%;
+    background: var(--accent); margin-top: -0.375rem; cursor: pointer;
+  }
+  input[type="range"].slider-demo::-moz-range-track { height: 2px; border-radius: 999px; background: var(--border); }
+  input[type="range"].slider-demo::-moz-range-progress { height: 2px; border-radius: 999px; background: var(--accent); }
+  input[type="range"].slider-demo::-moz-range-thumb { width: 0.875rem; height: 0.875rem; border: none; border-radius: 50%; background: var(--accent); cursor: pointer; }
 
   .sliders { display: flex; flex-direction: column; gap: 0.5rem; }
   .slider-row {
@@ -411,8 +424,10 @@ export class ChordalPlayground extends HTMLElement {
     errorBtn?.addEventListener('click', () => this.triggerTest('error'));
 
     const sliderDemo = this.shadow.querySelector<HTMLInputElement>('[data-test="slider"]');
+    sliderDemo?.style.setProperty('--fill', `${sliderDemo.value}%`);
     sliderDemo?.addEventListener('input', () => {
       const ratio = Number(sliderDemo.value) / 100;
+      sliderDemo.style.setProperty('--fill', `${sliderDemo.value}%`);
       playContinuous('slider', ratio, { family: this.family });
       const status = this.shadow.querySelector<HTMLElement>('.status');
       if (status) status.textContent = `${this.family} · slider · ${ratio.toFixed(2)}`;
