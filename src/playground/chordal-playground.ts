@@ -115,11 +115,27 @@ const STYLES = `
   .test-btn.active { border-color: var(--accent); color: var(--accent); }
   input[type="range"].slider-demo { width: 12rem; accent-color: var(--accent); }
 
-  .sliders { display: flex; flex-direction: column; gap: 1rem; }
-  .slider-row .top { display: flex; justify-content: space-between; font-size: var(--text-body); margin-bottom: 0.3rem; }
-  .slider-row .top .label { font-weight: var(--weight-regular); }
-  .slider-row .top .val { font-family: var(--font-body); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-  .slider-row input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .sliders { display: flex; flex-direction: column; gap: 0.5rem; }
+  .slider-row {
+    position: relative; height: 2.5rem; border-radius: var(--radius-sm);
+    background: var(--page-bg); overflow: hidden;
+  }
+  .slider-row .fill { position: absolute; inset: 0; width: var(--fill, 0%); background: var(--border); pointer-events: none; }
+  .slider-row .thumb {
+    position: absolute; top: 0.4rem; bottom: 0.4rem; left: var(--fill, 0%); width: 2px;
+    background: var(--accent); transform: translateX(-1px); pointer-events: none;
+  }
+  .slider-row .label {
+    position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
+    font-size: var(--text-body); font-weight: var(--weight-regular); color: var(--text-secondary); pointer-events: none;
+  }
+  .slider-row .val {
+    position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+    font-size: var(--text-body); font-weight: var(--weight-medium); color: var(--text-primary);
+    font-variant-numeric: tabular-nums; pointer-events: none;
+  }
+  .slider-row input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .slider-row:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .mute-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
   .mute-row button {
@@ -262,7 +278,15 @@ export class ChordalPlayground extends HTMLElement {
       const value = tuning[spec.key];
       if (input) input.value = String(value);
       if (val) val.textContent = spec.format(value);
+      this.setSliderFill(spec, value);
     });
+  }
+
+  private setSliderFill(spec: (typeof SLIDER_SPECS)[number], value: number): void {
+    const row = this.shadow.querySelector<HTMLElement>(`input[data-key="${spec.key}"]`)?.closest('.slider-row');
+    if (!row) return;
+    const pct = ((value - spec.min) / (spec.max - spec.min)) * 100;
+    (row as HTMLElement).style.setProperty('--fill', `${pct}%`);
   }
 
   private selectFamily(family: SoundFamily): void {
@@ -300,9 +324,12 @@ export class ChordalPlayground extends HTMLElement {
 
     const slidersHtml = SLIDER_SPECS.map(
       (spec) => `
-      <div class="slider-row">
-        <div class="top"><span class="label">${spec.label}</span><span class="val" data-key="${spec.key}"></span></div>
+      <div class="slider-row" style="--fill:0%">
         <input type="range" data-key="${spec.key}" min="${spec.min}" max="${spec.max}" step="${spec.step}" />
+        <div class="fill"></div>
+        <div class="thumb"></div>
+        <span class="label">${spec.label}</span>
+        <span class="val" data-key="${spec.key}"></span>
       </div>`
     ).join('');
 
@@ -358,6 +385,7 @@ export class ChordalPlayground extends HTMLElement {
         this.overrides.set(key, { ...current, [spec.key]: value });
         const val = this.shadow.querySelector<HTMLElement>(`.val[data-key="${spec.key}"]`);
         if (val) val.textContent = spec.format(value);
+        this.setSliderFill(spec, value);
         this.refreshCodeExport();
         this.triggerTest(this.instance);
       });
