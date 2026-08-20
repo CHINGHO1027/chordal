@@ -111,7 +111,6 @@ const STYLES = `
   .instance-divider { height: var(--border-width); background: var(--border); }
   .instance-ctrl-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
   .instance-ctrl-label { font-size: var(--text-small); color: var(--text-secondary); }
-  .instance-ctrl-label.active { color: var(--accent); }
 
   .switch { position: relative; display: inline-flex; width: 2.1rem; height: 1.15rem; flex-shrink: 0; cursor: pointer; }
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
@@ -392,7 +391,7 @@ export class ChordalPlayground extends HTMLElement {
               </div>
               <div class="instance-divider"></div>
               <div class="instance-ctrl-row">
-                <span class="instance-ctrl-label" data-instance-trigger="toggle">Toggle switch</span>
+                <span class="instance-ctrl-label">Toggle switch</span>
                 <label class="switch">
                   <input type="checkbox" data-test="toggle" />
                   <span class="switch-track"><span class="switch-knob"></span></span>
