@@ -257,20 +257,18 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
   },
   chime: {
     waveform: 'sine',
-    baseFrequency: 860,
+    baseFrequency: 940,
     // Cuelume's own chime is completely unfiltered sine — filtering was adding nothing
-    // but a slight dulling. Widened well above anything chime ever plays (root through a
-    // fifth tops out at 1290Hz) so it stays essentially transparent at any tone value;
-    // `tone` keeps a token effect rather than being removed outright.
+    // but a slight dulling. Widened well above anything chime ever plays so it stays
+    // essentially transparent at any tone value; `tone` keeps a token effect rather than
+    // being removed outright.
     filterType: 'lowpass',
     filterCutoffRange: [2400, 6000],
     filterQ: 0.7,
-    // No delay/shimmer here, unlike most other families. Cuelume's chime never had one —
-    // the "ring" comes entirely from each note's own envelope decay (per-instance `length`),
-    // not an artificial feedback tail. The shared shimmer pass applied earlier was tuned for
-    // families that needed help feeling less dry; on chime it stacked a ~700ms feedback tail
-    // (see engine.shimmerTailSeconds) under even a 12ms hover, which read as heavy/washy
-    // rather than light — the opposite of what a real chime should feel like.
+    // Shimmer wasn't actually the source of the "heavy" feel — Cuelume's own chime carries
+    // a near-identical tail. Brighter feedback lowpass than our other families' shimmer
+    // (4200 vs ~3200) so the repeats stay airy instead of darkening into a dull wash.
+    delay: { time: 0.12, feedback: 0.22, wet: 0.16, lowpass: 4200 },
   },
   'digital-blip': {
     waveform: 'square',
@@ -350,13 +348,18 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     toggle: preset(0.4, 0.02, 0.45, 'toggle', toggleClickNotes),
   },
   chime: {
-    hover: preset(0.3, 0.012, 0.5, 'hover', singleNote),
-    press: preset(0.4, 0.03, 0.5, 'press', chimePressNotes),
+    // Volumes pulled well below the shared limiter's -8dB (~0.4) threshold — Cuelume's
+    // chime notes land around 0.16-0.18 after their own gain staging, comfortably under
+    // their limiter too, so a single note never gets compressed. Ours were sitting at or
+    // above threshold, so the limiter was squashing almost every chime hit — that
+    // gain-reduction pumping is what read as "heavy" next to their untouched transients.
+    hover: preset(0.18, 0.012, 0.5, 'hover', singleNote),
+    press: preset(0.23, 0.03, 0.5, 'press', chimePressNotes),
     // 300ms — up from 170ms, so the fifth actually has room to ring like a real bell
     // instead of being cut off mid-decay.
-    congrats: preset(0.5, 0.3, 0.55, 'congrats', chimeCongratsNotes),
-    error: preset(0.38, 0.09, 0.28, 'error', chimeErrorNotes),
-    toggle: preset(0.4, 0.028, 0.5, 'toggle', chimeToggleNotes),
+    congrats: preset(0.28, 0.3, 0.55, 'congrats', chimeCongratsNotes),
+    error: preset(0.21, 0.09, 0.28, 'error', chimeErrorNotes),
+    toggle: preset(0.23, 0.028, 0.5, 'toggle', chimeToggleNotes),
   },
   'digital-blip': {
     hover: preset(0.26, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
