@@ -328,34 +328,41 @@ function preset(volume: number, length: number, tone: number, instance: SoundIns
   return { volume, length, tone, pitch: INSTANCE_PITCH[instance], notes };
 }
 
+// Every family below (chime already fixed separately) had congrats/press/toggle sitting
+// at or above the shared limiter's -8dB (~0.4 linear) threshold — the same "always-on
+// compression" problem diagnosed on chime, just not yet applied everywhere. Volumes here
+// are scaled down proportionally per family (relative loudness between a family's own
+// instances preserved) so the loudest instance in each family lands around 0.28-0.30,
+// comfortably under threshold even with an arpeggio's overlapping notes — the limiter goes
+// back to being a genuine polyphony safety net instead of shaping every single trigger.
 export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>> = {
   'soft-bubble': {
-    hover: preset(0.3, 0.011, 0.45, 'hover', singleNote),
-    press: preset(0.4, 0.02, 0.42, 'press', pressNotes),
-    congrats: preset(0.5, 0.16, 0.5, 'congrats', congratsArpeggio),
-    error: preset(0.37, 0.045, 0.25, 'error', errorNotes),
-    toggle: preset(0.37, 0.016, 0.42, 'toggle', singleNote),
+    hover: preset(0.18, 0.011, 0.45, 'hover', singleNote),
+    press: preset(0.24, 0.02, 0.42, 'press', pressNotes),
+    congrats: preset(0.3, 0.16, 0.5, 'congrats', congratsArpeggio),
+    error: preset(0.22, 0.045, 0.25, 'error', errorNotes),
+    toggle: preset(0.22, 0.016, 0.42, 'toggle', singleNote),
   },
   'glass-crystal': {
-    hover: preset(0.32, 0.009, 0.55, 'hover', singleNote),
-    press: preset(0.42, 0.017, 0.5, 'press', pressNotes),
-    congrats: preset(0.52, 0.15, 0.65, 'congrats', congratsArpeggio),
-    error: preset(0.38, 0.04, 0.3, 'error', errorNotes),
-    toggle: preset(0.4, 0.014, 0.5, 'toggle', singleNote),
+    hover: preset(0.18, 0.009, 0.55, 'hover', singleNote),
+    press: preset(0.24, 0.017, 0.5, 'press', pressNotes),
+    congrats: preset(0.3, 0.15, 0.65, 'congrats', congratsArpeggio),
+    error: preset(0.22, 0.04, 0.3, 'error', errorNotes),
+    toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
   },
   'paper-snap': {
-    hover: preset(0.26, 0.008, 0.5, 'hover', singleNote),
-    press: preset(0.36, 0.015, 0.5, 'press', pressNotes),
-    congrats: preset(0.46, 0.11, 0.55, 'congrats', paperSnapCongratsNotes),
-    error: preset(0.34, 0.035, 0.3, 'error', errorNotes),
-    toggle: preset(0.34, 0.014, 0.5, 'toggle', singleNote),
+    hover: preset(0.17, 0.008, 0.5, 'hover', singleNote),
+    press: preset(0.23, 0.015, 0.5, 'press', pressNotes),
+    congrats: preset(0.3, 0.11, 0.55, 'congrats', paperSnapCongratsNotes),
+    error: preset(0.22, 0.035, 0.3, 'error', errorNotes),
+    toggle: preset(0.22, 0.014, 0.5, 'toggle', singleNote),
   },
   'metallic-tact': {
-    hover: preset(0.3, 0.012, 0.45, 'hover', singleNote),
-    press: preset(0.4, 0.022, 0.45, 'press', pressNotes),
-    congrats: preset(0.5, 0.14, 0.5, 'congrats', metallicTactCongratsNotes),
-    error: preset(0.37, 0.05, 0.3, 'error', errorNotes),
-    toggle: preset(0.4, 0.02, 0.45, 'toggle', toggleClickNotes),
+    hover: preset(0.18, 0.012, 0.45, 'hover', singleNote),
+    press: preset(0.24, 0.022, 0.45, 'press', pressNotes),
+    congrats: preset(0.3, 0.14, 0.5, 'congrats', metallicTactCongratsNotes),
+    error: preset(0.22, 0.05, 0.3, 'error', errorNotes),
+    toggle: preset(0.24, 0.02, 0.45, 'toggle', toggleClickNotes),
   },
   chime: {
     // Volumes pulled well below the shared limiter's -8dB (~0.4) threshold — Cuelume's
@@ -374,32 +381,32 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     toggle: preset(0.23, 0.028, 0.5, 'toggle', chimeToggleNotes),
   },
   'digital-blip': {
-    hover: preset(0.26, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
-    press: preset(0.36, 0.016, 0.4, 'press', digitalBlipPressNotes),
-    congrats: preset(0.46, 0.12, 0.45, 'congrats', digitalBlipCongratsNotes),
-    error: preset(0.33, 0.038, 0.25, 'error', errorNotes),
-    toggle: preset(0.34, 0.014, 0.4, 'toggle', toggleClickNotes),
+    hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
+    press: preset(0.23, 0.016, 0.4, 'press', digitalBlipPressNotes),
+    congrats: preset(0.3, 0.12, 0.45, 'congrats', digitalBlipCongratsNotes),
+    error: preset(0.22, 0.038, 0.25, 'error', errorNotes),
+    toggle: preset(0.22, 0.014, 0.4, 'toggle', toggleClickNotes),
   },
   spring: {
-    hover: preset(0.29, 0.011, 0.45, 'hover', singleNote),
-    press: preset(0.39, 0.02, 0.42, 'press', pressNotes),
-    congrats: preset(0.48, 0.15, 0.48, 'congrats', congratsArpeggio),
-    error: preset(0.36, 0.045, 0.28, 'error', errorNotes),
-    toggle: preset(0.37, 0.017, 0.42, 'toggle', singleNote),
+    hover: preset(0.18, 0.011, 0.45, 'hover', singleNote),
+    press: preset(0.24, 0.02, 0.42, 'press', pressNotes),
+    congrats: preset(0.3, 0.15, 0.48, 'congrats', congratsArpeggio),
+    error: preset(0.22, 0.045, 0.28, 'error', errorNotes),
+    toggle: preset(0.23, 0.017, 0.42, 'toggle', singleNote),
   },
   'tiny-sparkle': {
-    hover: preset(0.24, 0.008, 0.2, 'hover', singleNote),
-    press: preset(0.34, 0.014, 0.2, 'press', pressNotes),
-    congrats: preset(0.44, 0.16, 0.32, 'congrats', congratsArpeggio),
-    error: preset(0.32, 0.032, 0.12, 'error', errorNotes),
-    toggle: preset(0.32, 0.012, 0.2, 'toggle', singleNote),
+    hover: preset(0.15, 0.008, 0.2, 'hover', singleNote),
+    press: preset(0.22, 0.014, 0.2, 'press', pressNotes),
+    congrats: preset(0.28, 0.16, 0.32, 'congrats', congratsArpeggio),
+    error: preset(0.2, 0.032, 0.12, 'error', errorNotes),
+    toggle: preset(0.2, 0.012, 0.2, 'toggle', singleNote),
   },
   snap: {
-    hover: preset(0.28, 0.009, 0.5, 'hover', singleNote),
-    press: preset(0.38, 0.016, 0.5, 'press', pressNotes),
-    congrats: preset(0.48, 0.1, 0.55, 'congrats', snapCongratsNotes),
-    error: preset(0.35, 0.035, 0.32, 'error', errorNotes),
-    toggle: preset(0.36, 0.014, 0.5, 'toggle', singleNote),
+    hover: preset(0.18, 0.009, 0.5, 'hover', singleNote),
+    press: preset(0.24, 0.016, 0.5, 'press', pressNotes),
+    congrats: preset(0.3, 0.1, 0.55, 'congrats', snapCongratsNotes),
+    error: preset(0.22, 0.035, 0.32, 'error', errorNotes),
+    toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
   },
 };
 

@@ -24,7 +24,7 @@ const FAMILY_ACCENTS: Record<SoundFamily, string> = {
 const WAVEFORM_BG = '#FAF7F3';
 
 const SLIDER_SPECS: Array<{ key: keyof InstanceTuning; label: string; min: number; max: number; step: number; format: (v: number) => string }> = [
-  { key: 'volume', label: 'Volume', min: 0, max: 1, step: 0.01, format: (v) => v.toFixed(2) },
+  { key: 'volume', label: 'Volume', min: 0, max: 1, step: 0.01, format: (v) => `${Math.round(v * 100)}` },
   { key: 'pitch', label: 'Pitch', min: 0.5, max: 2, step: 0.01, format: (v) => `${v.toFixed(2)}×` },
   { key: 'length', label: 'Length', min: 0.005, max: 0.4, step: 0.005, format: (v) => `${Math.round(v * 1000)}ms` },
   { key: 'tone', label: 'Tone', min: 0, max: 1, step: 0.01, format: (v) => v.toFixed(2) },
