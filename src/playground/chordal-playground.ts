@@ -295,6 +295,9 @@ export class ChordalPlayground extends HTMLElement {
     });
     this.refreshSliders();
     this.refreshCodeExport();
+    // Preview the family immediately — hover is the shortest, least intrusive instance,
+    // so browsing families doesn't require moving to the test area to hear each one.
+    this.triggerTest('hover');
   }
 
   private selectInstance(instance: SoundInstance): void {
@@ -343,9 +346,9 @@ export class ChordalPlayground extends HTMLElement {
             <div class="status">idle</div>
           </div>
           <div class="test-area">
-            <button type="button" class="test-btn" data-test="hover">Hover card</button>
+            <button type="button" class="test-btn primary" data-test="hover">Hover card</button>
             <button type="button" class="test-btn" data-test="press">Press</button>
-            <button type="button" class="test-btn primary" data-test="congrats">Complete task</button>
+            <button type="button" class="test-btn" data-test="congrats">Complete task</button>
             <button type="button" class="test-btn" data-test="toggle" aria-pressed="false">Dark mode</button>
             <form class="error-form" data-test="error-form">
               <input type="text" required placeholder="Required field" />
