@@ -101,7 +101,7 @@ const STYLES = `
   .status {
     position: absolute; top: 0.6rem; right: 0.75rem;
     font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-regular);
-    color: var(--accent); font-variant-numeric: tabular-nums;
+    color: var(--text-secondary); font-variant-numeric: tabular-nums;
   }
 
   .test-area { margin-top: 1rem; }
