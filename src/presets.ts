@@ -135,24 +135,37 @@ const toggleClickNotes: Note[] = [
   { offsetFraction: 0.5, lengthFraction: 0.5, pitchMultiplier: 0.94, volumeMultiplier: 0.4 },
 ];
 
-// soft-bubble: a single note with a hint of upward lift — not a bouncy multi-note run.
-const softBubbleCongratsNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.12 }];
+// The shared "task completed" gesture — a real major-triad-ish arpeggio (root, major
+// third, fifth), legato offsets so the notes overlap and ring together rather than
+// sounding like separate clicks. This is what a "premium" reward moment actually needs:
+// genuine pitch movement, not a flat tick.
+const congratsArpeggio: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.8 },
+  { offsetFraction: 0.22, lengthFraction: 0.44, pitchMultiplier: 1.26, volumeMultiplier: 0.85 },
+  { offsetFraction: 0.44, lengthFraction: 0.52, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+];
 
-// paper-snap: quick double-tap — pitchMultiplier shifts the noise band's center since
-// noise has no real pitch. Kept tight and short, not a melodic gesture.
+// paper-snap: a real jump (not a semitone nudge) — the bandpass center shifts a fifth
+// up on the second tap, audible even without a true pitched fundamental.
 const paperSnapCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.35, lengthFraction: 0.45, pitchMultiplier: 1.08, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.45, pitchMultiplier: 1, volumeMultiplier: 0.8 },
+  { offsetFraction: 0.4, lengthFraction: 0.5, pitchMultiplier: 1.5, volumeMultiplier: 1 },
 ];
 
-// metallic-tact: two short clicks, not three — a confirm, not a ratchet count-up.
+// metallic-tact: three evenly-spaced clicks climbing a fourth then a fifth — a mechanical
+// ratchet with a real interval, not three near-identical taps.
 const metallicTactCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 0.85 },
-  { offsetFraction: 0.4, lengthFraction: 0.45, pitchMultiplier: 1.12, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.8 },
+  { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.9 },
+  { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 1 },
 ];
 
-// digital-blip: one tick with a barely-there upward sweep — a confirm, not a run.
-const digitalBlipCongratsNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.06 }];
+// digital-blip: a real upward leap (fifth) with a sweep on the landing note — reads as
+// "confirmed," not a barely-there wobble.
+const digitalBlipCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 0.8 },
+  { offsetFraction: 0.34, lengthFraction: 0.55, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.12 },
+];
 // hover/press keep a quick, quiet click layered under the square tone for a little grit.
 const digitalBlipHoverNotes: Note[] = [
   ...singleNote,
@@ -163,11 +176,10 @@ const digitalBlipPressNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.32, useTexture: true },
 ];
 
-// snap: a tight two-note click, interval down from a fifth to barely a semitone —
-// still "snappy," no longer a melodic resolve.
+// snap: a real fourth-ish jump on the second hit — still snappy, but with somewhere to land.
 const snapCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 0.85 },
-  { offsetFraction: 0.35, lengthFraction: 0.45, pitchMultiplier: 1.06, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.8 },
+  { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
 
 export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
@@ -177,8 +189,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'lowpass',
     filterCutoffRange: [1200, 2600],
     filterQ: 0.8,
-    // No delay — a shimmer tail read as decorative/whimsical; dry is closer to a real
-    // system tap.
+    delay: { time: 0.09, feedback: 0.22, wet: 0.18, lowpass: 2800 },
   },
   'glass-crystal': {
     waveform: 'sine',
@@ -186,9 +197,10 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'highpass',
     // Kept below the 1046Hz fundamental across the practical pitch range so a highpass
     // on a pure sine actually passes signal (see engine notes from the volume fix);
-    // qRange still colors it via resonance as tone rises. No delay — dry "glass tick."
+    // qRange still colors it via resonance as tone rises.
     filterCutoffRange: [500, 950],
     qRange: [1, 8],
+    delay: { time: 0.11, feedback: 0.25, wet: 0.2, lowpass: 4500 },
     pitchRange: [0.7, 1.8],
   },
   'paper-snap': {
@@ -204,9 +216,8 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'bandpass',
     filterCutoffRange: [1400, 3200],
     filterQ: 12,
-    // Short comb-like metallic ring, toned down from the original — a confirm click,
-    // not a decorative ring-out.
-    delay: { time: 0.002, feedback: 0.2, wet: 0.3, lowpass: 3200 },
+    // Short comb-like metallic ring — a real physical resonance, not just a click.
+    delay: { time: 0.002, feedback: 0.28, wet: 0.4, lowpass: 3800 },
   },
   chime: {
     waveform: 'sine',
@@ -214,8 +225,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'bandpass',
     filterCutoffRange: [860, 1540],
     filterQ: 2,
-    // No delay — the "classic ascending bell" identity is gone; this is a short, clean
-    // tick now, not a decorative chime run.
+    delay: { time: 0.1, feedback: 0.25, wet: 0.2, lowpass: 3200 },
   },
   'digital-blip': {
     waveform: 'square',
@@ -223,8 +233,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'bandpass',
     filterCutoffRange: [360, 880],
     filterQ: 5,
-    // Barely-there slapback — was a much wetter tight delay; a system click doesn't ring.
-    delay: { time: 0.015, feedback: 0.12, wet: 0.1, lowpass: 4000 },
+    delay: { time: 0.02, feedback: 0.18, wet: 0.16, lowpass: 4200 },
     textureLayer: { filterType: 'bandpass', filterCutoff: 4200, filterQ: 5, volumeMultiplier: 0.32, lengthFraction: 0.25 },
   },
   spring: {
@@ -232,8 +241,8 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     baseFrequency: 520,
     filterType: 'lowpass',
     filterCutoffRange: [520, 940],
-    qRange: [1, 5], // resonance bump scales with tone — carries the family's character now
-    // instead of a pitch-bounce gesture. No delay.
+    qRange: [1, 5], // resonance bump scales with tone
+    delay: { time: 0.07, feedback: 0.25, wet: 0.18, lowpass: 3200 },
   },
   'tiny-sparkle': {
     waveform: 'sine',
@@ -241,8 +250,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'highpass',
     filterCutoffRange: [1040, 2240],
     qRange: [1, 7],
-    // Much lighter than before — a hint of shimmer, not a decorative tail.
-    delay: { time: 0.03, feedback: 0.12, wet: 0.1, lowpass: 3800 },
+    delay: { time: 0.05, feedback: 0.24, wet: 0.24, lowpass: 4800 },
   },
   snap: {
     waveform: 'triangle',
@@ -271,63 +279,63 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   'soft-bubble': {
     hover: preset(0.3, 0.011, 0.45, 'hover', singleNote),
     press: preset(0.4, 0.02, 0.42, 'press', pressNotes),
-    congrats: preset(0.44, 0.075, 0.5, 'congrats', softBubbleCongratsNotes),
+    congrats: preset(0.5, 0.16, 0.5, 'congrats', congratsArpeggio),
     error: preset(0.37, 0.045, 0.25, 'error', errorNotes),
     toggle: preset(0.37, 0.016, 0.42, 'toggle', singleNote),
   },
   'glass-crystal': {
     hover: preset(0.32, 0.009, 0.55, 'hover', singleNote),
     press: preset(0.42, 0.017, 0.5, 'press', pressNotes),
-    congrats: preset(0.46, 0.07, 0.6, 'congrats', singleNote),
+    congrats: preset(0.52, 0.15, 0.65, 'congrats', congratsArpeggio),
     error: preset(0.38, 0.04, 0.3, 'error', errorNotes),
     toggle: preset(0.4, 0.014, 0.5, 'toggle', singleNote),
   },
   'paper-snap': {
     hover: preset(0.26, 0.008, 0.5, 'hover', singleNote),
     press: preset(0.36, 0.015, 0.5, 'press', pressNotes),
-    congrats: preset(0.4, 0.06, 0.55, 'congrats', paperSnapCongratsNotes),
+    congrats: preset(0.46, 0.11, 0.55, 'congrats', paperSnapCongratsNotes),
     error: preset(0.34, 0.035, 0.3, 'error', errorNotes),
     toggle: preset(0.34, 0.014, 0.5, 'toggle', singleNote),
   },
   'metallic-tact': {
     hover: preset(0.3, 0.012, 0.45, 'hover', singleNote),
     press: preset(0.4, 0.022, 0.45, 'press', pressNotes),
-    congrats: preset(0.44, 0.09, 0.5, 'congrats', metallicTactCongratsNotes),
+    congrats: preset(0.5, 0.14, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.37, 0.05, 0.3, 'error', errorNotes),
     toggle: preset(0.4, 0.02, 0.45, 'toggle', toggleClickNotes),
   },
   chime: {
     hover: preset(0.28, 0.01, 0.5, 'hover', singleNote),
     press: preset(0.38, 0.018, 0.5, 'press', pressNotes),
-    congrats: preset(0.42, 0.075, 0.55, 'congrats', singleNote),
+    congrats: preset(0.48, 0.17, 0.55, 'congrats', congratsArpeggio),
     error: preset(0.35, 0.042, 0.3, 'error', errorNotes),
     toggle: preset(0.36, 0.015, 0.5, 'toggle', singleNote),
   },
   'digital-blip': {
     hover: preset(0.26, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
     press: preset(0.36, 0.016, 0.4, 'press', digitalBlipPressNotes),
-    congrats: preset(0.4, 0.065, 0.45, 'congrats', digitalBlipCongratsNotes),
+    congrats: preset(0.46, 0.12, 0.45, 'congrats', digitalBlipCongratsNotes),
     error: preset(0.33, 0.038, 0.25, 'error', errorNotes),
     toggle: preset(0.34, 0.014, 0.4, 'toggle', toggleClickNotes),
   },
   spring: {
     hover: preset(0.29, 0.011, 0.45, 'hover', singleNote),
     press: preset(0.39, 0.02, 0.42, 'press', pressNotes),
-    congrats: preset(0.42, 0.075, 0.48, 'congrats', singleNote),
+    congrats: preset(0.48, 0.15, 0.48, 'congrats', congratsArpeggio),
     error: preset(0.36, 0.045, 0.28, 'error', errorNotes),
     toggle: preset(0.37, 0.017, 0.42, 'toggle', singleNote),
   },
   'tiny-sparkle': {
     hover: preset(0.24, 0.008, 0.2, 'hover', singleNote),
     press: preset(0.34, 0.014, 0.2, 'press', pressNotes),
-    congrats: preset(0.38, 0.055, 0.3, 'congrats', singleNote),
+    congrats: preset(0.44, 0.16, 0.32, 'congrats', congratsArpeggio),
     error: preset(0.32, 0.032, 0.12, 'error', errorNotes),
     toggle: preset(0.32, 0.012, 0.2, 'toggle', singleNote),
   },
   snap: {
     hover: preset(0.28, 0.009, 0.5, 'hover', singleNote),
     press: preset(0.38, 0.016, 0.5, 'press', pressNotes),
-    congrats: preset(0.42, 0.06, 0.55, 'congrats', snapCongratsNotes),
+    congrats: preset(0.48, 0.1, 0.55, 'congrats', snapCongratsNotes),
     error: preset(0.35, 0.035, 0.32, 'error', errorNotes),
     toggle: preset(0.36, 0.014, 0.5, 'toggle', singleNote),
   },
