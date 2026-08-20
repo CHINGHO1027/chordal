@@ -144,7 +144,7 @@ const STYLES = `
   }
   .slider-row .val {
     position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
-    font-size: var(--text-body); font-weight: var(--weight-medium); color: var(--text-primary);
+    font-size: var(--text-small); font-weight: var(--weight-medium); color: var(--text-primary);
     font-variant-numeric: tabular-nums; pointer-events: none;
   }
   .slider-row input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
