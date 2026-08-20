@@ -115,13 +115,6 @@ const STYLES = `
   .test-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .test-btn.active { border-color: var(--accent); color: var(--accent); }
   input[type="range"].slider-demo { width: 12rem; accent-color: var(--accent); }
-  .error-form { display: flex; gap: 0.4rem; align-items: center; }
-  .error-form input {
-    font-family: var(--font-body); font-size: var(--text-body);
-    border: 1px solid var(--border); border-radius: var(--radius-sm);
-    padding: 0.5rem 0.6rem; width: 9rem;
-  }
-  .error-form.active input { border-color: var(--accent); color: var(--accent); }
 
   .sliders { display: flex; flex-direction: column; gap: 1rem; }
   .slider-row .top { display: flex; justify-content: space-between; font-size: var(--text-body); margin-bottom: 0.3rem; }
@@ -332,10 +325,7 @@ export class ChordalPlayground extends HTMLElement {
             <button type="button" class="test-btn" data-test="press" data-instance-trigger="press">Press</button>
             <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Complete task</button>
             <button type="button" class="test-btn" data-test="toggle" data-instance-trigger="toggle" aria-pressed="false">Toggle switch</button>
-            <form class="error-form" data-test="error-form" data-instance-trigger="error">
-              <input type="text" required placeholder="Required field" />
-              <button type="submit" class="test-btn">Submit</button>
-            </form>
+            <button type="button" class="test-btn" data-test="error" data-instance-trigger="error">Submit</button>
             <input type="range" class="slider-demo" min="0" max="100" value="50" data-test="slider" />
           </div>
           <div class="code-export"></div>
@@ -387,13 +377,8 @@ export class ChordalPlayground extends HTMLElement {
       this.triggerTest('toggle', { state: this.toggleState });
     });
 
-    const errorForm = this.shadow.querySelector<HTMLFormElement>('[data-test="error-form"]');
-    const errorInput = errorForm?.querySelector('input');
-    errorForm?.addEventListener('submit', (event) => {
-      event.preventDefault();
-      errorInput?.reportValidity();
-    });
-    errorInput?.addEventListener('invalid', () => this.triggerTest('error'));
+    const errorBtn = this.shadow.querySelector<HTMLElement>('[data-test="error"]');
+    errorBtn?.addEventListener('click', () => this.triggerTest('error'));
 
     const sliderDemo = this.shadow.querySelector<HTMLInputElement>('[data-test="slider"]');
     sliderDemo?.addEventListener('input', () => {
