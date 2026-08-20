@@ -117,17 +117,17 @@ const STYLES = `
 
   .sliders { display: flex; flex-direction: column; gap: 0.5rem; }
   .slider-row {
-    position: relative; height: 2.5rem; border-radius: var(--radius-sm);
+    position: relative; height: 1.75rem; border-radius: var(--radius-sm);
     background: var(--page-bg); overflow: hidden;
   }
-  .slider-row .fill { position: absolute; inset: 0; width: var(--fill, 0%); background: var(--border); pointer-events: none; }
+  .slider-row .fill { position: absolute; inset: 0; width: var(--fill, 0%); background: var(--waveform-bg); pointer-events: none; }
   .slider-row .thumb {
-    position: absolute; top: 0.4rem; bottom: 0.4rem; left: var(--fill, 0%); width: 2px;
+    position: absolute; top: 0.3rem; bottom: 0.3rem; left: var(--fill, 0%); width: 2px;
     background: var(--accent); transform: translateX(-1px); pointer-events: none;
   }
   .slider-row .label {
     position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
-    font-size: var(--text-body); font-weight: var(--weight-regular); color: var(--text-secondary); pointer-events: none;
+    font-size: var(--text-small); font-weight: var(--weight-regular); color: var(--text-secondary); pointer-events: none;
   }
   .slider-row .val {
     position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
