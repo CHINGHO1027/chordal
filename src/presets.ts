@@ -159,12 +159,15 @@ const chimePressNotes: Note[] = [
   { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 1.19, volumeMultiplier: 0.55 },
 ];
 
-// congrats: a clean two-note bell, root to a real fifth, spaced far enough apart that
-// each note actually rings before the next arrives — not a 3-note arpeggio squeezed
-// into 170ms.
+// congrats: reference baseline, matched exactly to Cuelume's own chime recipe as a
+// starting point to tune from — root C6 (1046.5Hz) then a fifth up to G6 (1568Hz),
+// second note entering 90ms after the first, each with its own attack/decay rather than
+// sharing one envelope. Pitch multipliers are solved against chime's 940Hz base register
+// (baseFrequency * congrats' 1.05 instance pitch = 987Hz) so the family's shared register
+// doesn't move, only these two notes land on Cuelume's exact frequencies.
 const chimeCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 1, volumeMultiplier: 0.85 },
-  { offsetFraction: 0.32, lengthFraction: 0.68, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.6348, pitchMultiplier: 1.0603, volumeMultiplier: 1 },
+  { offsetFraction: 0.2528, lengthFraction: 0.7472, pitchMultiplier: 1.5887, volumeMultiplier: 0.8889 },
 ];
 
 // error: a knock plus a genuine descending second note — a two-part "no," still muted
@@ -265,10 +268,10 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'lowpass',
     filterCutoffRange: [2400, 6000],
     filterQ: 0.7,
-    // Shimmer wasn't actually the source of the "heavy" feel — Cuelume's own chime carries
-    // a near-identical tail. Brighter feedback lowpass than our other families' shimmer
-    // (4200 vs ~3200) so the repeats stay airy instead of darkening into a dull wash.
-    delay: { time: 0.12, feedback: 0.22, wet: 0.16, lowpass: 4200 },
+    // Matched exactly to Cuelume's own chime shimmer for the reference baseline below —
+    // brighter feedback lowpass than our other families' shimmer (4000 vs ~3200) so the
+    // repeats stay airy instead of darkening into a dull wash.
+    delay: { time: 0.12, feedback: 0.25, wet: 0.18, lowpass: 4000 },
   },
   'digital-blip': {
     waveform: 'square',
@@ -355,9 +358,11 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // gain-reduction pumping is what read as "heavy" next to their untouched transients.
     hover: preset(0.18, 0.012, 0.5, 'hover', singleNote),
     press: preset(0.23, 0.03, 0.5, 'press', chimePressNotes),
-    // 300ms — up from 170ms, so the fifth actually has room to ring like a real bell
-    // instead of being cut off mid-decay.
-    congrats: preset(0.28, 0.3, 0.55, 'congrats', chimeCongratsNotes),
+    // 0.18 volume + 356ms length: solved to land at the exact same final amplitude
+    // (~0.18/0.16 post-limiter-headroom) and total decay time as Cuelume's own two chime
+    // layers (226ms + 266ms decay, second note entering at the 90ms mark) — see
+    // chimeCongratsNotes above for the rest of the mapping.
+    congrats: preset(0.18, 0.356, 0.55, 'congrats', chimeCongratsNotes),
     error: preset(0.21, 0.09, 0.28, 'error', chimeErrorNotes),
     toggle: preset(0.23, 0.028, 0.5, 'toggle', chimeToggleNotes),
   },
