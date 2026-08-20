@@ -159,15 +159,22 @@ const chimePressNotes: Note[] = [
   { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 1.19, volumeMultiplier: 0.55 },
 ];
 
-// congrats: reference baseline, matched exactly to Cuelume's own chime recipe as a
-// starting point to tune from — root C6 (1046.5Hz) then a fifth up to G6 (1568Hz),
-// second note entering 90ms after the first, each with its own attack/decay rather than
-// sharing one envelope. Pitch multipliers are solved against chime's 940Hz base register
-// (baseFrequency * congrats' 1.05 instance pitch = 987Hz) so the family's shared register
-// doesn't move, only these two notes land on Cuelume's exact frequencies.
+// congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
+// fifth up to G6 (1568Hz), second note entering 90ms after the first, each with its own
+// attack/decay rather than sharing one envelope. Pitch multipliers are solved against
+// chime's 940Hz base register (baseFrequency * congrats' 1.05 instance pitch = 987Hz) so
+// the family's shared register doesn't move, only these two notes land on Cuelume's exact
+// frequencies.
+//
+// Each strike also gets a quiet detuned unison companion (same pitch/timing, ±6-7 cents,
+// ~35% volume) — real chorus/beating from two real oscillators, rather than asking the
+// delay-based shimmer to be the only source of width. Opposite detune direction on the two
+// strikes (+7 then -6) so they don't beat identically.
 const chimeCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.6348, pitchMultiplier: 1.0603, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.6348, pitchMultiplier: 1.0603, volumeMultiplier: 0.35, detuneCents: 7 },
   { offsetFraction: 0.2528, lengthFraction: 0.7472, pitchMultiplier: 1.5887, volumeMultiplier: 0.8889 },
+  { offsetFraction: 0.2528, lengthFraction: 0.7472, pitchMultiplier: 1.5887, volumeMultiplier: 0.311, detuneCents: -6 },
 ];
 
 // error: a knock plus a genuine descending second note — a two-part "no," still muted
