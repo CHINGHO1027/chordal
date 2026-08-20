@@ -265,7 +265,12 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'lowpass',
     filterCutoffRange: [2400, 6000],
     filterQ: 0.7,
-    delay: { time: 0.12, feedback: 0.25, wet: 0.2, lowpass: 3200 },
+    // No delay/shimmer here, unlike most other families. Cuelume's chime never had one —
+    // the "ring" comes entirely from each note's own envelope decay (per-instance `length`),
+    // not an artificial feedback tail. The shared shimmer pass applied earlier was tuned for
+    // families that needed help feeling less dry; on chime it stacked a ~700ms feedback tail
+    // (see engine.shimmerTailSeconds) under even a 12ms hover, which read as heavy/washy
+    // rather than light — the opposite of what a real chime should feel like.
   },
   'digital-blip': {
     waveform: 'square',
