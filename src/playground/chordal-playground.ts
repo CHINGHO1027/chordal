@@ -46,11 +46,19 @@ const STYLES = `
     --font-body: Mulish, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
 
+    /* type tokens — three sizes, weight tops out at 500 and only pane titles use it */
+    --text-heading: 0.8125rem;
+    --text-body: 0.75rem;
+    --text-small: 0.6875rem;
+    --weight-regular: 400;
+    --weight-medium: 500;
+
     display: block;
     background: var(--page-bg);
     color: var(--text-primary);
     font-family: var(--font-body);
-    font-size: 1rem;
+    font-weight: var(--weight-regular);
+    font-size: var(--text-body);
     line-height: 1.5;
     border-radius: var(--radius-lg);
     padding: 1.5rem;
@@ -71,18 +79,24 @@ const STYLES = `
   }
   .pane { background: var(--surface); padding: 1rem; }
   .pane-head {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: var(--text-heading);
+    font-weight: var(--weight-medium);
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
+  }
+  .sub-head {
+    font-family: var(--font-body);
+    font-size: var(--text-small);
+    font-weight: var(--weight-regular);
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
   }
 
   .family-list { display: flex; flex-direction: column; gap: 0.3rem; }
   .family-btn {
     display: flex; align-items: center; gap: 0.55rem;
-    font-family: var(--font-body); font-size: 0.875rem; font-weight: 500;
+    font-family: var(--font-body); font-size: var(--text-body); font-weight: var(--weight-regular);
     text-align: left; border: none; background: none; cursor: pointer;
     padding: 0.4rem 0.5rem; border-radius: var(--radius-sm);
     color: var(--text-secondary);
@@ -93,7 +107,7 @@ const STYLES = `
 
   .instance-row { display: flex; gap: 0.35rem; margin-top: 1.25rem; flex-wrap: wrap; }
   .instance-btn {
-    font-family: var(--font-mono); font-size: 0.75rem;
+    font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular);
     border: 1px solid var(--border); background: var(--surface);
     color: var(--text-secondary); border-radius: 999px;
     padding: 0.3rem 0.7rem; cursor: pointer;
@@ -105,13 +119,13 @@ const STYLES = `
   canvas { display: block; width: 100%; height: 9rem; }
   .status {
     position: absolute; top: 0.6rem; right: 0.75rem;
-    font-family: var(--font-mono); font-size: 0.6875rem;
+    font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular);
     color: var(--accent); font-variant-numeric: tabular-nums;
   }
 
   .test-area { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
   .test-btn {
-    font-family: var(--font-body); font-weight: 500; font-size: 0.8125rem;
+    font-family: var(--font-body); font-weight: var(--weight-regular); font-size: var(--text-body);
     border: 1px solid var(--border); background: var(--page-bg);
     color: var(--text-primary); border-radius: var(--radius-sm);
     padding: 0.55rem 0.9rem; cursor: pointer;
@@ -121,20 +135,20 @@ const STYLES = `
   input[type="range"].slider-demo { width: 12rem; accent-color: var(--accent); }
   .error-form { display: flex; gap: 0.4rem; align-items: center; }
   .error-form input {
-    font-family: var(--font-body); font-size: 0.8125rem;
+    font-family: var(--font-body); font-size: var(--text-body);
     border: 1px solid var(--border); border-radius: var(--radius-sm);
     padding: 0.5rem 0.6rem; width: 9rem;
   }
 
   .sliders { display: flex; flex-direction: column; gap: 1rem; }
-  .slider-row .top { display: flex; justify-content: space-between; font-size: 0.8125rem; margin-bottom: 0.3rem; }
-  .slider-row .top .label { font-weight: 500; }
+  .slider-row .top { display: flex; justify-content: space-between; font-size: var(--text-body); margin-bottom: 0.3rem; }
+  .slider-row .top .label { font-weight: var(--weight-regular); }
   .slider-row .top .val { font-family: var(--font-mono); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .slider-row input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   .mute-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
   .mute-row button {
-    font-family: var(--font-mono); font-size: 0.75rem;
+    font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular);
     border: 1px solid var(--border); background: var(--surface);
     border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
   }
@@ -142,7 +156,7 @@ const STYLES = `
   .code-export {
     margin-top: 1.25rem; background: var(--page-bg); border: 1px solid var(--border);
     border-radius: var(--radius-md); padding: 0.85rem;
-    font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-primary);
+    font-family: var(--font-mono); font-size: var(--text-small); font-weight: var(--weight-regular); color: var(--text-primary);
     white-space: pre; overflow-x: auto;
   }
 `;
@@ -316,7 +330,7 @@ export class ChordalPlayground extends HTMLElement {
         <div class="pane">
           <div class="pane-head">Family</div>
           <div class="family-list">${familyListHtml}</div>
-          <div class="pane-head" style="margin-top:1.25rem;">Instance</div>
+          <div class="sub-head" style="margin-top:1.25rem;">Instance</div>
           <div class="instance-row">${instanceRowHtml}</div>
           <div class="mute-row">
             <button type="button" class="mute-btn">${isMuted() ? 'Unmute' : 'Mute'}</button>
