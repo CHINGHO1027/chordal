@@ -159,15 +159,24 @@ const chimePressNotes: Note[] = [
   { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 1.19, volumeMultiplier: 0.55 },
 ];
 
-// congrats: reference baseline, matched exactly to Cuelume's own chime recipe as a
-// starting point to tune from — root C6 (1046.5Hz) then a fifth up to G6 (1568Hz),
-// second note entering 90ms after the first, each with its own attack/decay rather than
-// sharing one envelope. Pitch multipliers are solved against chime's 940Hz base register
-// (baseFrequency * congrats' 1.05 instance pitch = 987Hz) so the family's shared register
-// doesn't move, only these two notes land on Cuelume's exact frequencies.
+// congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
+// fifth up to G6 (1568Hz), second note entering 90ms after the first, each with its own
+// attack/decay rather than sharing one envelope. Pitch multipliers are solved against
+// chime's 940Hz base register (baseFrequency * congrats' 1.05 instance pitch = 987Hz) so
+// the family's shared register doesn't move, only these two notes land on Cuelume's exact
+// frequencies.
+//
+// Beyond that baseline: each strike also gets a quiet, fast-decaying partial at 2.76x its
+// own fundamental — an inharmonic ratio (not a clean octave/fifth), same idea real bell
+// acoustics use for the "clang" partials that ring far shorter than the fundamental. This
+// is what Cuelume's recipe never has (their chime is two clean, harmonically-empty sines
+// in sequence, not a struck-object timbre) — it's the actual source of "bell" character a
+// bare sine can't produce on its own, independent of the shimmer/delay send.
 const chimeCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.6348, pitchMultiplier: 1.0603, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.1264, pitchMultiplier: 2.9264, volumeMultiplier: 0.18 },
   { offsetFraction: 0.2528, lengthFraction: 0.7472, pitchMultiplier: 1.5887, volumeMultiplier: 0.8889 },
+  { offsetFraction: 0.2528, lengthFraction: 0.1545, pitchMultiplier: 4.3848, volumeMultiplier: 0.16 },
 ];
 
 // error: a knock plus a genuine descending second note — a two-part "no," still muted
