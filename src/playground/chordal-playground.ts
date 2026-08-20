@@ -6,7 +6,7 @@
 
 import * as engine from '../engine';
 import { play, playContinuous, setFamily, getFamily, mute, unmute, isMuted, SOUND_FAMILIES } from '../index';
-import { PRESETS, type InstanceTuning } from '../presets';
+import { PRESETS, FAMILY_RECIPES, type InstanceTuning } from '../presets';
 import type { SoundFamily, SoundInstance } from '../presets';
 
 const FAMILY_ACCENTS: Record<SoundFamily, string> = {
@@ -23,9 +23,11 @@ const FAMILY_ACCENTS: Record<SoundFamily, string> = {
 
 const WAVEFORM_BG = '#FAF7F3';
 
-const SLIDER_SPECS: Array<{ key: keyof InstanceTuning; label: string; min: number; max: number; step: number; format: (v: number) => string }> = [
+// `format` gets the family's baseFrequency as context — only 'pitch' uses it, to display
+// the multiplier as the actual Hz a listener would recognize rather than an abstract ×.
+const SLIDER_SPECS: Array<{ key: keyof InstanceTuning; label: string; min: number; max: number; step: number; format: (v: number, baseFrequency: number) => string }> = [
   { key: 'volume', label: 'Volume', min: 0, max: 1, step: 0.01, format: (v) => `${Math.round(v * 100)}` },
-  { key: 'pitch', label: 'Pitch', min: 0.5, max: 2, step: 0.01, format: (v) => `${v.toFixed(2)}×` },
+  { key: 'pitch', label: 'Pitch', min: 0.5, max: 2, step: 0.01, format: (v, baseFrequency) => `${Math.round(v * baseFrequency)}Hz` },
   { key: 'length', label: 'Length', min: 0.005, max: 0.4, step: 0.005, format: (v) => `${Math.round(v * 1000)}ms` },
   { key: 'tone', label: 'Tone', min: 0, max: 1, step: 0.01, format: (v) => v.toFixed(2) },
 ];
@@ -308,7 +310,7 @@ export class ChordalPlayground extends HTMLElement {
       const val = this.shadow.querySelector<HTMLElement>(`.val[data-key="${spec.key}"]`);
       const value = tuning[spec.key];
       if (input) input.value = String(value);
-      if (val) val.textContent = spec.format(value);
+      if (val) val.textContent = spec.format(value, FAMILY_RECIPES[this.family].baseFrequency);
       this.setSliderFill(spec, value);
     });
   }
@@ -431,7 +433,7 @@ export class ChordalPlayground extends HTMLElement {
         const current = this.overrides.get(key) ?? {};
         this.overrides.set(key, { ...current, [spec.key]: value });
         const val = this.shadow.querySelector<HTMLElement>(`.val[data-key="${spec.key}"]`);
-        if (val) val.textContent = spec.format(value);
+        if (val) val.textContent = spec.format(value, FAMILY_RECIPES[this.family].baseFrequency);
         this.setSliderFill(spec, value);
         this.refreshCodeExport();
         this.triggerTest(this.instance);
