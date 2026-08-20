@@ -1,5 +1,5 @@
 /**
- * Chordal preset data — the 10 sound families, their synthesis recipes, and the
+ * Chordal preset data — the sound families, their synthesis recipes, and the
  * tuned defaults for each family's 5 instances. Pure data + pure resolution
  * functions; no AudioContext access happens in this file (see engine.ts).
  */
@@ -11,12 +11,19 @@ export type SoundFamily =
   | 'cyber-electric'
   | 'soft-bubble'
   | 'glass-crystal'
-  | 'retro-8bit'
   | 'paper-snap'
   | 'metallic-tact'
-  | 'zen-organic'
   | 'neo-pop'
-  | 'deep-space';
+  | 'soft-pop'
+  | 'chime'
+  | 'digital-blip'
+  | 'spring'
+  | 'glass-tap'
+  | 'tiny-sparkle'
+  | 'click'
+  | 'snap'
+  | 'thud'
+  | 'pop';
 
 export type SoundInstance = 'hover' | 'press' | 'congrats' | 'error' | 'toggle';
 
@@ -25,12 +32,19 @@ export const SOUND_FAMILIES: SoundFamily[] = [
   'cyber-electric',
   'soft-bubble',
   'glass-crystal',
-  'retro-8bit',
   'paper-snap',
   'metallic-tact',
-  'zen-organic',
   'neo-pop',
-  'deep-space',
+  'soft-pop',
+  'chime',
+  'digital-blip',
+  'spring',
+  'glass-tap',
+  'tiny-sparkle',
+  'click',
+  'snap',
+  'thud',
+  'pop',
 ];
 
 export const SOUND_INSTANCES: SoundInstance[] = ['hover', 'press', 'congrats', 'error', 'toggle'];
@@ -172,15 +186,6 @@ const glassCrystalCongratsNotes: Note[] = [
   { offsetFraction: 0.44, lengthFraction: 0.56, pitchMultiplier: 2, volumeMultiplier: 1 },
 ];
 
-// retro-8bit: literal 4-note chiptune run (root, major third, fifth, octave). Left pure —
-// no texture/delay/detune, chiptune purity is the point.
-const congratsNotesChiptune: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.22, pitchMultiplier: 1, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.2, lengthFraction: 0.22, pitchMultiplier: 1.26, volumeMultiplier: 0.85 },
-  { offsetFraction: 0.4, lengthFraction: 0.22, pitchMultiplier: 1.5, volumeMultiplier: 0.9 },
-  { offsetFraction: 0.6, lengthFraction: 0.35, pitchMultiplier: 2, volumeMultiplier: 1 },
-];
-
 // paper-snap: quick double-tap rather than a melodic run — pitchMultiplier shifts the
 // noise band's center since noise has no real pitch.
 const paperSnapCongratsNotes: Note[] = [
@@ -195,13 +200,6 @@ const metallicTactCongratsNotes: Note[] = [
   { offsetFraction: 0.5, lengthFraction: 0.35, pitchMultiplier: 1.4, volumeMultiplier: 1 },
 ];
 
-// zen-organic: gentle 2-tone swell instead of a punchy run — same "ascending reward"
-// concept, family-appropriate execution.
-const congratsNotesSwell: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.65, pitchMultiplier: 1, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.45, lengthFraction: 0.6, pitchMultiplier: 1.15, volumeMultiplier: 1 },
-];
-
 // neo-pop: overshoot-then-settle — jumps past its landing pitch and bounces back, elastic feel.
 const neoPopCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.8 },
@@ -210,12 +208,81 @@ const neoPopCongratsNotes: Note[] = [
   { offsetFraction: 0.62, lengthFraction: 0.38, pitchMultiplier: 1.5, volumeMultiplier: 0.95 },
 ];
 
-// deep-space: same 3-note ascending shape as the old generic run, but spaced wider and
-// held longer — immersive/ambient instead of tight and percussive.
-const deepSpaceCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.4, lengthFraction: 0.5, pitchMultiplier: 1.25, volumeMultiplier: 0.9 },
-  { offsetFraction: 0.75, lengthFraction: 0.55, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+// --- The 10 exploratory families below were mapped from a pasted external sound list
+// (name/wave/base/spread + per-instance volume/pitch/length/tone for hover & congrats
+// only). `spread` became each family's filterCutoffRange width above `base`; their
+// length/volume values were on a different normalized scale, so they were rescaled
+// proportionally into Chordal's actual hover/congrats ranges rather than used verbatim.
+// press/error/toggle weren't provided — designed here using the same deltas the other
+// families use (press louder/longer than hover, error darker/shorter than congrats).
+
+// soft-pop: simple 2-note gentle rise, detuned root for roundness (same treatment as
+// minimal-wood/soft-bubble — another plain-sine family that benefits from width).
+const softPopCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.85 },
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.45, detuneCents: 8 },
+  { offsetFraction: 0.4, lengthFraction: 0.55, pitchMultiplier: 1.2, volumeMultiplier: 1 },
+];
+
+// chime: classic 2-note ascending bell, detuned root for a richer ring.
+const chimeCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.85 },
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.4, detuneCents: 7 },
+  { offsetFraction: 0.4, lengthFraction: 0.55, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+];
+
+// digital-blip: 2-note confirm with an upward sweep on the second note.
+const digitalBlipCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 0.85 },
+  { offsetFraction: 0.3, lengthFraction: 0.6, pitchMultiplier: 1.4, volumeMultiplier: 1, sweepTo: 1.1 },
+];
+// digital-blip: hover/press get a glitchy high click layered under the square tone —
+// same treatment as cyber-electric, another square/digital family.
+const digitalBlipHoverNotes: Note[] = [
+  ...singleNote,
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.45, useTexture: true },
+];
+const digitalBlipPressNotes: Note[] = [
+  ...pressNotes,
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.4, useTexture: true },
+];
+
+// spring: jumps high then settles back toward the root — elastic overshoot in the
+// opposite direction from neo-pop (which lands above its start).
+const springCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 0.9 },
+  { offsetFraction: 0.3, lengthFraction: 0.65, pitchMultiplier: 1, volumeMultiplier: 1 },
+];
+
+// glass-tap: wide octave spread, detuned root for shimmer.
+const glassTapCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 0.85 },
+  { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 0.4, detuneCents: 5 },
+  { offsetFraction: 0.3, lengthFraction: 0.65, pitchMultiplier: 2, volumeMultiplier: 1 },
+];
+
+// tiny-sparkle: a quick 3-note ascending twinkle.
+const tinySparkleCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.8 },
+  { offsetFraction: 0.22, lengthFraction: 0.3, pitchMultiplier: 1.3, volumeMultiplier: 0.85 },
+  { offsetFraction: 0.44, lengthFraction: 0.4, pitchMultiplier: 1.6, volumeMultiplier: 1 },
+];
+
+// click, snap: single-hit families by nature — congrats is just a longer, louder version
+// of the same hit, not a melodic run (reuses singleNote).
+
+// thud: press gets a low sub-thump texture layered under the main tone for extra weight.
+const thudPressNotes: Note[] = [
+  ...pressNotes,
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+];
+
+// pop: simple 2-note rise, plainer/rounder than soft-pop's, with the same detuned-root
+// treatment for width.
+const popCongratsNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.85 },
+  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 0.4, detuneCents: 6 },
+  { offsetFraction: 0.4, lengthFraction: 0.55, pitchMultiplier: 1.25, volumeMultiplier: 1 },
 ];
 
 export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
@@ -255,14 +322,6 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     delay: { time: 0.13, feedback: 0.35, wet: 0.4, lowpass: 5000 },
     pitchRange: [0.7, 1.8],
   },
-  'retro-8bit': {
-    waveform: 'square',
-    baseFrequency: 440, // A4
-    filterType: 'lowpass',
-    filterCutoffRange: [4000, 9000],
-    filterQ: 0.5,
-    pitchRange: [0.5, 2.0],
-  },
   'paper-snap': {
     waveform: 'noise',
     baseFrequency: 3200, // bandpass center, since noise has no fundamental pitch
@@ -278,14 +337,6 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterQ: 12,
     delay: { time: 0.002, feedback: 0.35, wet: 0.6, lowpass: 4000 }, // short comb-like metallic ring
   },
-  'zen-organic': {
-    waveform: 'sine',
-    baseFrequency: 196, // G3 — low, calm register
-    filterType: 'lowpass',
-    filterCutoffRange: [400, 1000],
-    filterQ: 0.6,
-    delay: { time: 0.18, feedback: 0.3, wet: 0.3, lowpass: 800 }, // long, dark, disappearing tail
-  },
   'neo-pop': {
     waveform: 'triangle',
     baseFrequency: 523, // C5
@@ -294,14 +345,84 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     qRange: [1, 6], // resonance bump scales with tone
     delay: { time: 0.07, feedback: 0.28, wet: 0.28, lowpass: 3200 },
   },
-  'deep-space': {
+  'soft-pop': {
     waveform: 'sine',
-    baseFrequency: 65, // C2 — sub-bass
+    baseFrequency: 260,
     filterType: 'lowpass',
-    filterCutoffRange: [150, 500],
-    filterQ: 0.7,
-    delay: { time: 0.26, feedback: 0.45, wet: 0.5, lowpass: 400 }, // long, dark, ambient tail
-    pitchRange: [0.9, 1.3],
+    filterCutoffRange: [260, 440],
+    filterQ: 1,
+    delay: { time: 0.08, feedback: 0.2, wet: 0.25, lowpass: 2000 }, // light bloom
+  },
+  chime: {
+    waveform: 'sine',
+    baseFrequency: 860,
+    filterType: 'bandpass',
+    filterCutoffRange: [860, 1540],
+    filterQ: 2,
+    delay: { time: 0.1, feedback: 0.28, wet: 0.35, lowpass: 3000 },
+  },
+  'digital-blip': {
+    waveform: 'square',
+    baseFrequency: 360,
+    filterType: 'bandpass',
+    filterCutoffRange: [360, 880],
+    filterQ: 5,
+    delay: { time: 0.03, feedback: 0.25, wet: 0.2, lowpass: 5000 }, // tight slapback
+    textureLayer: { filterType: 'bandpass', filterCutoff: 4200, filterQ: 5, volumeMultiplier: 0.35, lengthFraction: 0.2 },
+  },
+  spring: {
+    waveform: 'sine',
+    baseFrequency: 520,
+    filterType: 'lowpass',
+    filterCutoffRange: [520, 940],
+    qRange: [1, 5], // springy resonance bump scales with tone
+    delay: { time: 0.06, feedback: 0.3, wet: 0.25, lowpass: 3000 }, // reinforces the springy resonance
+  },
+  'glass-tap': {
+    waveform: 'triangle',
+    baseFrequency: 820,
+    filterType: 'highpass',
+    filterCutoffRange: [820, 1800],
+    qRange: [1, 6],
+    delay: { time: 0.12, feedback: 0.32, wet: 0.38, lowpass: 4800 },
+  },
+  'tiny-sparkle': {
+    waveform: 'sine',
+    baseFrequency: 1040,
+    filterType: 'highpass',
+    filterCutoffRange: [1040, 2240],
+    qRange: [1, 7],
+    delay: { time: 0.08, feedback: 0.3, wet: 0.3, lowpass: 5500 },
+  },
+  click: {
+    waveform: 'square',
+    baseFrequency: 620,
+    filterType: 'bandpass',
+    filterCutoffRange: [620, 1380],
+    filterQ: 3,
+  },
+  snap: {
+    waveform: 'triangle',
+    baseFrequency: 720,
+    filterType: 'bandpass',
+    filterCutoffRange: [720, 1620],
+    filterQ: 3.5,
+  },
+  thud: {
+    waveform: 'triangle',
+    baseFrequency: 120,
+    filterType: 'lowpass',
+    filterCutoffRange: [120, 360],
+    filterQ: 0.6,
+    textureLayer: { filterType: 'lowpass', filterCutoff: 200, filterQ: 1.5, volumeMultiplier: 0.4, lengthFraction: 0.3 },
+  },
+  pop: {
+    waveform: 'sine',
+    baseFrequency: 340,
+    filterType: 'lowpass',
+    filterCutoffRange: [340, 580],
+    filterQ: 1,
+    delay: { time: 0.07, feedback: 0.2, wet: 0.22, lowpass: 2200 },
   },
 };
 
@@ -348,13 +469,6 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.45, 0.1, 0.4, 'error', errorNotes),
     toggle: preset(0.48, 0.04, 0.7, 'toggle', singleNote),
   },
-  'retro-8bit': {
-    hover: preset(0.45, 0.02, 0.5, 'hover', singleNote),
-    press: preset(0.6, 0.03, 0.5, 'press', pressNotes),
-    congrats: preset(0.65, 0.22, 0.55, 'congrats', congratsNotesChiptune),
-    error: preset(0.5, 0.1, 0.3, 'error', errorNotes),
-    toggle: preset(0.55, 0.035, 0.5, 'toggle', singleNote),
-  },
   'paper-snap': {
     hover: preset(0.35, 0.015, 0.55, 'hover', singleNote),
     press: preset(0.5, 0.025, 0.55, 'press', pressNotes),
@@ -369,13 +483,6 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.5, 0.11, 0.3, 'error', errorNotes),
     toggle: preset(0.55, 0.05, 0.5, 'toggle', singleNote),
   },
-  'zen-organic': {
-    hover: preset(0.3, 0.028, 0.3, 'hover', singleNote),
-    press: preset(0.4, 0.05, 0.3, 'press', pressNotes),
-    congrats: preset(0.45, 0.24, 0.35, 'congrats', congratsNotesSwell),
-    error: preset(0.4, 0.14, 0.2, 'error', errorNotes),
-    toggle: preset(0.38, 0.06, 0.3, 'toggle', singleNote),
-  },
   'neo-pop': {
     hover: preset(0.42, 0.026, 0.6, 'hover', singleNote),
     press: preset(0.55, 0.04, 0.55, 'press', pressNotes),
@@ -383,12 +490,75 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.5, 0.1, 0.35, 'error', errorNotes),
     toggle: preset(0.52, 0.045, 0.55, 'toggle', singleNote),
   },
-  'deep-space': {
-    hover: preset(0.4, 0.028, 0.25, 'hover', singleNote),
-    press: preset(0.5, 0.045, 0.25, 'press', pressNotes),
-    congrats: preset(0.55, 0.25, 0.35, 'congrats', deepSpaceCongratsNotes),
-    error: preset(0.45, 0.14, 0.15, 'error', errorNotes),
-    toggle: preset(0.45, 0.05, 0.25, 'toggle', singleNote),
+  'soft-pop': {
+    hover: preset(0.46, 0.027, 0.35, 'hover', singleNote),
+    press: preset(0.58, 0.045, 0.35, 'press', pressNotes),
+    congrats: preset(0.66, 0.139, 0.48, 'congrats', softPopCongratsNotes),
+    error: preset(0.54, 0.09, 0.2, 'error', errorNotes),
+    toggle: preset(0.54, 0.049, 0.35, 'toggle', singleNote),
+  },
+  chime: {
+    hover: preset(0.37, 0.027, 0.6, 'hover', singleNote),
+    press: preset(0.49, 0.045, 0.6, 'press', pressNotes),
+    congrats: preset(0.62, 0.146, 0.64, 'congrats', chimeCongratsNotes),
+    error: preset(0.45, 0.095, 0.36, 'error', errorNotes),
+    toggle: preset(0.45, 0.049, 0.6, 'toggle', singleNote),
+  },
+  'digital-blip': {
+    hover: preset(0.33, 0.023, 0.45, 'hover', digitalBlipHoverNotes),
+    press: preset(0.45, 0.038, 0.45, 'press', digitalBlipPressNotes),
+    congrats: preset(0.53, 0.133, 0.58, 'congrats', digitalBlipCongratsNotes),
+    error: preset(0.41, 0.087, 0.27, 'error', errorNotes),
+    toggle: preset(0.41, 0.041, 0.45, 'toggle', singleNote),
+  },
+  spring: {
+    hover: preset(0.4, 0.028, 0.5, 'hover', singleNote),
+    press: preset(0.52, 0.047, 0.5, 'press', pressNotes),
+    congrats: preset(0.6, 0.143, 0.55, 'congrats', springCongratsNotes),
+    error: preset(0.48, 0.093, 0.3, 'error', errorNotes),
+    toggle: preset(0.48, 0.05, 0.5, 'toggle', singleNote),
+  },
+  'glass-tap': {
+    hover: preset(0.38, 0.025, 0.72, 'hover', singleNote),
+    press: preset(0.5, 0.043, 0.72, 'press', pressNotes),
+    congrats: preset(0.6, 0.141, 0.76, 'congrats', glassTapCongratsNotes),
+    error: preset(0.46, 0.092, 0.43, 'error', errorNotes),
+    toggle: preset(0.46, 0.045, 0.72, 'toggle', singleNote),
+  },
+  'tiny-sparkle': {
+    hover: preset(0.32, 0.015, 0.15, 'hover', singleNote),
+    press: preset(0.44, 0.025, 0.15, 'press', pressNotes),
+    congrats: preset(0.57, 0.21, 0.32, 'congrats', tinySparkleCongratsNotes),
+    error: preset(0.4, 0.137, 0.09, 'error', errorNotes),
+    toggle: preset(0.4, 0.027, 0.15, 'toggle', singleNote),
+  },
+  click: {
+    hover: preset(0.34, 0.018, 0.52, 'hover', singleNote),
+    press: preset(0.46, 0.03, 0.52, 'press', pressNotes),
+    congrats: preset(0.55, 0.13, 0.62, 'congrats', singleNote),
+    error: preset(0.42, 0.085, 0.31, 'error', errorNotes),
+    toggle: preset(0.42, 0.033, 0.52, 'toggle', singleNote),
+  },
+  snap: {
+    hover: preset(0.37, 0.019, 0.68, 'hover', singleNote),
+    press: preset(0.49, 0.032, 0.68, 'press', pressNotes),
+    congrats: preset(0.57, 0.131, 0.72, 'congrats', singleNote),
+    error: preset(0.45, 0.085, 0.41, 'error', errorNotes),
+    toggle: preset(0.45, 0.035, 0.68, 'toggle', singleNote),
+  },
+  thud: {
+    hover: preset(0.42, 0.023, 0.22, 'hover', singleNote),
+    press: preset(0.54, 0.038, 0.22, 'press', thudPressNotes),
+    congrats: preset(0.62, 0.14, 0.38, 'congrats', singleNote),
+    error: preset(0.5, 0.091, 0.13, 'error', errorNotes),
+    toggle: preset(0.5, 0.041, 0.22, 'toggle', singleNote),
+  },
+  pop: {
+    hover: preset(0.43, 0.022, 0.42, 'hover', singleNote),
+    press: preset(0.55, 0.036, 0.42, 'press', pressNotes),
+    congrats: preset(0.62, 0.137, 0.56, 'congrats', popCongratsNotes),
+    error: preset(0.51, 0.089, 0.25, 'error', errorNotes),
+    toggle: preset(0.51, 0.04, 0.42, 'toggle', singleNote),
   },
 };
 
