@@ -1011,6 +1011,12 @@ const snapCongratsNotes: Note[] = [
   { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
 
+// snap hover: own note (rather than the generic hoverNote every other family uses)
+// because this family's own Q3.5 bandpass attenuates a plain triangle wave enough to read
+// as noticeably quieter than other families' hover at the same nominal volume — same root
+// cause as click/toggle below. useFilter:false removes that attenuation at its source.
+const snapHoverNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1.15, useFilter: false, useDelay: false }];
+
 // snap click: strictly two discrete transients — press sits low (weighted), a real
 // silent gap, then release snaps up a real fourth — no third layer riding alongside
 // either one. Dropped the texture-flick companion this used to carry on release: even
@@ -1020,18 +1026,22 @@ const snapCongratsNotes: Note[] = [
 // ~34ms onset-to-onset gap, matching paper-snap's exact-match reference. volumeMultiplier
 // scaled up (not the preset default) to compensate this family's Q3.5 bandpass, which
 // attenuates the fundamental and this triangle wave's naturally weak harmonics — the same
-// nominal `volume` as other families' click was reading noticeably quieter here.
+// nominal `volume` as other families' click was reading noticeably quieter here, and
+// compensating with volumeMultiplier alone wasn't enough headroom to fix it without risking
+// the shared limiter (pushing a single note's peak close to its -8dB threshold). useFilter:
+// false removes the attenuation at its source — the raw triangle wave's own energy, not a
+// narrow slice of it — so a much smaller volumeMultiplier now reaches the same loudness.
 const snapClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.39, pitchMultiplier: 0.96, volumeMultiplier: 1.33, attack: 0.002 },
-  { offsetFraction: 0.71, lengthFraction: 0.29, pitchMultiplier: 1.3, volumeMultiplier: 0.73, attack: 0.002 },
+  { offsetFraction: 0, lengthFraction: 0.39, pitchMultiplier: 0.96, volumeMultiplier: 1.1, attack: 0.002, useFilter: false },
+  { offsetFraction: 0.71, lengthFraction: 0.29, pitchMultiplier: 1.3, volumeMultiplier: 0.6, attack: 0.002, useFilter: false },
 ];
 
 // toggle: own note (rather than reusing the generic singleNote paper-snap also uses) so
 // its own bandpass-attenuation compensation lives here at the note level, not blended into
-// paper-snap's baseline. volumeMultiplier scaled up (not the preset default) to compensate
-// this family's Q3.5 bandpass, which — same as click above — attenuates the fundamental
-// and this triangle wave's naturally weak harmonics, reading quiet at equal nominal volume.
-const snapToggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1.39 }];
+// paper-snap's baseline. useFilter:false removes the attenuation at its source (same
+// reasoning as snapClickNotes above) — raw triangle energy, not a narrow filtered slice —
+// so only a modest volumeMultiplier is needed on top.
+const snapToggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1.15, useFilter: false }];
 
 // submit: same loading-recipe structure, at snap's own triangle-wave register.
 const snapSubmitNotes: Note[] = [
@@ -1348,7 +1358,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     notification: preset(0.15, 0.4, 0.1, 'notification', tinySparkleNotificationNotes),
   },
   snap: {
-    hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
+    hover: preset(0.18, 0.009, 0.5, 'hover', snapHoverNotes),
     click: preset(0.24, 0.048, 0.5, 'click', snapClickNotes),
     // 160ms, up from 100ms — was genuinely the shortest congrats of any family (next
     // shortest was paper-snap at 110ms), not giving the fourth-interval jump room to land.
