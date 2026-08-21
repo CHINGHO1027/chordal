@@ -460,15 +460,20 @@ const chimeErrorNotes: Note[] = [
 // stable, trackable pitch (same lesson as error's descending pair), so the actual
 // ascending content now runs on real sine tones (waveformOverride, useFilter:false) — a
 // genuine 3-note consonant climb (root, major third, fifth) instead of a 2-note bandpass
-// jump. A brief bright noise "snap" opens the gesture so this family's own texture
-// character isn't lost entirely, just no longer carrying the pitch itself. Register
-// (pitchMultiplier ~0.26) picked for a bright register rather than this family's
+// jump. A brief bright noise "snap" opens the gesture, and each landing tone now also
+// carries a quiet noise-grain companion (this family's own bandpass-noise voice, no
+// waveformOverride) so the papery texture stays present under the whole run instead of
+// only at the start — the clean sine still carries the pitch, the grain is just color.
+// Register (pitchMultiplier ~0.26) picked for a bright register rather than this family's
 // noise-bandpass-tuned 3200Hz base.
 const paperSnapCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1.4, volumeMultiplier: 0.5, attack: 0.001 },
   { offsetFraction: 0.06, lengthFraction: 0.34, pitchMultiplier: 0.26, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
+  { offsetFraction: 0.06, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.2, attack: 0.008 },
   { offsetFraction: 0.34, lengthFraction: 0.34, pitchMultiplier: 0.3276, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
+  { offsetFraction: 0.34, lengthFraction: 0.3, pitchMultiplier: 1.05, volumeMultiplier: 0.2, attack: 0.008 },
   { offsetFraction: 0.62, lengthFraction: 0.38, pitchMultiplier: 0.39, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
+  { offsetFraction: 0.62, lengthFraction: 0.34, pitchMultiplier: 1.1, volumeMultiplier: 0.22, attack: 0.008 },
 ];
 
 // paper-snap click: noise-native, so this is the one family that can mirror Cuelume's
@@ -542,12 +547,17 @@ const paperSnapNotificationNotes: Note[] = [
 // ratchet with a real interval, not three near-identical taps. Reconsidered: routing
 // these through this family's own narrow bandpass (the source of its "metallic" identity
 // everywhere else) read as buzzy/mechanical, not the bright, clean, airy run this instance
-// needs — same lesson as notification. waveformOverride:'sine' + useFilter:false here
-// specifically; same pitches/timing, just a clean voice instead of a colored one.
+// needs — same lesson as notification. waveformOverride:'sine' + useFilter:false carries
+// the pitch; a quiet useTexture:true companion at each note (this family's own 4200Hz
+// bandpass sheen, same layer the click release uses for its metallic ping) rides
+// underneath so the run still reads as metallic-tact, not a generic clean sine.
 const metallicTactCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.22, useTexture: true },
   { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.24, useTexture: true },
   { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 0.26, useTexture: true },
 ];
 
 // metallic-tact click: press sits low (mechanical), release pings up a real interval
@@ -586,6 +596,10 @@ const metallicTactSubmitNotes: Note[] = [
 const metallicTactNotificationNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 0.85, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.06 },
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.85, volumeMultiplier: 0.83, waveformOverride: 'sine', useFilter: false, detuneCents: 15, attack: 0.06 },
+  // quiet metallic sheen riding under the pad (this family's own texture layer, slow
+  // attack to match the swell) — keeps a trace of family identity without reintroducing
+  // the harshness the sine override was meant to remove.
+  { offsetFraction: 0, lengthFraction: 0.9, pitchMultiplier: 0.85, volumeMultiplier: 0.14, useTexture: true, attack: 0.08 },
 ];
 
 // error: same knock+2-tone pattern as snap's exact Cuelume match, at metallic-tact's own
@@ -616,11 +630,16 @@ const metallicTactErrorNotes: Note[] = [
 // genuine 3-note consonant climb (root, major third, fifth) for real ascending motion, no
 // sweep (clean landing instead of a wobble). Register raised (pitchMultiplier ~2.2, vs
 // this family's usual ~1x) — its native 360Hz base reads as warm/low, not bright, once
-// it's a clean sine rather than a filtered square.
+// it's a clean sine rather than a filtered square. A quiet useTexture:true companion rides
+// under each tone — the same "grit" layer hover/click already use — so the run keeps this
+// family's digital edge instead of sounding like a generic clean sine climb.
 const digitalBlipCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 2.2, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 2.2, volumeMultiplier: 0.28, useTexture: true },
   { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 2.772, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 2.772, volumeMultiplier: 0.3, useTexture: true },
   { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 3.3, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 3.3, volumeMultiplier: 0.32, useTexture: true },
 ];
 // hover/click keep a quick, quiet click layered under the square tone for a little grit.
 const digitalBlipHoverNotes: Note[] = [
@@ -658,6 +677,9 @@ const digitalBlipSubmitNotes: Note[] = [
 const digitalBlipNotificationNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.06 },
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, waveformOverride: 'sine', useFilter: false, detuneCents: 15, attack: 0.06 },
+  // quiet digital grit riding under the pad, slow attack to match the swell — keeps this
+  // family's own texture legible without reintroducing raw-square harshness.
+  { offsetFraction: 0, lengthFraction: 0.9, pitchMultiplier: 1, volumeMultiplier: 0.13, useTexture: true, attack: 0.08 },
 ];
 
 // error: same knock+2-tone pattern as snap's exact Cuelume match, at digital-blip's own
@@ -881,6 +903,9 @@ const snapSubmitNotes: Note[] = [
 const snapNotificationNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 0.9, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.06 },
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.9, volumeMultiplier: 0.83, waveformOverride: 'sine', useFilter: false, detuneCents: 15, attack: 0.06 },
+  // quiet texture companion (this family's own bandpass layer, slow attack) — keeps a
+  // trace of snap's own voice under the warm pad instead of a fully generic sine.
+  { offsetFraction: 0, lengthFraction: 0.9, pitchMultiplier: 0.9, volumeMultiplier: 0.13, useTexture: true, attack: 0.08 },
 ];
 
 // error (exact reference match): Cuelume's own error recipe, layer for layer. It's the
