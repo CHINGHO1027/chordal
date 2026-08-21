@@ -473,15 +473,48 @@ const paperSnapCongratsNotes: Note[] = [
   { offsetFraction: 0.62, lengthFraction: 0.38, pitchMultiplier: 0.39, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
 ];
 
-// paper-snap click: noise-native, so this is the one family that can mirror Cuelume's
-// actual press/release technique directly — theirs is entirely built from bandpass-noise
-// filter brightness (a dull ~1700Hz knock vs a bright ~4600Hz flick), not a pitch sweep at
-// all. pitchMultiplier here scales the bandpass center, not a fundamental, so a wide swing
-// (0.65 -> 1.8, vs the ~1x -> ~1.2x every pitched family uses) reproduces that same
-// dull-knock / bright-flick contrast on our own register.
+// paper-snap click (exact reference match): Cuelume's press and release are two
+// separately-triggered cues (pointerdown / pointerup), but they're built from the same
+// material — bandpass noise, nothing else but one small sine tick — so compounding them
+// into a single click reads as one physical down-then-up motion instead of two unrelated
+// hits. press: dull muted knock, bandpass noise at 1700Hz/Q1.4. release: brighter springy
+// tick, bandpass noise at 4600Hz/Q1.8 plus a tiny 3200Hz sine riding 6ms into it (their own
+// offset, kept) — 3200Hz happens to be this family's exact baseFrequency, so that tick note
+// needs no register adjustment at all. useTexture's inline filter override reproduces their
+// literal cutoffs instead of scaling off this family's own bandpass center, the same
+// technique soft-bubble's loading and snap's error already use for their exact matches. No
+// shimmer (useDelay:false) — their press/release recipes carry none. Timing compressed into
+// a genuine click length (was 15ms; now 90ms) so the knock and the flick both have room to
+// read as distinct instead of blurring into one transient.
 const paperSnapClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 0.65, volumeMultiplier: 1 },
-  { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1.8, volumeMultiplier: 0.55 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.22,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 1700, filterQ: 1.4 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  {
+    offsetFraction: 0.4,
+    lengthFraction: 0.16,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.92,
+    useTexture: { filterType: 'bandpass', filterCutoff: 4600, filterQ: 1.8 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  {
+    offsetFraction: 0.46,
+    lengthFraction: 0.5,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.15,
+    waveformOverride: 'sine',
+    useFilter: false,
+    useDelay: false,
+    attack: 0.001,
+  },
 ];
 
 // paper-snap submit: sweepTo is ignored for noise (the engine never sweeps a bandpass
@@ -1122,7 +1155,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'paper-snap': {
     hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
-    click: preset(0.23, 0.015, 0.5, 'click', paperSnapClickNotes),
+    click: preset(0.26, 0.09, 0.5, 'click', paperSnapClickNotes),
     // 220ms, up from 110ms — matches the broader congrats pack now that this is a real
     // 3-note ascending run instead of a 2-note bandpass jump.
     congrats: preset(0.3, 0.22, 0.55, 'congrats', paperSnapCongratsNotes),
