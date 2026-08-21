@@ -456,19 +456,26 @@ export class ChordalPlayground extends HTMLElement {
       points.push({ x: leadBlankPx + px, y: h / 2 - peak * gain, peak });
     }
 
-    // Draw only where the signal actually clears the noise floor — silent runs (including
-    // any blank lead-in/out from centering a short capture) become a gap in the line
-    // instead of a flat trace, the same "no curve when nothing's happening" rule the idle
-    // state already follows, just applied within an active capture too.
+    // Draw only where the signal actually clears the noise floor — but with hold/hysteresis,
+    // not a bare per-column check: a broadband noise waveform (paper-snap) legitimately
+    // crosses back near zero between almost every peak while still fully "active," so a
+    // bare per-column gap fragmented it into dozens of disconnected slivers instead of one
+    // continuous trace. Holding the line through any single short quiet stretch (a handful
+    // of columns, ~1ms) bridges those crossings while still treating a genuinely sustained
+    // silence (padding before/after the real gesture) as a real gap.
+    const holdColumns = Math.max(3, Math.round((w / DISPLAY_WINDOW_MS) * 1));
     ctx2d.strokeStyle = FAMILY_ACCENTS[this.family];
     ctx2d.lineWidth = 1;
     ctx2d.lineJoin = 'round';
     ctx2d.lineCap = 'round';
     let drawing = false;
+    let silentRun = 0;
     for (let i = 0; i < points.length; i++) {
       const p = points[i]!;
       const active = Math.abs(p.peak) > NOISE_FLOOR;
-      if (!active) {
+      silentRun = active ? 0 : silentRun + 1;
+      const shouldDraw = active || (drawing && silentRun <= holdColumns);
+      if (!shouldDraw) {
         if (drawing) {
           ctx2d.stroke();
           drawing = false;
@@ -482,8 +489,9 @@ export class ChordalPlayground extends HTMLElement {
         continue;
       }
       const next = points[i + 1];
-      if (next && Math.abs(next.peak) > NOISE_FLOOR) {
-        const mid = { x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 };
+      const nextShouldDraw = next && (Math.abs(next.peak) > NOISE_FLOOR || silentRun < holdColumns);
+      if (nextShouldDraw) {
+        const mid = { x: (p.x + next!.x) / 2, y: (p.y + next!.y) / 2 };
         ctx2d.quadraticCurveTo(p.x, p.y, mid.x, mid.y);
       } else {
         ctx2d.lineTo(p.x, p.y);
