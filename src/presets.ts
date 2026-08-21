@@ -562,13 +562,17 @@ const metallicTactSubmitNotes: Note[] = [
   },
 ];
 
-// notification: same bloom pattern, at metallic-tact's own 784Hz register. useFilter:false
-// here unlike click/error — this family's narrow Q12 bandpass through a genuinely warm,
-// slow swell reads as harsh/buzzy rather than "warm"; a clean square wave (still has real
-// harmonic bite of its own) carries the character better for this specific instance.
+// notification: reconsidered — a raw unfiltered square wave is never "warm," it just
+// trades the family's usual filtered harshness for a different, unfiltered harshness (all
+// those odd harmonics are still there). "Warm, subtle chorusing, ambient" is fundamentally
+// a sine-wave quality, so this instance specifically breaks from the family's own
+// waveform (waveformOverride:'sine', same technique already used for paper-snap's error).
+// Register dropped too (pitchMultiplier 0.85, ~666Hz) — this family's usual 784Hz+
+// register reads as present/tactile, not the deeper, room-filling register bloom implies.
+// Detune widened slightly (12 -> 15 cents) for a more perceptible chorus depth.
 const metallicTactNotificationNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
-  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 0.85, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.85, volumeMultiplier: 0.83, waveformOverride: 'sine', useFilter: false, detuneCents: 15, attack: 0.06 },
 ];
 
 // error: same knock+2-tone pattern as snap's exact Cuelume match, at metallic-tact's own
@@ -628,11 +632,13 @@ const digitalBlipSubmitNotes: Note[] = [
   },
 ];
 
-// notification: same bloom pattern, at digital-blip's own low 360Hz register.
-// useFilter:false for warmth, same reasoning as metallic-tact.
+// notification: reconsidered, same reasoning as metallic-tact — raw square is still
+// harsh, not warm, no matter the filtering. waveformOverride:'sine' here too. 360Hz was
+// already a low, reasonably warm register, so no pitch change needed, just the waveform
+// and the same widened detune (15 cents) for more perceptible chorus depth.
 const digitalBlipNotificationNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
-  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, waveformOverride: 'sine', useFilter: false, detuneCents: 15, attack: 0.06 },
 ];
 
 // error: same knock+2-tone pattern as snap's exact Cuelume match, at digital-blip's own
@@ -779,12 +785,16 @@ const tinySparkleSubmitNotes: Note[] = [
   },
 ];
 
-// notification: same bloom pattern, at tiny-sparkle's own 1040Hz register.
-// useFilter:false sidesteps this family's highpass entirely, same reasoning as everywhere
-// else in this family.
+// notification: reconsidered — this family's own bright 1040Hz+ register (already
+// unfiltered, sine, so timbre wasn't the issue) reads as shimmery/glassy, not the deeper,
+// room-filling warmth bloom implies. Register dropped for this instance specifically
+// (pitchMultiplier 0.55, ~572Hz) — a deliberate break from tiny-sparkle's usual bright
+// identity, same as every other family's notification prioritizing "warm" over its own
+// default character here. Detune widened (12 -> 15 cents) for more perceptible depth.
+// useFilter:false still sidesteps this family's highpass.
 const tinySparkleNotificationNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
-  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 0.55, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.55, volumeMultiplier: 0.83, useFilter: false, detuneCents: 15, attack: 0.06 },
 ];
 
 // error: tiny-sparkle's delicate brightness had the same problem as glass-crystal/
@@ -845,11 +855,13 @@ const snapSubmitNotes: Note[] = [
   },
 ];
 
-// notification: same bloom pattern, at snap's own 720Hz triangle register.
-// useFilter:false for a clean warm tone, same reasoning as metallic-tact/digital-blip.
+// notification: reconsidered — a raw unfiltered triangle is softer than square but still
+// not sine-warm (it keeps real odd-harmonic bite). waveformOverride:'sine' here too, same
+// as metallic-tact/digital-blip, with the register nudged down slightly (pitchMultiplier
+// 0.9, ~648Hz) and detune widened (12 -> 15 cents) for more perceptible chorus depth.
 const snapNotificationNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
-  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 0.9, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.9, volumeMultiplier: 0.83, waveformOverride: 'sine', useFilter: false, detuneCents: 15, attack: 0.06 },
 ];
 
 // error (exact reference match): Cuelume's own error recipe, layer for layer. It's the
@@ -1078,7 +1090,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.22, 0.17, 0.3, 'error', metallicTactErrorNotes),
     toggle: preset(0.24, 0.02, 0.45, 'toggle', toggleClickNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', metallicTactSubmitNotes),
-    notification: preset(0.2, 0.4, 0.3, 'notification', metallicTactNotificationNotes),
+    notification: preset(0.15, 0.4, 0.3, 'notification', metallicTactNotificationNotes),
   },
   chime: {
     // Volumes pulled well below the shared limiter's -8dB (~0.4) threshold — Cuelume's
@@ -1105,7 +1117,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.22, 0.16, 0.25, 'error', digitalBlipErrorNotes),
     toggle: preset(0.22, 0.014, 0.4, 'toggle', toggleClickNotes),
     submit: preset(0.2, 0.16, 0.4, 'submit', digitalBlipSubmitNotes),
-    notification: preset(0.2, 0.4, 0.4, 'notification', digitalBlipNotificationNotes),
+    notification: preset(0.15, 0.4, 0.4, 'notification', digitalBlipNotificationNotes),
   },
   spring: {
     hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
@@ -1133,7 +1145,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // click's 6ms release), matching tiny-sparkle's own "quick" identity. tone pinned to
     // 0.1 — see tinySparkleSubmitNotes for why (highpass-cutoff safety).
     submit: preset(0.19, 0.15, 0.1, 'submit', tinySparkleSubmitNotes),
-    notification: preset(0.19, 0.4, 0.1, 'notification', tinySparkleNotificationNotes),
+    notification: preset(0.15, 0.4, 0.1, 'notification', tinySparkleNotificationNotes),
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
@@ -1146,7 +1158,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.2184, 0.244, 0.3, 'error', snapErrorNotes),
     toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
     submit: preset(0.21, 0.17, 0.45, 'submit', snapSubmitNotes),
-    notification: preset(0.2, 0.4, 0.45, 'notification', snapNotificationNotes),
+    notification: preset(0.15, 0.4, 0.45, 'notification', snapNotificationNotes),
   },
 };
 
