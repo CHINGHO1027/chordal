@@ -186,20 +186,13 @@ const STYLES = `
   }
 `;
 
-// Grace period the frozen waveform stays on screen after its capture window completes,
-// before the canvas clears to blank. Short — long enough to register as "still there for a
-// beat," not long enough to read as a persistent scope trace.
-const CAPTURE_CLEAR_DELAY_MS = 200;
+// Extra time to keep drawing live past a gesture's own nominal length — covers a natural
+// decay/shimmer tail the engine may still be rendering after the "note" technically ends.
+const ACTIVE_GRACE_MS = 120;
 
-// Fixed display window — not the whole gesture. Showing an entire 50-400ms gesture
-// auto-zoomed to canvas width squeezes it into a compressed envelope burst; showing a
-// short, fixed ~16ms slice centered on the loudest moment exposes the actual oscillation
-// cycles, which is what makes a waveform panel readable as a *waveform* rather than a
-// silhouette. Same window for every instance, short or long.
-const DISPLAY_WINDOW_MS = 16;
-
-// Target fraction of half-height the loudest sample in the displayed window should reach
-// — auto-gain so quiet gestures (e.g. a 0.18 hover) aren't a flat line next to a loud one.
+// Target fraction of half-height the loudest sample in the current live window should
+// reach — auto-gain recomputed every frame, so it tracks the signal's own envelope (loud
+// attack, quiet decay) as it plays, not a single value fixed at trigger time.
 const TARGET_PEAK_FRACTION = 0.75;
 
 // Raw (pre-gain) amplitude below which a sample counts as silence for drawing purposes —
@@ -224,18 +217,13 @@ export class ChordalPlayground extends HTMLElement {
   private idleTimer: number | null = null;
   private toggleState: 'on' | 'off' = 'off';
 
-  // Trigger-scoped waveform capture — see drawWaveform()'s doc comment for why this
-  // replaced a live rolling-analyser draw.
-  private captureScratch: Float32Array | null = null;
-  private captureBuffer: Float32Array | null = null;
-  private captureWriteIndex = 0;
-  private captureAudioMs = 0; // total buffered material: gesture length + a small tail
-  private captureStartedAt = 0;
-  private captureLastReadAt = 0;
-  private captureActive = false;
-  private captureFinishedAt: number | null = null;
-  private captureSingleShot = false; // see startCapture()
-  private analyserWindowMs = 0; // real time one full getFloatTimeDomainData read spans
+  // Live waveform — see drawWaveform()'s doc comment.
+  private liveScratch: Float32Array | null = null;
+  private sampleRate = 48000;
+  private analyserWindowMs = 0; // real time one getFloatTimeDomainData read spans — the
+  // live display window itself, not a separate crop
+  private activeUntil = 0; // performance.now() timestamp; blank canvas once passed
+  private gestureLengthMs = 0; // last-triggered instance's own length, for the status label
 
   constructor() {
     super();
@@ -267,61 +255,34 @@ export class ChordalPlayground extends HTMLElement {
     if (!context || !output) return; // SSR or Web Audio unavailable — no scope to draw
 
     this.analyser = context.createAnalyser();
-    // Small window (~10.7ms at 48kHz) — see startCapture()'s doc comment for why: a forced
-    // first read that's mostly pre-trigger silence used to waste a much larger fraction of
-    // the whole buffer when the window was 4096.
+    // fftSize 1024 -> 512-sample window, ~10.7ms at 48kHz. This is the live display window
+    // itself now (not a source buffer for a separate crop) — small enough to expose
+    // individual oscillation cycles rather than a compressed envelope.
     this.analyser.fftSize = 1024;
     output.connect(this.analyser);
-    this.captureScratch = new Float32Array(this.analyser.frequencyBinCount);
-    this.analyserWindowMs = (this.captureScratch.length / context.sampleRate) * 1000;
+    this.sampleRate = context.sampleRate;
+    this.liveScratch = new Float32Array(this.analyser.frequencyBinCount);
+    this.analyserWindowMs = (this.liveScratch.length / this.sampleRate) * 1000;
     this.drawWaveform();
   }
 
-  /**
-   * Starts a fresh capture for a gesture of `lengthSeconds` — buffers the gesture itself
-   * plus a small tail (so a release transient isn't clipped). This is raw material for
-   * drawWaveform()'s own fixed-size crop, not the display window itself.
-   *
-   * Two capture modes, chosen by how the gesture's length compares to one analyser window:
-   * - captureSingleShot (gesture ≲ one window, covers most hovers): wait for the whole
-   *   gesture to finish, then take exactly one read — the analyser's own rolling window by
-   *   then naturally spans back far enough to contain the complete gesture already
-   *   correctly positioned, no stitching needed.
-   * - multi-read (everything longer — click/toggle/submit/etc): stitch several reads
-   *   together, but gate the *first* one the same as every later one (wait a full
-   *   analyserWindowMs before reading at all) instead of reading immediately at trigger
-   *   time. A forced-immediate first read is almost entirely pre-trigger silence (the
-   *   window looks backward from "now," and "now" is the instant the gesture just started),
-   *   which used to burn a large fraction of a short gesture's whole buffer on nothing —
-   *   observed as the real audio squeezed into a compressed sliver at one edge instead of
-   *   centered.
-   */
-  private startCapture(lengthSeconds: number): void {
-    const context = engine.getContext();
-    if (!context || !this.analyser) return;
-    const lengthMs = lengthSeconds * 1000;
-    this.captureAudioMs = lengthMs + Math.max(5, lengthMs * 0.15);
-    this.captureSingleShot = this.captureAudioMs <= this.analyserWindowMs;
-    const totalSamples = Math.max(1, Math.ceil((this.captureAudioMs / 1000) * context.sampleRate));
-    this.captureBuffer = new Float32Array(totalSamples);
-    this.captureWriteIndex = 0;
-    this.captureStartedAt = performance.now();
-    this.captureLastReadAt = this.captureStartedAt;
-    this.captureActive = true;
-    this.captureFinishedAt = null;
+  /** Marks the panel active for a gesture of `lengthSeconds` — drawWaveform() draws the
+   *  analyser live every frame until this window (length + a decay-tail grace) elapses. */
+  private markActive(lengthSeconds: number): void {
+    this.gestureLengthMs = lengthSeconds * 1000;
+    this.activeUntil = performance.now() + this.gestureLengthMs + ACTIVE_GRACE_MS;
   }
 
   // Faint vertical ticks only — no per-line text (the corner .status label already carries
   // the duration), and a dotted center reference line, matching a scope-style readout
-  // rather than a labeled chart axis. Always spans DISPLAY_WINDOW_MS, not the gesture's own
-  // length, since the plot itself is now a fixed-size crop.
+  // rather than a labeled chart axis. Spans the analyser's own live window.
   private drawGrid(ctx2d: CanvasRenderingContext2D, w: number, h: number): void {
-    const step = niceMsStep(DISPLAY_WINDOW_MS, 8);
+    const step = niceMsStep(this.analyserWindowMs, 8);
     ctx2d.strokeStyle = '#00000012';
     ctx2d.lineWidth = 1;
     ctx2d.setLineDash([]);
-    for (let t = 0; t <= DISPLAY_WINDOW_MS + 0.001; t += step) {
-      const x = (t / DISPLAY_WINDOW_MS) * w;
+    for (let t = 0; t <= this.analyserWindowMs + 0.001; t += step) {
+      const x = (t / this.analyserWindowMs) * w;
       ctx2d.beginPath();
       ctx2d.moveTo(x, 0);
       ctx2d.lineTo(x, h);
@@ -337,22 +298,17 @@ export class ChordalPlayground extends HTMLElement {
   }
 
   /**
-   * Not a live oscilloscope — a trigger-scoped capture, cropped and auto-gained for
-   * readability. startCapture() buffers the gesture's own length plus a small tail; each
-   * frame here pulls a fresh full read from the analyser once a whole analyserWindowMs has
-   * genuinely elapsed (rather than estimating a partial sample count from wall-clock time,
-   * which drifted against real audio time badly enough to read as near-total silence
-   * followed by a compressed burst right at the capture's tail). Once buffered, the DRAWN
-   * window is a fixed DISPLAY_WINDOW_MS slice centered on the loudest captured sample —
-   * not the whole gesture — so individual oscillation cycles are visible instead of a
-   * compressed envelope silhouette, and the interesting part always lands in the middle of
-   * the panel regardless of exactly where capture timing placed it in the buffer. Idle (no
-   * capture, or past its clear delay) is fully blank — no resting line, no grid.
+   * Genuinely live: no capture buffer, no freeze, no crop. Every frame reads whatever the
+   * analyser's own short rolling window (~10.7ms, see setupWaveform) currently shows and
+   * draws it directly, auto-gained fresh each frame so the trace tracks the signal's own
+   * envelope (a loud attack reads big, a quiet decay tail still reads clearly) as it plays
+   * in real time — not a single gain computed once from a frozen recording. Idle (nothing
+   * triggered within markActive's window) is fully blank — no resting line, no grid.
    */
   private drawWaveform = (): void => {
     this.rafId = requestAnimationFrame(this.drawWaveform);
     const canvas = this.shadow.querySelector<HTMLCanvasElement>('canvas');
-    if (!canvas || !this.analyser || !this.captureScratch) return;
+    if (!canvas || !this.analyser || !this.liveScratch) return;
     const ctx2d = canvas.getContext('2d');
     if (!ctx2d) return;
 
@@ -360,100 +316,41 @@ export class ChordalPlayground extends HTMLElement {
     const h = canvas.height;
     const now = performance.now();
 
-    if (this.captureActive && this.captureBuffer) {
-      if (this.captureSingleShot) {
-        if (now - this.captureStartedAt >= this.captureAudioMs) {
-          this.analyser.getFloatTimeDomainData(this.captureScratch as Float32Array<ArrayBuffer>);
-          const toCopy = Math.min(this.captureScratch.length, this.captureBuffer.length);
-          this.captureBuffer.set(this.captureScratch.subarray(this.captureScratch.length - toCopy), 0);
-          this.captureWriteIndex = toCopy;
-          this.captureActive = false;
-          this.captureFinishedAt = now;
-        }
-      } else if (now - this.captureLastReadAt >= this.analyserWindowMs) {
-        this.analyser.getFloatTimeDomainData(this.captureScratch as Float32Array<ArrayBuffer>);
-        const remaining = this.captureBuffer.length - this.captureWriteIndex;
-        const toCopy = Math.min(this.captureScratch.length, remaining);
-        // A full read copies straight across; a final partial read (buffer almost full)
-        // takes the newest tail of the window instead, so the freshest samples always win.
-        const src = toCopy === this.captureScratch.length ? this.captureScratch : this.captureScratch.subarray(this.captureScratch.length - toCopy);
-        this.captureBuffer.set(src, this.captureWriteIndex);
-        this.captureWriteIndex += toCopy;
-        this.captureLastReadAt = now;
-        if (this.captureWriteIndex >= this.captureBuffer.length) {
-          this.captureActive = false;
-          this.captureFinishedAt = now;
-        }
-      }
-    }
-
-    const withinClearDelay = this.captureFinishedAt !== null && now - this.captureFinishedAt < CAPTURE_CLEAR_DELAY_MS;
-    const showingCapture = this.captureBuffer !== null && (this.captureActive || withinClearDelay);
-
     ctx2d.clearRect(0, 0, w, h);
-    if (!showingCapture) {
-      if (this.captureBuffer !== null && this.captureFinishedAt !== null && !withinClearDelay) {
-        this.captureBuffer = null; // fully done — stop re-checking every frame
-      }
-      return; // idle: blank canvas, no curve, no grid
-    }
+    if (now >= this.activeUntil) return; // idle: blank canvas, no curve, no grid
 
-    const buf = this.captureBuffer!;
-    const n = this.captureWriteIndex;
-    if (n < 2) {
-      this.drawGrid(ctx2d, w, h);
-      return;
-    }
+    this.analyser.getFloatTimeDomainData(this.liveScratch as Float32Array<ArrayBuffer>);
+    const buf = this.liveScratch;
+    const n = buf.length;
 
-    const context = engine.getContext();
-    const sampleRate = context?.sampleRate ?? 48000;
-    const cropSamples = Math.max(2, Math.round((DISPLAY_WINDOW_MS / 1000) * sampleRate));
-
-    // Find the loudest sample captured so far — that's what gets centered.
-    let peakIndex = 0;
     let peakVal = 0;
     for (let i = 0; i < n; i++) {
       const v = buf[i] ?? 0;
-      if (Math.abs(v) > Math.abs(peakVal)) {
-        peakVal = v;
-        peakIndex = i;
-      }
+      if (Math.abs(v) > Math.abs(peakVal)) peakVal = v;
     }
-
-    let cropStart: number;
-    let cropLen: number;
-    if (n <= cropSamples) {
-      cropStart = 0;
-      cropLen = n;
-    } else {
-      cropStart = Math.min(Math.max(peakIndex - Math.floor(cropSamples / 2), 0), n - cropSamples);
-      cropLen = cropSamples;
-    }
-    // Center shorter captures (e.g. an 8ms hover) inside the fixed display window instead
-    // of stretching them to fill it — same physical time-per-pixel scale as a full crop.
-    const leadBlankPx = ((cropSamples - cropLen) / 2 / cropSamples) * w;
 
     this.drawGrid(ctx2d, w, h);
+    this.updateFrequencyLabel(buf);
 
-    const gain = peakVal !== 0 ? (TARGET_PEAK_FRACTION * (h / 2)) / Math.abs(peakVal) : 1;
+    if (Math.abs(peakVal) <= NOISE_FLOOR) return; // nothing audible this instant — grid only
 
-    // One point per pixel column, not one per sample — plotting every raw sample would be
-    // fine at this zoom level (samples-per-pixel is low with only ~16ms across the canvas)
-    // but the peak-preserving decimation keeps a fast transient's true peak from being
-    // averaged away, then quadratic curves between points give smooth, rounded humps
-    // instead of a jagged straight-segment trace. Raw (pre-gain) peak is kept alongside y
-    // so silent columns can be skipped below rather than traced as a flat line.
+    const gain = (TARGET_PEAK_FRACTION * (h / 2)) / Math.abs(peakVal);
+
+    // One point per pixel column, not one per sample — the peak-preserving decimation keeps
+    // a fast transient's true peak from being averaged away, then quadratic curves between
+    // points give smooth, rounded humps instead of a jagged straight-segment trace. Raw
+    // (pre-gain) peak is kept alongside y so silent columns can be skipped below.
     const points: Array<{ x: number; y: number; peak: number }> = [];
-    const samplesPerCol = cropLen / (w - leadBlankPx * 2 || 1);
-    for (let px = 0; px <= w - leadBlankPx * 2; px++) {
+    const samplesPerCol = n / w;
+    for (let px = 0; px < w; px++) {
       const start = Math.floor(px * samplesPerCol);
-      const end = Math.min(cropLen, Math.max(start + 1, Math.floor((px + 1) * samplesPerCol)));
+      const end = Math.min(n, Math.max(start + 1, Math.floor((px + 1) * samplesPerCol)));
       let peak = 0;
       for (let i = start; i < end; i++) {
-        const v = buf[cropStart + i] ?? 0;
+        const v = buf[i] ?? 0;
         if (Math.abs(v) > Math.abs(peak)) peak = v;
       }
-      points.push({ x: leadBlankPx + px, y: h / 2 - peak * gain, peak });
+      points.push({ x: px, y: h / 2 - peak * gain, peak });
     }
 
     // Draw only where the signal actually clears the noise floor — but with hold/hysteresis,
@@ -462,8 +359,8 @@ export class ChordalPlayground extends HTMLElement {
     // bare per-column gap fragmented it into dozens of disconnected slivers instead of one
     // continuous trace. Holding the line through any single short quiet stretch (a handful
     // of columns, ~1ms) bridges those crossings while still treating a genuinely sustained
-    // silence (padding before/after the real gesture) as a real gap.
-    const holdColumns = Math.max(3, Math.round((w / DISPLAY_WINDOW_MS) * 1));
+    // silence as a real gap.
+    const holdColumns = Math.max(3, Math.round(w / this.analyserWindowMs));
     ctx2d.strokeStyle = FAMILY_ACCENTS[this.family];
     ctx2d.lineWidth = 1;
     ctx2d.lineJoin = 'round';
@@ -498,31 +395,30 @@ export class ChordalPlayground extends HTMLElement {
       }
     }
     if (drawing) ctx2d.stroke();
-
-    this.updateFrequencyLabel(buf, cropStart, cropLen, sampleRate);
   };
 
-  // Zero-crossing rate over the displayed crop — a cheap, good-enough dominant-frequency
-  // estimate for the mostly-monotone transients this library produces, not a real FFT.
-  private updateFrequencyLabel(buf: Float32Array, start: number, len: number, sampleRate: number): void {
-    if (len < 4) return;
+  // Zero-crossing rate over the current live window — a cheap, good-enough dominant-
+  // frequency estimate for the mostly-monotone transients this library produces, not a
+  // real FFT. Duration shown is the triggered gesture's own nominal length, not the tiny
+  // live window itself.
+  private updateFrequencyLabel(buf: Float32Array): void {
     let crossings = 0;
-    let prev = buf[start] ?? 0;
-    for (let i = 1; i < len; i++) {
-      const v = buf[start + i] ?? 0;
+    let prev = buf[0] ?? 0;
+    for (let i = 1; i < buf.length; i++) {
+      const v = buf[i] ?? 0;
       if ((prev >= 0) !== (v >= 0)) crossings++;
       prev = v;
     }
-    const hz = (crossings / 2 / (len / sampleRate)) || 0;
+    const hz = (crossings / 2 / (buf.length / this.sampleRate)) || 0;
     const status = this.shadow.querySelector<HTMLElement>('.status');
     if (!status) return;
     const freqLabel = hz >= 50 ? `${(hz / 1000).toFixed(1)} kHz, ` : '';
-    const durationLabel = `${(this.captureAudioMs / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '.0')} s`;
+    const durationLabel = `${(this.gestureLengthMs / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '.0')} s`;
     status.textContent = `${this.family} · ${this.instance} · ${freqLabel}${durationLabel}`;
   }
 
   private showStatus(instance: SoundInstance, tuning: InstanceTuning): void {
-    this.startCapture(tuning.length);
+    this.markActive(tuning.length);
     const status = this.shadow.querySelector<HTMLElement>('.status');
     if (!status) return;
     if (this.idleTimer !== null) window.clearTimeout(this.idleTimer);
@@ -730,9 +626,9 @@ export class ChordalPlayground extends HTMLElement {
       sliderDemo.style.setProperty('--fill', `${sliderDemo.value}%`);
       playContinuous('slider', ratio, { family: this.family });
       // playContinuous's own tick length isn't exposed here — 30ms is a reasonable
-      // estimate for its body+click layers, close enough for the capture window to catch
-      // the tick without needing the exact internal duration plumbed through.
-      this.startCapture(0.03);
+      // estimate for its body+click layers, close enough to keep the panel live for the
+      // tick without needing the exact internal duration plumbed through.
+      this.markActive(0.03);
       const status = this.shadow.querySelector<HTMLElement>('.status');
       if (status) status.textContent = `${this.family} · slider · ${ratio.toFixed(2)}`;
     });
