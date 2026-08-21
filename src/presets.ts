@@ -460,20 +460,17 @@ const chimeErrorNotes: Note[] = [
 // stable, trackable pitch (same lesson as error's descending pair), so the actual
 // ascending content now runs on real sine tones (waveformOverride, useFilter:false) — a
 // genuine 3-note consonant climb (root, major third, fifth) instead of a 2-note bandpass
-// jump. A brief bright noise "snap" opens the gesture, and each landing tone now also
-// carries a quiet noise-grain companion (this family's own bandpass-noise voice, no
-// waveformOverride) so the papery texture stays present under the whole run instead of
-// only at the start — the clean sine still carries the pitch, the grain is just color.
-// Register (pitchMultiplier ~0.26) picked for a bright register rather than this family's
-// noise-bandpass-tuned 3200Hz base.
+// jump. A brief bright noise "snap" opens the gesture for family character — tried also
+// layering a quiet noise-grain companion under each landing tone, but noise reads far
+// louder than its nominal volume suggests, and threading it through the whole run made
+// the papery texture the dominant impression instead of an accent. Pulled back to a
+// single opening snap only (register ~0.26 picked for a bright register rather than this
+// family's noise-bandpass-tuned 3200Hz base).
 const paperSnapCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1.4, volumeMultiplier: 0.5, attack: 0.001 },
+  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1.4, volumeMultiplier: 0.4, attack: 0.001 },
   { offsetFraction: 0.06, lengthFraction: 0.34, pitchMultiplier: 0.26, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
-  { offsetFraction: 0.06, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.2, attack: 0.008 },
   { offsetFraction: 0.34, lengthFraction: 0.34, pitchMultiplier: 0.3276, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
-  { offsetFraction: 0.34, lengthFraction: 0.3, pitchMultiplier: 1.05, volumeMultiplier: 0.2, attack: 0.008 },
   { offsetFraction: 0.62, lengthFraction: 0.38, pitchMultiplier: 0.39, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
-  { offsetFraction: 0.62, lengthFraction: 0.34, pitchMultiplier: 1.1, volumeMultiplier: 0.22, attack: 0.008 },
 ];
 
 // paper-snap click: noise-native, so this is the one family that can mirror Cuelume's
@@ -745,10 +742,15 @@ const springNotificationNotes: Note[] = [
 
 // congrats: a bouncy ascending run (root, fourth, fifth) where the final note overshoots
 // upward before relaxing — the spring settling past its target, not a clean landing.
+// useFilter:false on all three: the family's lowpass cutoff is computed once from `tone`
+// and held fixed across the whole gesture, so as these notes climb toward and past it
+// (691Hz/780Hz against a ~722Hz cutoff at this preset's tone) it was quietly muffling
+// exactly the notes that needed to sound brighter, undercutting the ascent instead of
+// letting it read.
 const springCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.26, lengthFraction: 0.34, pitchMultiplier: 1.33, volumeMultiplier: 0.85 },
-  { offsetFraction: 0.52, lengthFraction: 0.48, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.08 },
+  { offsetFraction: 0, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.8, useFilter: false },
+  { offsetFraction: 0.26, lengthFraction: 0.34, pitchMultiplier: 1.33, volumeMultiplier: 0.85, useFilter: false },
+  { offsetFraction: 0.52, lengthFraction: 0.48, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.08, useFilter: false },
 ];
 
 // Same knock+2-tone pattern as snap's exact Cuelume match, at spring's own 520Hz register,
