@@ -171,10 +171,11 @@ const hoverNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultipli
 // (brief, not lingering) rather than the reverse. No pitch sweep on either note — Cuelume's
 // own press/release don't sweep at all (static frequency + filter brightness + decay
 // length do all the work); forcing a glide into a note this short read as an unstable
-// flutter rather than a clean transition.
+// flutter rather than a clean transition. useDelay:false on both — a physical click-clack
+// is dry and punchy, not a resonance that should ring on past the gesture.
 const clickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 0.96, volumeMultiplier: 1 },
-  { offsetFraction: 0.58, lengthFraction: 0.32, pitchMultiplier: 1.26, volumeMultiplier: 0.5 },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 0.96, volumeMultiplier: 1, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.32, pitchMultiplier: 1.26, volumeMultiplier: 0.5, useDelay: false },
 ];
 
 // Mechanical toggle click — down-stroke + a quiet settle, reused by the two "switch-like" families.
@@ -203,11 +204,13 @@ const congratsArpeggio: Note[] = [
 // blended glide, the same relationship as Cuelume's own separately-triggered press/release
 // pair. Release also gets a quiet bright-noise flick layered under its tonal sweep — the
 // actual source of "crisp," per Cuelume's own release recipe, which a sine sweep alone
-// can't produce.
+// can't produce. useDelay:false on all three — a physical click-clack is dry and punchy;
+// this family's shimmer is a "genuine tail" quality that belongs on its warmer instances,
+// not a struck/released contact sound that should stop the instant it's done.
 const softBubbleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88 },
-  { offsetFraction: 0.58, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.45, sweepTo: 1.12 },
-  { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.45, sweepTo: 1.12, useDelay: false },
+  { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
 ];
 
 // congrats: three bubbles blooping upward — root, major third, fifth — each with its own
@@ -305,11 +308,13 @@ const softBubbleNotificationNotes: Note[] = [
 // blended glide (same shape as paper-snap's exact-match rebuild). No pitch sweep — on a
 // note this short a glide read as flutter, not a clean interval jump; the resonant highpass
 // Q made it worse (a swept pitch passing near the filter's own resonant peak rings/wobbles).
-// The static fourth plus the texture flick below carry "crisp" now.
+// The static fourth plus the texture flick below carry "crisp" now. useDelay:false on all
+// three — a physical click-clack is dry and punchy, not a resonance that should ring on
+// past the gesture.
 const glassCrystalClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.33, volumeMultiplier: 0.45 },
-  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
+  { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.33, volumeMultiplier: 0.45, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
 ];
 
 // congrats: an ascending "ting-ting-TING" — root, fifth, octave — the biggest interval
@@ -397,9 +402,9 @@ const glassCrystalErrorNotes: Note[] = [
 // exact-match rebuild). No sweep: Cuelume's own release doesn't glide either, and a
 // forced glide on a note this short read as flutter, not a clean interval jump.
 const chimeClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
+  { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
 ];
 
 // congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
@@ -606,11 +611,12 @@ const metallicTactCongratsNotes: Note[] = [
 // release fires rather than overlapping it, the clearest fit of any family for this shape
 // given the family's own mechanical-tactile identity (same as paper-snap's exact-match
 // rebuild of Cuelume's separately-triggered press/release pair). No sweep — a glide
-// squeezed this short read as flutter rather than a clean ping.
+// squeezed this short read as flutter rather than a clean ping. useDelay:false on all
+// three — a mechanical key strike is dry and punchy, not a resonance that rings on.
 const metallicTactClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1 },
-  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.28, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1, useDelay: false },
+  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.28, volumeMultiplier: 0.5, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at metallic-tact's own register — the square
@@ -692,10 +698,10 @@ const digitalBlipHoverNotes: Note[] = [
 ];
 const digitalBlipClickNotes: Note[] = [
   ...clickNotes,
-  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.32, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.32, useTexture: true, useDelay: false },
   // extra flick right on the release, on top of the grit note above — reinforces the
   // upward snap's crispness specifically, rather than texture spread evenly across both.
-  { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true },
+  { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
@@ -753,11 +759,12 @@ const digitalBlipErrorNotes: Note[] = [
 // overshoots upward — a genuine spring release, not a static two-note click. Widened the
 // gap between compress and rebound (same "let press decay out before release fires"
 // principle behind every other family's compound click this pass) so the settle reads as
-// a real pause rather than one continuous glide.
+// a real pause rather than one continuous glide. useDelay:false on all three — a physical
+// contact sound is dry and punchy, not a resonance that should ring on past the gesture.
 const springClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82 },
-  { offsetFraction: 0.5, lengthFraction: 0.42, pitchMultiplier: 0.94, volumeMultiplier: 0.55, sweepTo: 1.28 },
-  { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82, useDelay: false },
+  { offsetFraction: 0.5, lengthFraction: 0.42, pitchMultiplier: 0.94, volumeMultiplier: 0.55, sweepTo: 1.28, useDelay: false },
+  { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
 ];
 
 // submit: the loading-recipe structure (slow-attack tone + soft breath), but with a small
@@ -834,10 +841,11 @@ const springToggleNotes: Note[] = [
 // other family's compound click this pass, just kept the tightest of all of them to match
 // this family's genuinely-fast identity. No sweep: nowhere near long enough for a glide to
 // read as anything but flutter — the fifth interval alone already carries plenty of "up."
+// useDelay:false on all three — dry and punchy, no ring-on.
 const tinySparkleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.5, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
+  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.5, volumeMultiplier: 0.5, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
 ];
 
 // congrats: tuned toward Cuelume's own sparkle recipe — root/third/fifth/octave was
