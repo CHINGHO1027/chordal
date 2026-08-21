@@ -268,9 +268,14 @@ const softBubbleErrorNotes: Note[] = [
 // time (group delay), which on a note this short ate into a large fraction of the note's
 // total duration and softened the onset into a gradual swell instead of an instant snap;
 // bypassing it gives the raw tone an unfiltered, instant attack.
+// Register raised well above this family's usual 587Hz home (pitchMultiplier 1.8/2.0,
+// landing ~1050-1175Hz) — bypassing the filter wasn't enough on its own: a sine burst this
+// short only fits ~3-4 cycles at 587Hz, too few for the ear to resolve a clean pitch, which
+// is what actually reads as "muffled" (a psychoacoustic floor, not a filtering artifact).
+// At ~1.1kHz the same duration holds 7-8 cycles, comfortably above that floor.
 const softBubbleToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 1.12, volumeMultiplier: 0.6, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1.8, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 2.0, volumeMultiplier: 0.6, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // submit (exact reference match): Cuelume's own "loading" recipe, layer for layer — a soft
@@ -343,9 +348,14 @@ const glassCrystalCongratsNotes: Note[] = [
 // useFilter:false on both — this family's resonant highpass has its own settling time,
 // which on a note this short softened the onset into a gradual swell instead of an instant
 // snap; bypassing it gives the raw tone an unfiltered, instant attack.
+// Register raised modestly (pitchMultiplier 1.25/0.98, landing ~1300Hz/1020Hz) — this
+// family's 1046Hz home was already close to clean, but the descending release note (0.78x
+// -> ~816Hz) was dipping low enough for a sine burst this short to lose definition. Lifting
+// both keeps the release comfortably above the ~1kHz floor where a burst this brief still
+// resolves a clean pitch.
 const glassCrystalToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.78, volumeMultiplier: 0.7, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1.25, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.98, volumeMultiplier: 0.7, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // submit: same loading-recipe structure as soft-bubble's exact match (slow-attack tone
@@ -449,9 +459,12 @@ const chimeCongratsNotes: Note[] = [
 // useDelay:false on both — zero reverb. useFilter:false on both — this family's lowpass
 // has its own settling time, which on a note this short softened the onset into a gradual
 // swell instead of an instant snap; bypassing it gives the raw tone an instant attack.
+// Register raised modestly (pitchMultiplier 1.3/1.07, landing ~1220Hz/1005Hz) — same
+// psychoacoustic floor as the other families: a sine burst this short needs to sit near or
+// above ~1kHz to resolve a clean pitch rather than reading as a soft thump.
 const chimeToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.82, volumeMultiplier: 0.75, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1.3, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 1.07, volumeMultiplier: 0.75, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at chime's own transparent-filter register
@@ -729,9 +742,13 @@ const digitalBlipClickNotes: Note[] = clickNotes;
 // this short the filter's own settling time was eating a large fraction of the note and
 // reading as a muffled thump instead of a crisp blip. useFilter:false bypasses that
 // settling time for an instant raw-square attack. useDelay:false — zero reverb.
+// Register raised well above this family's usual 360Hz home (pitchMultiplier 3.0/2.82,
+// landing ~1080Hz/1015Hz) — 360Hz was the lowest fundamental of any family attempting this
+// pattern; even filter-bypassed, a burst this short only fit ~2-3 cycles at 360Hz, nowhere
+// near enough to resolve a clean pitch. At ~1kHz the same duration holds 8-9 cycles.
 const digitalBlipToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.94, volumeMultiplier: 0.4, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 3.0, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 2.82, volumeMultiplier: 0.4, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
@@ -865,9 +882,12 @@ const springErrorNotes: Note[] = [
 // useDelay:false on both — zero reverb. useFilter:false on both — this family's lowpass
 // has its own settling time, which on a note this short softened the onset into a gradual
 // swell instead of an instant snap; bypassing it gives the raw tone an instant attack.
+// Register raised well above this family's usual 520Hz home (pitchMultiplier 2.0/2.38,
+// landing ~1040Hz/1238Hz) — same psychoacoustic floor as soft-bubble and digital-blip: a
+// burst this short only fit ~3-4 cycles at 520Hz, too few to resolve a clean pitch.
 const springToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 1.19, volumeMultiplier: 0.55, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 2.0, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 2.38, volumeMultiplier: 0.55, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // --- tiny-sparkle: bespoke per-instance gestures — quick, bright, and light, distinct
