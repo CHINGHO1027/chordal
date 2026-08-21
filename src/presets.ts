@@ -180,9 +180,11 @@ const clickNotes: Note[] = [
 ];
 
 // Mechanical toggle click — two closely-spaced micro-transients (down-stroke + a quiet
-// settle), reused by the two "switch-like" families. First note decays out before the
-// second fires (a real gap instead of legato overlap). useDelay:false on both — zero
-// reverb, immediate feedback.
+// settle). First note decays out before the second fires (a real gap instead of legato
+// overlap). useDelay:false on both — zero reverb, immediate feedback. Kept filtered
+// (metallic-tact's own resonant Q12 bandpass rings up fast enough even at this length to
+// stay crisp, unlike the families that needed useFilter:false — see digitalBlipToggleNotes
+// for the family that shared this exact note shape but didn't hold up).
 const toggleClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
   { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.94, volumeMultiplier: 0.4, attack: 0.002, useDelay: false },
@@ -261,11 +263,14 @@ const softBubbleErrorNotes: Note[] = [
 // toggle: two closely-spaced micro-transients, a real minor-third step between them — a
 // mechanical latch, not a musical phrase. Dropped the sweep (a glide reads as soft/mushy,
 // not a discrete "snap into place") and the legato overlap (first note decays out before
-// the second fires, a real ~4ms gap at this length instead of blending together).
-// useDelay:false on both — zero reverb, immediate feedback.
+// the second fires instead of blending together). useDelay:false on both — zero reverb,
+// immediate feedback. useFilter:false on both — this family's lowpass has its own settling
+// time (group delay), which on a note this short ate into a large fraction of the note's
+// total duration and softened the onset into a gradual swell instead of an instant snap;
+// bypassing it gives the raw tone an unfiltered, instant attack.
 const softBubbleToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 1.12, volumeMultiplier: 0.6, attack: 0.002, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 1.12, volumeMultiplier: 0.6, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // submit (exact reference match): Cuelume's own "loading" recipe, layer for layer — a soft
@@ -335,9 +340,12 @@ const glassCrystalCongratsNotes: Note[] = [
 // toggle: two closely-spaced micro-transients, a genuine descending fourth — a mechanical
 // latch, not a musical phrase. First note decays out before the second fires (a real gap
 // instead of the legato overlap this used to have). useDelay:false on both — zero reverb.
+// useFilter:false on both — this family's resonant highpass has its own settling time,
+// which on a note this short softened the onset into a gradual swell instead of an instant
+// snap; bypassing it gives the raw tone an unfiltered, instant attack.
 const glassCrystalToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.78, volumeMultiplier: 0.7, attack: 0.002, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.78, volumeMultiplier: 0.7, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // submit: same loading-recipe structure as soft-bubble's exact match (slow-attack tone
@@ -438,10 +446,12 @@ const chimeCongratsNotes: Note[] = [
 // toggle: two closely-spaced micro-transients, a genuine step between them — a mechanical
 // latch, not a barely-there wobble or a musical phrase. First note decays out before the
 // second fires (a real gap instead of the legato overlap this used to have).
-// useDelay:false on both — zero reverb.
+// useDelay:false on both — zero reverb. useFilter:false on both — this family's lowpass
+// has its own settling time, which on a note this short softened the onset into a gradual
+// swell instead of an instant snap; bypassing it gives the raw tone an instant attack.
 const chimeToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.82, volumeMultiplier: 0.75, attack: 0.002, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.82, volumeMultiplier: 0.75, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at chime's own transparent-filter register
@@ -713,6 +723,17 @@ const digitalBlipHoverNotes: Note[] = [
 // notes from clickNotes now, same as every other family this pass.
 const digitalBlipClickNotes: Note[] = clickNotes;
 
+// toggle: own note set rather than reusing toggleClickNotes (metallic-tact's shared
+// shape) — this family's 360Hz register is the lowest of any family using this pattern,
+// and its own Q5 bandpass needs a few cycles to ring up to its resonant peak; on a note
+// this short the filter's own settling time was eating a large fraction of the note and
+// reading as a muffled thump instead of a crisp blip. useFilter:false bypasses that
+// settling time for an instant raw-square attack. useDelay:false — zero reverb.
+const digitalBlipToggleNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.94, volumeMultiplier: 0.4, attack: 0.002, useFilter: false, useDelay: false },
+];
+
 // submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
 // breath's cutoff is pulled down to match rather than reusing a register tuned for a
 // family sitting an octave-plus higher.
@@ -841,10 +862,12 @@ const springErrorNotes: Note[] = [
 // toggle: two closely-spaced micro-transients, a mechanical latch rather than a musical
 // phrase. Dropped the sweep (a glide reads as soft/mushy, not a discrete snap into place)
 // and the legato overlap — first note decays out before the second fires.
-// useDelay:false on both — zero reverb.
+// useDelay:false on both — zero reverb. useFilter:false on both — this family's lowpass
+// has its own settling time, which on a note this short softened the onset into a gradual
+// swell instead of an instant snap; bypassing it gives the raw tone an instant attack.
 const springToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 1.19, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 1.19, volumeMultiplier: 0.55, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // --- tiny-sparkle: bespoke per-instance gestures — quick, bright, and light, distinct
@@ -1188,7 +1211,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // 140ms, up from 55ms — a 3-element compound (knock + 2 tones) needs real room; the
     // old single swept note fit in 55ms because it was just one continuous motion.
     error: preset(0.22, 0.2, 0.25, 'error', softBubbleErrorNotes),
-    toggle: preset(0.22, 0.02, 0.42, 'toggle', softBubbleToggleNotes),
+    toggle: preset(0.22, 0.024, 0.42, 'toggle', softBubbleToggleNotes),
     // high tone so the tone-scaled sweep gimmick still delivers a real fifth-ish lift
     // rather than a token wobble (softBubble's sweep magnitude scales with tone).
     submit: preset(0.084, 0.205, 1.0, 'submit', softBubbleSubmitNotes),
@@ -1199,7 +1222,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     click: preset(0.24, 0.046, 0.5, 'click', glassCrystalClickNotes),
     congrats: preset(0.3, 0.22, 0.65, 'congrats', glassCrystalCongratsNotes),
     error: preset(0.22, 0.195, 0.3, 'error', glassCrystalErrorNotes),
-    toggle: preset(0.23, 0.018, 0.5, 'toggle', glassCrystalToggleNotes),
+    toggle: preset(0.23, 0.022, 0.5, 'toggle', glassCrystalToggleNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', glassCrystalSubmitNotes),
     notification: preset(0.2, 0.4, 0.3, 'notification', glassCrystalNotificationNotes),
   },
@@ -1238,7 +1261,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // chimeCongratsNotes above for the rest of the mapping.
     congrats: preset(0.18, 0.356, 0.55, 'congrats', chimeCongratsNotes),
     error: preset(0.21, 0.16, 0.28, 'error', chimeErrorNotes),
-    toggle: preset(0.23, 0.02, 0.5, 'toggle', chimeToggleNotes),
+    toggle: preset(0.23, 0.024, 0.5, 'toggle', chimeToggleNotes),
     submit: preset(0.2, 0.2, 0.45, 'submit', chimeSubmitNotes),
     notification: preset(0.2, 0.4, 0.5, 'notification', chimeNotificationNotes),
   },
@@ -1249,7 +1272,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // 3-note ascending run instead of a 2-note jump.
     congrats: preset(0.3, 0.22, 0.45, 'congrats', digitalBlipCongratsNotes),
     error: preset(0.22, 0.16, 0.25, 'error', digitalBlipErrorNotes),
-    toggle: preset(0.22, 0.014, 0.4, 'toggle', toggleClickNotes),
+    toggle: preset(0.22, 0.026, 0.4, 'toggle', digitalBlipToggleNotes),
     submit: preset(0.2, 0.16, 0.4, 'submit', digitalBlipSubmitNotes),
     notification: preset(0.15, 0.4, 0.4, 'notification', digitalBlipNotificationNotes),
   },
@@ -1258,7 +1281,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     click: preset(0.24, 0.049, 0.42, 'click', springClickNotes),
     congrats: preset(0.3, 0.22, 0.48, 'congrats', springCongratsNotes),
     error: preset(0.22, 0.14, 0.28, 'error', springErrorNotes),
-    toggle: preset(0.23, 0.02, 0.42, 'toggle', springToggleNotes),
+    toggle: preset(0.23, 0.023, 0.42, 'toggle', springToggleNotes),
     submit: preset(0.22, 0.2, 0.45, 'submit', springSubmitNotes),
     // exact reference match to Cuelume's bloom — see springNotificationNotes.
     notification: preset(0.12, 0.4, 0.45, 'notification', springNotificationNotes),
