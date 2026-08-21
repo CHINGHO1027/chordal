@@ -199,17 +199,20 @@ const congratsArpeggio: Note[] = [
 // for a genuine squeeze/bloop quality instead of a flat pitch.
 
 // click (compound press+release, matching paper-snap's exact-match shape): a real gap
-// between the squeeze-down and the spring-back lift, not a legato overlap — press decays
-// out before release fires, so the two read as one down-then-up motion instead of one
-// blended glide, the same relationship as Cuelume's own separately-triggered press/release
-// pair. Release also gets a quiet bright-noise flick layered under its tonal sweep — the
-// actual source of "crisp," per Cuelume's own release recipe, which a sine sweep alone
-// can't produce. useDelay:false on all three — a physical click-clack is dry and punchy;
-// this family's shimmer is a "genuine tail" quality that belongs on its warmer instances,
-// not a struck/released contact sound that should stop the instant it's done.
+// between press and release, not a legato overlap — press decays out before release
+// fires, so the two read as a clear down-then-up rather than one blended motion, the same
+// relationship as Cuelume's own separately-triggered press/release pair. Dropped the pitch
+// sweeps this used to carry on both notes — on a note this short a glide reads as an
+// unstable warble rather than a clean transition (the same "vibrato" lesson click's release
+// hit earlier this session, just missed here because this family's own sweep gimmick was
+// specific to it). Static pitch now, same as every other family's click; the minor-third
+// interval plus the texture flick below still carry plenty of "give" and "crisp" without
+// needing motion mid-note. useDelay:false on all three — a physical click-clack is dry and
+// punchy; this family's shimmer is a "genuine tail" quality that belongs on its warmer
+// instances, not a struck/released contact sound that should stop the instant it's done.
 const softBubbleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.45, sweepTo: 1.12, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5, useDelay: false },
   { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
 ];
 
@@ -756,14 +759,20 @@ const digitalBlipErrorNotes: Note[] = [
 // than a flat second pitch.
 
 // click: compress down, a beat for the compression to fully settle, then rebound
-// overshoots upward — a genuine spring release, not a static two-note click. Widened the
-// gap between compress and rebound (same "let press decay out before release fires"
-// principle behind every other family's compound click this pass) so the settle reads as
-// a real pause rather than one continuous glide. useDelay:false on all three — a physical
-// contact sound is dry and punchy, not a resonance that should ring on past the gesture.
+// overshoots upward — a genuine spring release, not a static two-note click. Dropped the
+// pitch sweeps this used to ride on both notes (compress 1->0.82, rebound 0.94->1.28*0.94)
+// — on notes this short they read as an unstable warble rather than a clean physical
+// motion, the same "vibrato" lesson click's release hit elsewhere this session. The
+// "overshoot past rest" idea now comes from a static interval instead — press sits below
+// rest (0.9), release lands above it (1.15) — so press and release still read as two clear,
+// static-pitch hits, just at registers that imply the compress/rebound without a glide.
+// Widened the gap between compress and rebound (same "let press decay out before release
+// fires" principle behind every other family's compound click) so the settle reads as a
+// real pause. useDelay:false on all three — a physical contact sound is dry and punchy,
+// not a resonance that should ring on past the gesture.
 const springClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82, useDelay: false },
-  { offsetFraction: 0.5, lengthFraction: 0.42, pitchMultiplier: 0.94, volumeMultiplier: 0.55, sweepTo: 1.28, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 0.9, volumeMultiplier: 1, useDelay: false },
+  { offsetFraction: 0.5, lengthFraction: 0.42, pitchMultiplier: 1.15, volumeMultiplier: 0.55, useDelay: false },
   { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
 ];
 
