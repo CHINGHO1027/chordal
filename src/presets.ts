@@ -70,11 +70,16 @@ export interface Note {
    */
   detuneCents?: number;
   /**
-   * When true, this note is resolved from the family's `textureLayer` (a fixed noise
-   * transient) instead of its primary waveform/filter — e.g. a soft knock layered under
-   * a tonal note. Ignored if the family has no textureLayer.
+   * When true, this note is resolved as a noise transient from the family's `textureLayer`
+   * instead of its primary waveform/filter — e.g. a soft knock layered under a tonal note.
+   * Ignored if the family has no textureLayer. Pass an inline filter spec instead of `true`
+   * when a note needs its own noise character that doesn't match the family's shared
+   * texture (e.g. a soft lowpass "breath" under a family whose texture layer is tuned as a
+   * bright bandpass flick) — bypasses the family's textureLayer and its extra
+   * volume/length scaling entirely; this note's own volumeMultiplier/lengthFraction apply
+   * directly.
    */
-  useTexture?: boolean;
+  useTexture?: boolean | { filterType: BiquadFilterType; filterCutoff: number; filterQ?: number };
   /**
    * Set false to skip the family's shimmer/delay on this note specifically. Defaults to
    * true. The delay's feedback tail runs for a fixed duration independent of note length
@@ -82,6 +87,12 @@ export interface Note {
    * lingers long after the note itself has ended, which reads as heavy rather than light.
    */
   useDelay?: boolean;
+  /**
+   * Optional attack-time override in seconds — see engine.SynthParams['attack']. Only
+   * needed for genuine "swell" gestures (e.g. submit's lift-off); every other note relies
+   * on the engine's default fast attack.
+   */
+  attack?: number;
 }
 
 export interface InstancePreset extends InstanceTuning {
@@ -216,6 +227,30 @@ const softBubbleErrorNotes: Note[] = [
 const softBubbleToggleNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.95 },
   { offsetFraction: 0.46, lengthFraction: 0.54, pitchMultiplier: 1.12, volumeMultiplier: 0.6 },
+];
+
+// submit (exact reference match): Cuelume's own "loading" recipe, layer for layer — a soft
+// lowpass-noise breath (1400Hz, Q0.6, 35ms attack, 140ms decay) underneath a sine gliding a
+// real fifth, 420 -> 630Hz (1 -> 1.5x), 25ms attack, 180ms decay. Uses the new per-note
+// attack override and inline noise-filter override specifically so this one instance can
+// carry a genuinely slow "swell" attack and its own soft noise character — soft-bubble's
+// own textureLayer is tuned as a bright bandpass flick for click's release, the wrong
+// character for a breath. tone is set to 1.0 so soft-bubble's tone-scaled sweep gimmick
+// doesn't attenuate the fifth — this is the one instance that wants the full, unscaled
+// glide, not a softened one. Volumes solved to match Cuelume's own post-gain-stage
+// amplitudes (~0.084 tone / ~0.059 noise), the same approach used for chime's exact-match
+// congrats baseline earlier in this project.
+const softBubbleSubmitNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.7155, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.8537,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.7,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1400, filterQ: 0.6 },
+    useDelay: false,
+    attack: 0.035,
+  },
 ];
 
 // --- glass-crystal: bespoke per-instance gestures, leaning into the family's resonant
@@ -594,7 +629,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     toggle: preset(0.22, 0.026, 0.42, 'toggle', softBubbleToggleNotes),
     // high tone so the tone-scaled sweep gimmick still delivers a real fifth-ish lift
     // rather than a token wobble (softBubble's sweep magnitude scales with tone).
-    submit: preset(0.22, 0.2, 0.75, 'submit', submitNote),
+    submit: preset(0.084, 0.205, 1.0, 'submit', softBubbleSubmitNotes),
   },
   'glass-crystal': {
     hover: preset(0.18, 0.009, 0.55, 'hover', hoverNote),
@@ -702,6 +737,21 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
   const pitchMultiplier = tuning.pitch * note.pitchMultiplier;
   const delay = note.useDelay === false ? undefined : recipe.delay;
 
+  if (note.useTexture && typeof note.useTexture === 'object') {
+    const ov = note.useTexture;
+    return {
+      waveform: 'noise',
+      frequency: 0,
+      filterType: ov.filterType,
+      filterCutoff: ov.filterCutoff,
+      filterQ: ov.filterQ ?? 1,
+      volume: noteVolume,
+      length: noteLength,
+      attack: note.attack,
+      detuneCents: note.detuneCents ?? 0,
+    };
+  }
+
   if (note.useTexture && recipe.textureLayer) {
     const tex = recipe.textureLayer;
     return {
@@ -729,6 +779,7 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
       filterQ,
       volume: noteVolume,
       length: noteLength,
+      attack: note.attack,
       delay,
       detuneCents: note.detuneCents ?? 0,
     };
@@ -750,6 +801,7 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
     filterQ,
     volume: noteVolume,
     length: noteLength,
+    attack: note.attack,
     delay,
     detuneCents: note.detuneCents ?? 0,
   };

@@ -21,6 +21,14 @@ export interface SynthParams {
   volume: number;
   /** Seconds */
   length: number;
+  /**
+   * Optional attack-time override, seconds. Every voice defaults to a fast fixed attack
+   * (min(5ms, 20% of length)) tuned for percussive UI ticks; a handful of "swell" gestures
+   * (e.g. submit's lift-off) need a genuinely slow attack instead, closer to Cuelume's own
+   * loading/arrival recipes (25-50ms). Clamped to at most 40% of `length` so it can never
+   * outrun the note's own decay.
+   */
+  attack?: number;
   detuneCents?: number;
   /**
    * Internal feedback delay — a shimmer/echo tail applied to this voice.
@@ -176,7 +184,7 @@ function getPinkNoiseBuffer(context: AudioContext): AudioBuffer {
  */
 function synthesize(context: AudioContext, output: AudioNode, params: SynthParams, startOffset: number): Voice {
   const startTime = context.currentTime + Math.max(startOffset, 0);
-  const { waveform, frequency, endFrequency, filterType, filterCutoff, filterCutoffEnd, filterQ, volume, length, detuneCents = 0, delay } =
+  const { waveform, frequency, endFrequency, filterType, filterCutoff, filterCutoffEnd, filterQ, volume, length, attack: attackOverride, detuneCents = 0, delay } =
     params;
 
   const nodes: AudioNode[] = [];
@@ -200,7 +208,7 @@ function synthesize(context: AudioContext, output: AudioNode, params: SynthParam
 
   const envelope = context.createGain();
   nodes.push(envelope);
-  const attack = Math.min(0.005, length * 0.2);
+  const attack = attackOverride !== undefined ? Math.min(attackOverride, length * 0.4) : Math.min(0.005, length * 0.2);
   const release = Math.max(length - attack, 0.001);
   envelope.gain.setValueAtTime(0, startTime);
   envelope.gain.linearRampToValueAtTime(Math.max(volume, 0.0001), startTime + attack);
