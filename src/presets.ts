@@ -101,6 +101,15 @@ export interface Note {
    * bandpass centers much higher) would attenuate it rather than leave it clean.
    */
   useFilter?: boolean;
+  /**
+   * Override the family's own waveform for this note specifically. Only meant for a noise
+   * family's rare note that needs a genuinely stable, trackable pitch — filtered noise
+   * (even a narrow, high-Q bandpass) always retains some random amplitude/phase wobble
+   * within the passband, which reads as "ringing" rather than "a tone," so a family whose
+   * voice is noise structurally can't produce the same clean descending pitch every other
+   * family's error relies on without this.
+   */
+  waveformOverride?: Waveform;
 }
 
 export interface InstancePreset extends InstanceTuning {
@@ -441,33 +450,36 @@ const paperSnapSubmitNotes: Note[] = [
   { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 1, attack: 0.035 },
 ];
 
-// error: the previous descending pair used this family's normal broad bandpass (Q3, the
-// same width as its ordinary snappy texture) — diffuse noise doesn't carry a clear sense
-// of pitch the way an actual tone does, so a bandpass-center shift through that much
-// width just read as two similar-sounding taps, not a "descent." Redesigned: the two
-// descending notes now use an inline high-Q (12) bandpass override — much narrower, so
-// each one rings at something close to an actual perceivable pitch instead of a wash of
-// texture — root then a real tritone down (0.7071), the same interval every other
-// family's error uses. The two knocks stay on this family's normal broad/percussive
-// texture (Q3) for contrast — thump vs. ring. Length matched to the other three families
-// (195ms, was 150ms) using the same offset/length proportions they all share.
+// error: even a high-Q (12) bandpass on noise still didn't produce a genuinely stable,
+// trackable pitch — filtered noise always retains some random amplitude/phase wobble
+// within the passband, which reads as "ringing" rather than "a tone descending." Every
+// other family's error relies on an actual oscillator for this; this family's voice is
+// pure noise, so it never had one. Gave these two notes a real sine (waveformOverride),
+// raw/unfiltered (useFilter:false) — genuine, stable pitch, root then a real tritone down
+// (0.7071, same interval every other family's error uses), now audible the same way
+// theirs is. Picked a register (pitchMultiplier ~0.3, landing around 875Hz -> 619Hz) sized
+// for an actual tone rather than reusing this family's noise-bandpass-tuned 3200Hz base,
+// which would read as unusually shrill for a pitch. The two knocks stay pure noise — this
+// family's own percussive character, contrasting against the now-clean tonal descent.
 const paperSnapErrorNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.075, pitchMultiplier: 1.3, volumeMultiplier: 1, attack: 0.001 },
   { offsetFraction: 0.2, lengthFraction: 0.075, pitchMultiplier: 1.3, volumeMultiplier: 0.7, attack: 0.001 },
   {
     offsetFraction: 0.35,
     lengthFraction: 0.3,
-    pitchMultiplier: 1,
-    volumeMultiplier: 0.55,
-    useTexture: { filterType: 'bandpass', filterCutoff: 2912, filterQ: 12 },
+    pitchMultiplier: 0.3,
+    volumeMultiplier: 0.4,
+    waveformOverride: 'sine',
+    useFilter: false,
     attack: 0.004,
   },
   {
     offsetFraction: 0.65,
     lengthFraction: 0.35,
-    pitchMultiplier: 1,
-    volumeMultiplier: 0.58,
-    useTexture: { filterType: 'bandpass', filterCutoff: 2059, filterQ: 12 },
+    pitchMultiplier: 0.2121,
+    volumeMultiplier: 0.42,
+    waveformOverride: 'sine',
+    useFilter: false,
     attack: 0.004,
   },
 ];
@@ -1088,10 +1100,11 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
   const [cutoffLow, cutoffHigh] = recipe.filterCutoffRange;
   const filterCutoff = cutoffLow + (cutoffHigh - cutoffLow) * toneT;
   const filterQ = recipe.qRange ? recipe.qRange[0] + (recipe.qRange[1] - recipe.qRange[0]) * toneT : recipe.filterQ ?? 1;
+  const waveform = note.waveformOverride ?? recipe.waveform;
 
-  if (recipe.waveform === 'noise') {
+  if (waveform === 'noise' || waveform === 'pink-noise') {
     return {
-      waveform: 'noise',
+      waveform,
       frequency: 0, // unused for noise sources
       filterType: recipe.filterType,
       filterCutoff: recipe.baseFrequency * pitchMultiplier,
@@ -1114,7 +1127,7 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
   const useFilter = note.useFilter !== false;
 
   return {
-    waveform: recipe.waveform,
+    waveform,
     frequency,
     endFrequency: sweepTo !== undefined ? frequency * sweepTo : undefined,
     filterType: useFilter ? recipe.filterType : undefined,
