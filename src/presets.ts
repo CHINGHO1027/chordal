@@ -163,19 +163,20 @@ const singleNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultipl
 // hover doesn't get one — it's a weightless probe, not a struck object.
 const hoverNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false }];
 
-// Compound press+release: press low, solid, weighted; a real gap; then release high,
-// brief, crisp — press decays out before release fires rather than overlapping it, so the
-// two read as a distinct down-then-up (same shape as paper-snap's exact-match rebuild of
-// Cuelume's own separately-triggered press/release pair). Real minor-third interval
-// between them (not a ~1-semitone token nudge), release deliberately shorter than press
-// (brief, not lingering) rather than the reverse. No pitch sweep on either note — Cuelume's
-// own press/release don't sweep at all (static frequency + filter brightness + decay
-// length do all the work); forcing a glide into a note this short read as an unstable
-// flutter rather than a clean transition. useDelay:false on both — a physical click-clack
-// is dry and punchy, not a resonance that should ring on past the gesture.
+// Strictly two discrete transients: press low, solid, weighted; a real silent gap; then
+// release high, brief, crisp — no third layer riding alongside either one (echoing how
+// Cuelume's own press/release are two separately-triggered recipes, not one sound plus
+// decoration). Real minor-third interval between them (not a ~1-semitone token nudge). No
+// pitch sweep on either note — Cuelume's own press/release don't sweep at all (static
+// frequency + filter brightness + decay length do all the work); forcing a glide into a
+// note this short read as an unstable flutter. Fast 2ms attack on both notes for a genuine
+// transient. Timing tuned so press decays out (40%) well before release fires (71%) — at
+// this family's own click length that's a real ~31ms onset-to-onset gap, matching
+// paper-snap's exact-match reference. useDelay:false on both — dry and punchy, not a
+// resonance that should ring on past the gesture.
 const clickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 0.96, volumeMultiplier: 1, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.32, pitchMultiplier: 1.26, volumeMultiplier: 0.5, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 0.96, volumeMultiplier: 1, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.71, lengthFraction: 0.28, pitchMultiplier: 1.26, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
 // Mechanical toggle click — down-stroke + a quiet settle, reused by the two "switch-like" families.
@@ -198,22 +199,18 @@ const congratsArpeggio: Note[] = [
 // "gimmick" from resolveNoteParams — a sweepTo glide whose magnitude scales with `tone` —
 // for a genuine squeeze/bloop quality instead of a flat pitch.
 
-// click (compound press+release, matching paper-snap's exact-match shape): a real gap
-// between press and release, not a legato overlap — press decays out before release
-// fires, so the two read as a clear down-then-up rather than one blended motion, the same
-// relationship as Cuelume's own separately-triggered press/release pair. Dropped the pitch
-// sweeps this used to carry on both notes — on a note this short a glide reads as an
-// unstable warble rather than a clean transition (the same "vibrato" lesson click's release
-// hit earlier this session, just missed here because this family's own sweep gimmick was
-// specific to it). Static pitch now, same as every other family's click; the minor-third
-// interval plus the texture flick below still carry plenty of "give" and "crisp" without
-// needing motion mid-note. useDelay:false on all three — a physical click-clack is dry and
-// punchy; this family's shimmer is a "genuine tail" quality that belongs on its warmer
-// instances, not a struck/released contact sound that should stop the instant it's done.
+// click: strictly two discrete transients — a lower press, a real silent gap, then a
+// crisp release — no third layer riding alongside either one. The texture-flick companion
+// this used to carry on release added its own onset (even quiet, it's still a separate
+// noise transient), which is exactly what reads as a multi-tap flutter instead of one
+// clean hit; dropped it entirely, same as every other family's click this pass. Fast 2ms
+// attack on both notes for a genuine transient rather than a soft swell. Timing tuned so
+// press decays out (ends at 38% of the gesture) well before release fires (starts at 72%)
+// — at this family's own click length that's a real ~37ms onset-to-onset gap, matching
+// paper-snap's exact-match reference. useDelay:false on both — dry and punchy, no ring-on.
 const softBubbleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5, useDelay: false },
-  { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.19, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
 // congrats: three bubbles blooping upward — root, major third, fifth — each with its own
@@ -305,19 +302,19 @@ const softBubbleNotificationNotes: Note[] = [
 // highpass — real intervals given room so the resonance can actually ring, rather than
 // generic clicks riding on top of the brightness.
 
-// click (compound press+release): press sits at the tap (weighted), then a real gap before
-// release jumps to a brighter fourth (crisp) — press decays out before release fires
-// rather than overlapping it, so the two read as a distinct down-then-up rather than one
-// blended glide (same shape as paper-snap's exact-match rebuild). No pitch sweep — on a
-// note this short a glide read as flutter, not a clean interval jump; the resonant highpass
-// Q made it worse (a swept pitch passing near the filter's own resonant peak rings/wobbles).
-// The static fourth plus the texture flick below carry "crisp" now. useDelay:false on all
-// three — a physical click-clack is dry and punchy, not a resonance that should ring on
-// past the gesture.
+// click: strictly two discrete transients — press sits at the tap (weighted), a real
+// silent gap, then release jumps to a brighter fourth (crisp) — no third layer riding
+// alongside either one. Dropped the texture-flick companion this used to carry on
+// release: even quiet, it's a separate noise onset, which reads as a multi-tap flutter
+// rather than one clean hit. No pitch sweep — the resonant highpass Q makes a swept pitch
+// ring/wobble near its own resonant peak, on top of reading as flutter on a note this
+// short anyway. Fast 2ms attack on both notes. Timing tuned so press decays out (ends at
+// 38%) well before release fires (72%) — at this family's own click length that's a real
+// ~33ms onset-to-onset gap, matching paper-snap's exact-match reference. useDelay:false on
+// both — dry and punchy, not a resonance that should ring on past the gesture.
 const glassCrystalClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
-  { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.33, volumeMultiplier: 0.45, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.33, volumeMultiplier: 0.5, attack: 0.002, useDelay: false },
 ];
 
 // congrats: an ascending "ting-ting-TING" — root, fifth, octave — the biggest interval
@@ -398,20 +395,17 @@ const glassCrystalErrorNotes: Note[] = [
 // from more notes packed tighter. Applied here at chime's own register or without
 // literally copying their numbers.
 
-// click (compound press+release): press sits at the tap (weighted), then a real gap
-// before release jumps a minor third up (crisp) — press decays out before release fires
-// instead of overlapping it, echoing how Cuelume's press/release are two separately-
-// triggered recipes rather than one sound scaled down (same shape as paper-snap's
-// exact-match rebuild). No sweep: Cuelume's own release doesn't glide either, and a
-// forced glide on a note this short read as flutter, not a clean interval jump. Texture
-// companion pulled way down (0.5 -> 0.08) — at equal volume with the release tone it read
-// as a second competing sound instead of press+release reading as exactly two clear hits;
-// paper-snap's own exact match keeps its analogous accent at roughly this same fraction of
-// its dominant layer.
+// click: strictly two discrete transients — press sits at the tap (weighted), a real
+// silent gap, then release jumps a minor third up (crisp) — no third layer riding
+// alongside either one. Dropped the texture-flick companion this used to carry on
+// release: even quiet, it's a separate noise onset, which reads as a multi-tap flutter
+// rather than one clean hit. No sweep: Cuelume's own release doesn't glide either. Fast
+// 2ms attack on both notes. Timing tuned so press decays out (38%) well before release
+// fires (72%) — at this family's own click length that's a real ~39ms onset-to-onset gap,
+// matching paper-snap's exact-match reference.
 const chimeClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
-  { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.19, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
 // congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
@@ -612,18 +606,18 @@ const metallicTactCongratsNotes: Note[] = [
   { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 0.26, useTexture: true },
 ];
 
-// metallic-tact click (compound press+release): press sits low (mechanical, "the key
-// bottoming out"), a real gap, then release pings up a real interval ("the key returning")
-// with a bright metallic-sheen texture flick for the crispness — press decays out before
-// release fires rather than overlapping it, the clearest fit of any family for this shape
-// given the family's own mechanical-tactile identity (same as paper-snap's exact-match
-// rebuild of Cuelume's separately-triggered press/release pair). No sweep — a glide
-// squeezed this short read as flutter rather than a clean ping. useDelay:false on all
-// three — a mechanical key strike is dry and punchy, not a resonance that rings on.
+// metallic-tact click: strictly two discrete transients — press sits low (mechanical,
+// "the key bottoming out"), a real silent gap, then release pings up a real interval
+// ("the key returning") — no third layer riding alongside either one. Dropped the
+// metallic-sheen texture flick this used to carry on release: even quiet, it's a separate
+// noise onset, which reads as a multi-tap flutter rather than one clean ping. No sweep.
+// Fast 2ms attack on both notes. Timing tuned so press decays out (38%) well before
+// release fires (72%) — at this family's own click length that's a real ~36ms
+// onset-to-onset gap, matching paper-snap's exact-match reference. useDelay:false on
+// both — a mechanical key strike is dry and punchy, not a resonance that rings on.
 const metallicTactClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1, useDelay: false },
-  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.28, volumeMultiplier: 0.5, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.28, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at metallic-tact's own register — the square
@@ -703,16 +697,10 @@ const digitalBlipHoverNotes: Note[] = [
   ...hoverNote,
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true },
 ];
-// Two texture notes (a grit bed under the whole gesture, plus a separate flick on release)
-// piled on top of the two tone notes made this read as more than a press+release compound
-// — four audible layers instead of two clear hits. Collapsed to one quiet accent on
-// release only, matching the treatment every other family's click uses now: paper-snap's
-// own exact match is the model — press and release should read as exactly two sounds, with
-// any texture underneath staying a subordinate color, not a competing third layer.
-const digitalBlipClickNotes: Note[] = [
-  ...clickNotes,
-  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true, useDelay: false },
-];
+// Even a quiet texture accent on release is still a separate noise onset — three audible
+// transients instead of two clean ones. Dropped entirely; click is just the two tone
+// notes from clickNotes now, same as every other family this pass.
+const digitalBlipClickNotes: Note[] = clickNotes;
 
 // submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
 // breath's cutoff is pulled down to match rather than reusing a register tuned for a
@@ -765,25 +753,19 @@ const digitalBlipErrorNotes: Note[] = [
 // compress, then rebound past rest before settling — using sweepTo for the rebound rather
 // than a flat second pitch.
 
-// click: compress down, a beat for the compression to fully settle, then rebound
-// overshoots upward — a genuine spring release, not a static two-note click. Dropped the
-// pitch sweeps this used to ride on both notes (compress 1->0.82, rebound 0.94->1.28*0.94)
-// — on notes this short they read as an unstable warble rather than a clean physical
-// motion, the same "vibrato" lesson click's release hit elsewhere this session. The
-// "overshoot past rest" idea now comes from a static interval instead — press sits below
-// rest (0.9), release lands above it (1.15) — so press and release still read as two clear,
-// static-pitch hits, just at registers that imply the compress/rebound without a glide.
-// Widened the gap between compress and rebound (same "let press decay out before release
-// fires" principle behind every other family's compound click) so the settle reads as a
-// real pause. useDelay:false on all three — a physical contact sound is dry and punchy,
-// not a resonance that should ring on past the gesture. Texture companion pulled way down
-// (0.5 -> 0.08) — at equal volume with the release tone it read as a second competing
-// sound; paper-snap's exact match is the model for "press+release as exactly two clear
-// hits," with any texture staying a subordinate color underneath.
+// click: strictly two discrete transients — compress down, a real silent gap, then
+// rebound overshoots upward — no third layer riding alongside either one. Static pitch on
+// both (press below rest at 0.9x, release above it at 1.15x — the "overshoot" comes from
+// the interval, not a glide, since a sweep on a note this short reads as an unstable
+// warble). Dropped the texture-flick companion this used to carry on release: even quiet,
+// it's a separate noise onset, which reads as a multi-tap flutter rather than one clean
+// rebound. Fast 2ms attack on both notes. Timing tuned so press decays out (39%) well
+// before release fires (71%) — at this family's own click length that's a real ~35ms
+// onset-to-onset gap, matching paper-snap's exact-match reference. useDelay:false on
+// both — a physical contact sound is dry and punchy, not a resonance that rings on.
 const springClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 0.9, volumeMultiplier: 1, useDelay: false },
-  { offsetFraction: 0.5, lengthFraction: 0.42, pitchMultiplier: 1.15, volumeMultiplier: 0.55, useDelay: false },
-  { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.39, pitchMultiplier: 0.9, volumeMultiplier: 1, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.71, lengthFraction: 0.29, pitchMultiplier: 1.15, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
 // submit: the loading-recipe structure (slow-attack tone + soft breath), but with a small
@@ -854,20 +836,19 @@ const springToggleNotes: Note[] = [
 // --- tiny-sparkle: bespoke per-instance gestures — quick, bright, and light, distinct
 // from every other family's timing by being genuinely fast rather than just quiet.
 
-// click (compound press+release): a very light two-part twinkle — press sits at the root,
-// a brief gap, then release leaps a real fifth up and stays the shorter of the two notes —
-// press decays out before release fires rather than overlapping it, same shape as every
-// other family's compound click this pass, just kept the tightest of all of them to match
-// this family's genuinely-fast identity. No sweep: nowhere near long enough for a glide to
-// read as anything but flutter — the fifth interval alone already carries plenty of "up."
-// useDelay:false on all three — dry and punchy, no ring-on. Texture companion pulled way
-// down (0.5 -> 0.08) — at equal volume with the release tone it read as a second competing
-// sound rather than press+release landing as exactly two clear hits, paper-snap's own
-// exact match being the model for that.
+// click: strictly two discrete transients — a very light press at the root, a real
+// silent gap, then release leaps a real fifth up — no third layer riding alongside
+// either one. Dropped the texture-flick companion this used to carry on release: even
+// quiet, it's a separate noise onset, which reads as a multi-tap flutter rather than one
+// clean hit — the fifth interval alone already carries plenty of "up." No sweep. Fast 2ms
+// attack on both notes. Timing tuned so press decays out (39%) well before release fires
+// (71%) — at this family's own click length that's a real ~30ms onset-to-onset gap, the
+// tightest of any family (matching this family's genuinely-fast identity) while still
+// landing inside paper-snap's exact-match reference range. useDelay:false on both — dry
+// and punchy, no ring-on.
 const tinySparkleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
-  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.5, volumeMultiplier: 0.5, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.39, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.71, lengthFraction: 0.29, pitchMultiplier: 1.5, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
 // congrats: tuned toward Cuelume's own sparkle recipe — root/third/fifth/octave was
@@ -957,18 +938,16 @@ const snapCongratsNotes: Note[] = [
   { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
 
-// snap click (compound press+release): press sits low (weighted), a real gap, then
-// release snaps up a real fourth with a bright texture flick for the crispness — press
-// decays out before release fires rather than overlapping it, same shape as paper-snap's
-// exact-match rebuild of Cuelume's own separately-triggered press/release pair. No sweep —
-// a glide had no room to read as anything but flutter. Texture companion pulled way down
-// (0.5 -> 0.08) — at equal volume with the release tone it read as a second competing
-// sound rather than press+release landing as exactly two clear hits, paper-snap's own
-// exact match being the model for that.
+// snap click: strictly two discrete transients — press sits low (weighted), a real
+// silent gap, then release snaps up a real fourth — no third layer riding alongside
+// either one. Dropped the texture-flick companion this used to carry on release: even
+// quiet, it's a separate noise onset, which reads as a multi-tap flutter rather than one
+// clean snap. No sweep. Fast 2ms attack on both notes. Timing tuned so press decays out
+// (39%) well before release fires (71%) — at this family's own click length that's a real
+// ~34ms onset-to-onset gap, matching paper-snap's exact-match reference.
 const snapClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1 },
-  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.3, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.58, lengthFraction: 0.26, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.39, pitchMultiplier: 0.96, volumeMultiplier: 1, attack: 0.002 },
+  { offsetFraction: 0.71, lengthFraction: 0.29, pitchMultiplier: 1.3, volumeMultiplier: 0.55, attack: 0.002 },
 ];
 
 // submit: same loading-recipe structure, at snap's own triangle-wave register.
@@ -1185,7 +1164,7 @@ function preset(volume: number, length: number, tone: number, instance: SoundIns
 export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>> = {
   'soft-bubble': {
     hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
-    click: preset(0.24, 0.055, 0.42, 'click', softBubbleClickNotes),
+    click: preset(0.24, 0.052, 0.42, 'click', softBubbleClickNotes),
     // 220ms, up from 160ms — 3 real-interval notes need more room than the old flat
     // arpeggio timing gave them.
     congrats: preset(0.3, 0.22, 0.5, 'congrats', softBubbleCongratsNotes),
@@ -1200,7 +1179,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'glass-crystal': {
     hover: preset(0.18, 0.009, 0.55, 'hover', hoverNote),
-    click: preset(0.24, 0.045, 0.5, 'click', glassCrystalClickNotes),
+    click: preset(0.24, 0.046, 0.5, 'click', glassCrystalClickNotes),
     congrats: preset(0.3, 0.22, 0.65, 'congrats', glassCrystalCongratsNotes),
     error: preset(0.22, 0.195, 0.3, 'error', glassCrystalErrorNotes),
     toggle: preset(0.23, 0.024, 0.5, 'toggle', glassCrystalToggleNotes),
@@ -1220,7 +1199,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'metallic-tact': {
     hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
-    click: preset(0.24, 0.06, 0.45, 'click', metallicTactClickNotes),
+    click: preset(0.24, 0.05, 0.45, 'click', metallicTactClickNotes),
     // 220ms, up from 140ms — matches the broader congrats pack.
     congrats: preset(0.3, 0.22, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.22, 0.17, 0.3, 'error', metallicTactErrorNotes),
@@ -1235,7 +1214,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // above threshold, so the limiter was squashing almost every chime hit — that
     // gain-reduction pumping is what read as "heavy" next to their untouched transients.
     hover: preset(0.18, 0.012, 0.5, 'hover', hoverNote),
-    click: preset(0.23, 0.06, 0.5, 'click', chimeClickNotes),
+    click: preset(0.23, 0.054, 0.5, 'click', chimeClickNotes),
     // 0.18 volume + 356ms length: solved to land at the exact same final amplitude
     // (~0.18/0.16 post-limiter-headroom) and total decay time as Cuelume's own two chime
     // layers (226ms + 266ms decay, second note entering at the 90ms mark) — see
@@ -1248,7 +1227,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'digital-blip': {
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
-    click: preset(0.23, 0.035, 0.4, 'click', digitalBlipClickNotes),
+    click: preset(0.23, 0.044, 0.4, 'click', digitalBlipClickNotes),
     // 220ms, up from 120ms — matches the broader congrats pack now that this is a real
     // 3-note ascending run instead of a 2-note jump.
     congrats: preset(0.3, 0.22, 0.45, 'congrats', digitalBlipCongratsNotes),
@@ -1259,7 +1238,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   spring: {
     hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
-    click: preset(0.24, 0.05, 0.42, 'click', springClickNotes),
+    click: preset(0.24, 0.049, 0.42, 'click', springClickNotes),
     congrats: preset(0.3, 0.22, 0.48, 'congrats', springCongratsNotes),
     error: preset(0.22, 0.14, 0.28, 'error', springErrorNotes),
     toggle: preset(0.23, 0.027, 0.42, 'toggle', springToggleNotes),
@@ -1269,7 +1248,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'tiny-sparkle': {
     hover: preset(0.15, 0.008, 0.2, 'hover', hoverNote),
-    click: preset(0.22, 0.032, 0.2, 'click', tinySparkleClickNotes),
+    click: preset(0.22, 0.042, 0.2, 'click', tinySparkleClickNotes),
     // 280ms — matches Cuelume's own sparkle's real total span (last note starts at 135ms,
     // decays 120ms, ≈255ms) now that the notes carry their real individual decay times
     // instead of a compressed fixed fraction. Volume kept in family (still the loudest of
@@ -1287,7 +1266,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
-    click: preset(0.24, 0.05, 0.5, 'click', snapClickNotes),
+    click: preset(0.24, 0.048, 0.5, 'click', snapClickNotes),
     // 160ms, up from 100ms — was genuinely the shortest congrats of any family (next
     // shortest was paper-snap at 110ms), not giving the fourth-interval jump room to land.
     congrats: preset(0.3, 0.16, 0.55, 'congrats', snapCongratsNotes),
