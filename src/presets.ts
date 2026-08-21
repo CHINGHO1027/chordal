@@ -165,18 +165,6 @@ const clickNotes: Note[] = [
   { offsetFraction: 0.56, lengthFraction: 0.3, pitchMultiplier: 1.26, volumeMultiplier: 0.5 },
 ];
 
-// error: a genuine compound, matching Cuelume's own recipe structure — "a muted knock
-// followed by two descending tones." Not a single note with a pitch sweep (what we had):
-// a quick knock (their family's own texture layer) establishes the moment, then a root
-// tone, then a second tone a real major third down (0.7937, their exact interval) landing
-// after it — the descent is discrete note-to-note movement, not a continuous glide, which
-// is what actually reads as "two tones," not "one wobbling tone."
-const errorNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.16, pitchMultiplier: 0.9, volumeMultiplier: 0.9, useTexture: true },
-  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.85 },
-  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.7 },
-];
-
 // Mechanical toggle click — down-stroke + a quiet settle, reused by the two "switch-like" families.
 const toggleClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 1 },
@@ -218,10 +206,23 @@ const softBubbleCongratsNotes: Note[] = [
 // error: the shared knock + descending-major-third compound, with a touch of soft-bubble's
 // own tone-scaled give on the root tone — a hint of "deflate" without replacing the
 // discrete two-note descent with a continuous sweep.
+// Same knock+2-tone pattern as snap's exact Cuelume match — dull bandpass knock
+// (~1.9x the root tone, matching their 850/440 ratio), two raw unfiltered tones a real
+// major third apart (0.7937), no shimmer, punchy 1ms/4ms attacks — just at soft-bubble's
+// own 587Hz register instead of copying snap's numbers, plus its own tone-scaled sweep
+// kept on the root tone as a bit of family flavor on top of the shared structure.
 const softBubbleErrorNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.16, pitchMultiplier: 0.9, volumeMultiplier: 0.9, useTexture: true },
-  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.85, sweepTo: 0.92 },
-  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.7 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.16,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 1000, filterQ: 1.1 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useFilter: false, useDelay: false, attack: 0.004, sweepTo: 0.92 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
 // toggle: two soft bubbles, a real minor-third step between them.
@@ -302,6 +303,24 @@ const glassCrystalSubmitNotes: Note[] = [
   },
 ];
 
+// error: same knock+2-tone pattern as snap's exact Cuelume match, at glass-crystal's own
+// 1046Hz register. useFilter:false on the tones sidesteps this family's highpass
+// entirely — no risk of the cutoff eating a low reference-match tone the way an ordinary
+// (filtered) note here would need care about.
+const glassCrystalErrorNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.16,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 1800, filterQ: 1.1 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useFilter: false, useDelay: false, attack: 0.004 },
+];
+
 // --- chime: bespoke per-instance gestures, not the shared templates. Cuelume's own
 // chime is two clean unfiltered sine layers a fifth apart, spaced 90ms with 220-260ms
 // of individual decay each — the "bell" comes from real interval + room to ring, not
@@ -358,6 +377,22 @@ const chimeSubmitNotes: Note[] = [
   },
 ];
 
+// error: same knock+2-tone pattern as snap's exact Cuelume match, at chime's own 940Hz
+// register.
+const chimeErrorNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.16,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 1600, filterQ: 1.1 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useFilter: false, useDelay: false, attack: 0.004 },
+];
+
 // paper-snap: a real jump (not a semitone nudge) — the bandpass center shifts a fifth
 // up on the second tap, audible even without a true pitched fundamental.
 const paperSnapCongratsNotes: Note[] = [
@@ -384,6 +419,18 @@ const paperSnapClickNotes: Note[] = [
 const paperSnapSubmitNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 0.85, attack: 0.03 },
   { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 1, attack: 0.035 },
+];
+
+// error: same 3-part shape and timing as snap's exact Cuelume match, but since this
+// family's whole voice already is noise there's no separate "knock vs. tone" distinction
+// to make — all three notes are the same kind of burst, just at descending bandpass
+// centers (root, then a real major third down, 0.7937 — Cuelume's exact interval). Punchy
+// 1ms/4ms attacks and no shimmer (this family never had a delay field to begin with)
+// carry the rest of the pattern.
+const paperSnapErrorNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.16, pitchMultiplier: 1.2, volumeMultiplier: 1, attack: 0.001 },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.4, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.35, attack: 0.004 },
 ];
 
 // metallic-tact: three evenly-spaced clicks climbing a fourth then a fifth — a mechanical
@@ -419,6 +466,26 @@ const metallicTactSubmitNotes: Note[] = [
   },
 ];
 
+// error: same knock+2-tone pattern as snap's exact Cuelume match, at metallic-tact's own
+// 784Hz register. Unlike the sine families, the tones stay routed through this family's
+// own bandpass rather than useFilter:false — that filter is what makes it read as
+// "metallic" everywhere else in this family (picking out inharmonic content from the
+// square wave's own harmonics), and bypassing it here would flatten the tones into a
+// generic buzz instead of this family's established voice.
+const metallicTactErrorNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.16,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 1350, filterQ: 1.1 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useDelay: false, attack: 0.004 },
+];
+
 // digital-blip: a real upward leap (fifth) with a sweep on the landing note — reads as
 // "confirmed," not a barely-there wobble.
 const digitalBlipCongratsNotes: Note[] = [
@@ -452,6 +519,23 @@ const digitalBlipSubmitNotes: Note[] = [
     useDelay: false,
     attack: 0.03,
   },
+];
+
+// error: same knock+2-tone pattern as snap's exact Cuelume match, at digital-blip's own
+// low 360Hz register. Tones stay filtered (not useFilter:false) for the same reason as
+// metallic-tact — the bandpass is this family's own "digital" character, not incidental.
+const digitalBlipErrorNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.16,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 620, filterQ: 1.1 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useDelay: false, attack: 0.004 },
 ];
 
 // --- spring: bespoke per-instance gestures built around a real physical overshoot —
@@ -490,12 +574,20 @@ const springCongratsNotes: Note[] = [
   { offsetFraction: 0.52, lengthFraction: 0.48, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.08 },
 ];
 
-// error: the shared knock + descending-major-third compound, with spring's own compressed
-// "boing-down" sweep kept on both tones rather than replaced outright.
+// Same knock+2-tone pattern as snap's exact Cuelume match, at spring's own 520Hz register,
+// with its own compressed "boing-down" sweep kept on both tones rather than replaced.
 const springErrorNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.16, pitchMultiplier: 0.9, volumeMultiplier: 0.9, useTexture: true },
-  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.85, sweepTo: 0.85 },
-  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.7, sweepTo: 0.9 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.16,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 900, filterQ: 1.1 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useFilter: false, useDelay: false, attack: 0.004, sweepTo: 0.85 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useFilter: false, useDelay: false, attack: 0.004, sweepTo: 0.9 },
 ];
 
 // toggle: click + a small springy rebound step.
@@ -555,6 +647,23 @@ const tinySparkleSubmitNotes: Note[] = [
     useDelay: false,
     attack: 0.025,
   },
+];
+
+// error: same knock+2-tone pattern as snap's exact Cuelume match, at tiny-sparkle's own
+// 1040Hz register. useFilter:false on the tones sidesteps this family's highpass
+// entirely, same reasoning as glass-crystal.
+const tinySparkleErrorNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.16,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 1800, filterQ: 1.1 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
 // snap: a real fourth-ish jump on the second hit — still snappy, but with somewhere to land.
@@ -788,7 +897,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     hover: preset(0.18, 0.009, 0.55, 'hover', hoverNote),
     click: preset(0.24, 0.024, 0.5, 'click', glassCrystalClickNotes),
     congrats: preset(0.3, 0.22, 0.65, 'congrats', glassCrystalCongratsNotes),
-    error: preset(0.22, 0.13, 0.3, 'error', errorNotes),
+    error: preset(0.22, 0.13, 0.3, 'error', glassCrystalErrorNotes),
     toggle: preset(0.23, 0.024, 0.5, 'toggle', glassCrystalToggleNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', glassCrystalSubmitNotes),
   },
@@ -796,7 +905,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
     click: preset(0.23, 0.015, 0.5, 'click', paperSnapClickNotes),
     congrats: preset(0.3, 0.11, 0.55, 'congrats', paperSnapCongratsNotes),
-    error: preset(0.22, 0.12, 0.3, 'error', errorNotes),
+    error: preset(0.22, 0.12, 0.3, 'error', paperSnapErrorNotes),
     toggle: preset(0.22, 0.014, 0.5, 'toggle', singleNote),
     submit: preset(0.21, 0.16, 0.5, 'submit', paperSnapSubmitNotes),
   },
@@ -804,7 +913,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
     click: preset(0.24, 0.022, 0.45, 'click', metallicTactClickNotes),
     congrats: preset(0.3, 0.14, 0.5, 'congrats', metallicTactCongratsNotes),
-    error: preset(0.22, 0.13, 0.3, 'error', errorNotes),
+    error: preset(0.22, 0.13, 0.3, 'error', metallicTactErrorNotes),
     toggle: preset(0.24, 0.02, 0.45, 'toggle', toggleClickNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', metallicTactSubmitNotes),
   },
@@ -821,7 +930,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // layers (226ms + 266ms decay, second note entering at the 90ms mark) — see
     // chimeCongratsNotes above for the rest of the mapping.
     congrats: preset(0.18, 0.356, 0.55, 'congrats', chimeCongratsNotes),
-    error: preset(0.21, 0.16, 0.28, 'error', errorNotes),
+    error: preset(0.21, 0.16, 0.28, 'error', chimeErrorNotes),
     toggle: preset(0.23, 0.028, 0.5, 'toggle', chimeToggleNotes),
     submit: preset(0.2, 0.2, 0.45, 'submit', chimeSubmitNotes),
   },
@@ -829,7 +938,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
     click: preset(0.23, 0.016, 0.4, 'click', digitalBlipClickNotes),
     congrats: preset(0.3, 0.12, 0.45, 'congrats', digitalBlipCongratsNotes),
-    error: preset(0.22, 0.12, 0.25, 'error', errorNotes),
+    error: preset(0.22, 0.12, 0.25, 'error', digitalBlipErrorNotes),
     toggle: preset(0.22, 0.014, 0.4, 'toggle', toggleClickNotes),
     submit: preset(0.2, 0.16, 0.4, 'submit', digitalBlipSubmitNotes),
   },
@@ -851,7 +960,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // matching Cuelume's sparkle-is-half-as-loud-as-their-chime ratio — that ratio compares
     // two different Cuelume recipes, not analogous to congrats vs. its own family's hover.
     congrats: preset(0.28, 0.28, 0.32, 'congrats', tinySparkleCongratsNotes),
-    error: preset(0.2, 0.11, 0.12, 'error', errorNotes),
+    error: preset(0.2, 0.11, 0.12, 'error', tinySparkleErrorNotes),
     toggle: preset(0.2, 0.022, 0.2, 'toggle', tinySparkleToggleNotes),
     // shortest submit of any family, still well clear of flutter territory (150ms vs
     // click's 6ms release), matching tiny-sparkle's own "quick" identity. tone pinned to
