@@ -163,15 +163,18 @@ const singleNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultipl
 // hover doesn't get one — it's a weightless probe, not a struck object.
 const hoverNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false }];
 
-// press: low, solid, weighted. release: high, brief, crisp. Real minor-third interval
+// Compound press+release: press low, solid, weighted; a real gap; then release high,
+// brief, crisp — press decays out before release fires rather than overlapping it, so the
+// two read as a distinct down-then-up (same shape as paper-snap's exact-match rebuild of
+// Cuelume's own separately-triggered press/release pair). Real minor-third interval
 // between them (not a ~1-semitone token nudge), release deliberately shorter than press
 // (brief, not lingering) rather than the reverse. No pitch sweep on either note — Cuelume's
 // own press/release don't sweep at all (static frequency + filter brightness + decay
 // length do all the work); forcing a glide into a note this short read as an unstable
 // flutter rather than a clean transition.
 const clickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.64, pitchMultiplier: 0.96, volumeMultiplier: 1 },
-  { offsetFraction: 0.56, lengthFraction: 0.3, pitchMultiplier: 1.26, volumeMultiplier: 0.5 },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 0.96, volumeMultiplier: 1 },
+  { offsetFraction: 0.58, lengthFraction: 0.32, pitchMultiplier: 1.26, volumeMultiplier: 0.5 },
 ];
 
 // Mechanical toggle click — down-stroke + a quiet settle, reused by the two "switch-like" families.
@@ -194,14 +197,17 @@ const congratsArpeggio: Note[] = [
 // "gimmick" from resolveNoteParams — a sweepTo glide whose magnitude scales with `tone` —
 // for a genuine squeeze/bloop quality instead of a flat pitch.
 
-// click: a soft squeeze-down + a quieter spring-back lift — the sweep gives it real
-// physical "give" rather than a static click. Release also gets a quiet bright-noise
-// flick layered under its tonal sweep — the actual source of "crisp," per Cuelume's own
-// release recipe, which a sine sweep alone can't produce.
+// click (compound press+release, matching paper-snap's exact-match shape): a real gap
+// between the squeeze-down and the spring-back lift, not a legato overlap — press decays
+// out before release fires, so the two read as one down-then-up motion instead of one
+// blended glide, the same relationship as Cuelume's own separately-triggered press/release
+// pair. Release also gets a quiet bright-noise flick layered under its tonal sweep — the
+// actual source of "crisp," per Cuelume's own release recipe, which a sine sweep alone
+// can't produce.
 const softBubbleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88 },
-  { offsetFraction: 0.54, lengthFraction: 0.32, pitchMultiplier: 1.19, volumeMultiplier: 0.45, sweepTo: 1.12 },
-  { offsetFraction: 0.54, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88 },
+  { offsetFraction: 0.58, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.45, sweepTo: 1.12 },
+  { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: three bubbles blooping upward — root, major third, fifth — each with its own
@@ -293,15 +299,17 @@ const softBubbleNotificationNotes: Note[] = [
 // highpass — real intervals given room so the resonance can actually ring, rather than
 // generic clicks riding on top of the brightness.
 
-// click: press sits at the tap (weighted), release jumps to a brighter fourth (crisp) —
-// and stays the shorter of the two, so the lift reads as brief, not lingering. No pitch
-// sweep — on a note this short a glide read as flutter, not a clean interval jump; the
-// resonant highpass Q made it worse (a swept pitch passing near the filter's own resonant
-// peak rings/wobbles). The static fourth plus the texture flick below carry "crisp" now.
+// click (compound press+release): press sits at the tap (weighted), then a real gap before
+// release jumps to a brighter fourth (crisp) — press decays out before release fires
+// rather than overlapping it, so the two read as a distinct down-then-up rather than one
+// blended glide (same shape as paper-snap's exact-match rebuild). No pitch sweep — on a
+// note this short a glide read as flutter, not a clean interval jump; the resonant highpass
+// Q made it worse (a swept pitch passing near the filter's own resonant peak rings/wobbles).
+// The static fourth plus the texture flick below carry "crisp" now.
 const glassCrystalClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.56, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.48, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.45 },
-  { offsetFraction: 0.48, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.33, volumeMultiplier: 0.45 },
+  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: an ascending "ting-ting-TING" — root, fifth, octave — the biggest interval
@@ -382,14 +390,16 @@ const glassCrystalErrorNotes: Note[] = [
 // from more notes packed tighter. Applied here at chime's own register or without
 // literally copying their numbers.
 
-// click: press sits at the tap (weighted), release jumps a minor third up (crisp) and
-// stays the shorter of the two — echoing how Cuelume's press/release are two separate
-// recipes rather than one sound scaled down. No sweep: Cuelume's own release doesn't glide
-// either, and a forced glide on a ~10ms note read as flutter, not a clean interval jump.
+// click (compound press+release): press sits at the tap (weighted), then a real gap
+// before release jumps a minor third up (crisp) — press decays out before release fires
+// instead of overlapping it, echoing how Cuelume's press/release are two separately-
+// triggered recipes rather than one sound scaled down (same shape as paper-snap's
+// exact-match rebuild). No sweep: Cuelume's own release doesn't glide either, and a
+// forced glide on a note this short read as flutter, not a clean interval jump.
 const chimeClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.58, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.5, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.5, lengthFraction: 0.34, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5 },
+  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
@@ -590,13 +600,17 @@ const metallicTactCongratsNotes: Note[] = [
   { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 0.26, useTexture: true },
 ];
 
-// metallic-tact click: press sits low (mechanical), release pings up a real interval
-// with a bright metallic-sheen texture flick for the crispness. No sweep — a glide
-// squeezed into a ~7ms note read as flutter rather than a clean ping.
+// metallic-tact click (compound press+release): press sits low (mechanical, "the key
+// bottoming out"), a real gap, then release pings up a real interval ("the key returning")
+// with a bright metallic-sheen texture flick for the crispness — press decays out before
+// release fires rather than overlapping it, the clearest fit of any family for this shape
+// given the family's own mechanical-tactile identity (same as paper-snap's exact-match
+// rebuild of Cuelume's separately-triggered press/release pair). No sweep — a glide
+// squeezed this short read as flutter rather than a clean ping.
 const metallicTactClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 0.96, volumeMultiplier: 1 },
-  { offsetFraction: 0.54, lengthFraction: 0.3, pitchMultiplier: 1.28, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.54, lengthFraction: 0.22, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1 },
+  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.28, volumeMultiplier: 0.5 },
+  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // submit: same loading-recipe structure, at metallic-tact's own register — the square
@@ -681,7 +695,7 @@ const digitalBlipClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.32, useTexture: true },
   // extra flick right on the release, on top of the grit note above — reinforces the
   // upward snap's crispness specifically, rather than texture spread evenly across both.
-  { offsetFraction: 0.56, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true },
+  { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true },
 ];
 
 // submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
@@ -735,12 +749,15 @@ const digitalBlipErrorNotes: Note[] = [
 // compress, then rebound past rest before settling — using sweepTo for the rebound rather
 // than a flat second pitch.
 
-// click: compress down, then rebound overshoots upward before it would settle — a genuine
-// spring release, not a static two-note click.
+// click: compress down, a beat for the compression to fully settle, then rebound
+// overshoots upward — a genuine spring release, not a static two-note click. Widened the
+// gap between compress and rebound (same "let press decay out before release fires"
+// principle behind every other family's compound click this pass) so the settle reads as
+// a real pause rather than one continuous glide.
 const springClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.44, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82 },
-  { offsetFraction: 0.38, lengthFraction: 0.4, pitchMultiplier: 0.94, volumeMultiplier: 0.55, sweepTo: 1.28 },
-  { offsetFraction: 0.38, lengthFraction: 0.25, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82 },
+  { offsetFraction: 0.5, lengthFraction: 0.42, pitchMultiplier: 0.94, volumeMultiplier: 0.55, sweepTo: 1.28 },
+  { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // submit: the loading-recipe structure (slow-attack tone + soft breath), but with a small
@@ -811,14 +828,16 @@ const springToggleNotes: Note[] = [
 // --- tiny-sparkle: bespoke per-instance gestures — quick, bright, and light, distinct
 // from every other family's timing by being genuinely fast rather than just quiet.
 
-// click: a very light two-part twinkle — press sits at the root, release leaps a real
-// fifth up and stays the shorter of the two notes. No sweep: at ~6ms this note is the
-// shortest of any family's release, nowhere near long enough for a glide to read as
-// anything but flutter — the fifth interval alone already carries plenty of "up."
+// click (compound press+release): a very light two-part twinkle — press sits at the root,
+// a brief gap, then release leaps a real fifth up and stays the shorter of the two notes —
+// press decays out before release fires rather than overlapping it, same shape as every
+// other family's compound click this pass, just kept the tightest of all of them to match
+// this family's genuinely-fast identity. No sweep: nowhere near long enough for a glide to
+// read as anything but flutter — the fifth interval alone already carries plenty of "up."
 const tinySparkleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.46, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.4, lengthFraction: 0.3, pitchMultiplier: 1.5, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.4, lengthFraction: 0.22, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.5, volumeMultiplier: 0.5 },
+  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: tuned toward Cuelume's own sparkle recipe — root/third/fifth/octave was
@@ -908,13 +927,15 @@ const snapCongratsNotes: Note[] = [
   { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
 
-// snap click: press sits low (weighted), release snaps up a real fourth with a bright
-// texture flick for the crispness. No sweep — at ~4.5ms this is close to tiny-sparkle's
-// release for shortness; a glide had no room to read as anything but flutter.
+// snap click (compound press+release): press sits low (weighted), a real gap, then
+// release snaps up a real fourth with a bright texture flick for the crispness — press
+// decays out before release fires rather than overlapping it, same shape as paper-snap's
+// exact-match rebuild of Cuelume's own separately-triggered press/release pair. No sweep —
+// a glide had no room to read as anything but flutter.
 const snapClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 0.96, volumeMultiplier: 1 },
-  { offsetFraction: 0.52, lengthFraction: 0.28, pitchMultiplier: 1.3, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.52, lengthFraction: 0.2, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1 },
+  { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.3, volumeMultiplier: 0.5 },
+  { offsetFraction: 0.58, lengthFraction: 0.26, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // submit: same loading-recipe structure, at snap's own triangle-wave register.
@@ -1131,7 +1152,7 @@ function preset(volume: number, length: number, tone: number, instance: SoundIns
 export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>> = {
   'soft-bubble': {
     hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
-    click: preset(0.24, 0.028, 0.42, 'click', softBubbleClickNotes),
+    click: preset(0.24, 0.055, 0.42, 'click', softBubbleClickNotes),
     // 220ms, up from 160ms — 3 real-interval notes need more room than the old flat
     // arpeggio timing gave them.
     congrats: preset(0.3, 0.22, 0.5, 'congrats', softBubbleCongratsNotes),
@@ -1146,7 +1167,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'glass-crystal': {
     hover: preset(0.18, 0.009, 0.55, 'hover', hoverNote),
-    click: preset(0.24, 0.024, 0.5, 'click', glassCrystalClickNotes),
+    click: preset(0.24, 0.045, 0.5, 'click', glassCrystalClickNotes),
     congrats: preset(0.3, 0.22, 0.65, 'congrats', glassCrystalCongratsNotes),
     error: preset(0.22, 0.195, 0.3, 'error', glassCrystalErrorNotes),
     toggle: preset(0.23, 0.024, 0.5, 'toggle', glassCrystalToggleNotes),
@@ -1166,7 +1187,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'metallic-tact': {
     hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
-    click: preset(0.24, 0.022, 0.45, 'click', metallicTactClickNotes),
+    click: preset(0.24, 0.06, 0.45, 'click', metallicTactClickNotes),
     // 220ms, up from 140ms — matches the broader congrats pack.
     congrats: preset(0.3, 0.22, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.22, 0.17, 0.3, 'error', metallicTactErrorNotes),
@@ -1181,7 +1202,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // above threshold, so the limiter was squashing almost every chime hit — that
     // gain-reduction pumping is what read as "heavy" next to their untouched transients.
     hover: preset(0.18, 0.012, 0.5, 'hover', hoverNote),
-    click: preset(0.23, 0.03, 0.5, 'click', chimeClickNotes),
+    click: preset(0.23, 0.06, 0.5, 'click', chimeClickNotes),
     // 0.18 volume + 356ms length: solved to land at the exact same final amplitude
     // (~0.18/0.16 post-limiter-headroom) and total decay time as Cuelume's own two chime
     // layers (226ms + 266ms decay, second note entering at the 90ms mark) — see
@@ -1194,7 +1215,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'digital-blip': {
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
-    click: preset(0.23, 0.016, 0.4, 'click', digitalBlipClickNotes),
+    click: preset(0.23, 0.035, 0.4, 'click', digitalBlipClickNotes),
     // 220ms, up from 120ms — matches the broader congrats pack now that this is a real
     // 3-note ascending run instead of a 2-note jump.
     congrats: preset(0.3, 0.22, 0.45, 'congrats', digitalBlipCongratsNotes),
@@ -1205,7 +1226,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   spring: {
     hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
-    click: preset(0.24, 0.03, 0.42, 'click', springClickNotes),
+    click: preset(0.24, 0.05, 0.42, 'click', springClickNotes),
     congrats: preset(0.3, 0.22, 0.48, 'congrats', springCongratsNotes),
     error: preset(0.22, 0.14, 0.28, 'error', springErrorNotes),
     toggle: preset(0.23, 0.027, 0.42, 'toggle', springToggleNotes),
@@ -1215,7 +1236,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'tiny-sparkle': {
     hover: preset(0.15, 0.008, 0.2, 'hover', hoverNote),
-    click: preset(0.22, 0.02, 0.2, 'click', tinySparkleClickNotes),
+    click: preset(0.22, 0.032, 0.2, 'click', tinySparkleClickNotes),
     // 280ms — matches Cuelume's own sparkle's real total span (last note starts at 135ms,
     // decays 120ms, ≈255ms) now that the notes carry their real individual decay times
     // instead of a compressed fixed fraction. Volume kept in family (still the loudest of
@@ -1233,7 +1254,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
-    click: preset(0.24, 0.016, 0.5, 'click', snapClickNotes),
+    click: preset(0.24, 0.05, 0.5, 'click', snapClickNotes),
     // 160ms, up from 100ms — was genuinely the shortest congrats of any family (next
     // shortest was paper-snap at 110ms), not giving the fourth-interval jump room to land.
     congrats: preset(0.3, 0.16, 0.55, 'congrats', snapCongratsNotes),
