@@ -47,19 +47,20 @@ const STYLES = `
     --border-width: 0.8px;
     --font-body: Mulish, system-ui, sans-serif;
 
-    /* type tokens — three sizes, weight tops out at 500 and only pane titles use it */
+    /* type tokens — three sizes; weight never exceeds regular (400). Body copy runs
+       light (300), regular is reserved for pane headings only. */
     --text-heading: 0.8125rem;
     --text-body: 0.75rem;
     --text-small: 0.6875rem;
+    --weight-light: 300;
     --weight-regular: 400;
-    --weight-medium: 500;
 
     display: block;
     max-width: 60rem;
     margin: 0 auto;
     color: var(--text-primary);
     font-family: var(--font-body);
-    font-weight: var(--weight-regular);
+    font-weight: var(--weight-light);
     font-size: var(--text-body);
     line-height: 1.5;
     box-sizing: border-box;
@@ -82,14 +83,14 @@ const STYLES = `
   .pane-head {
     font-family: var(--font-body);
     font-size: var(--text-heading);
-    font-weight: var(--weight-medium);
+    font-weight: var(--weight-regular);
     color: var(--text-primary);
     margin-bottom: 0.75rem;
   }
   .family-list { display: flex; flex-direction: column; gap: 0.3rem; }
   .family-btn {
     display: flex; align-items: center; gap: 0.55rem;
-    font-family: var(--font-body); font-size: var(--text-body); font-weight: var(--weight-regular);
+    font-family: var(--font-body); font-size: var(--text-body); font-weight: var(--weight-light);
     text-align: left; border: none; background: none; cursor: pointer;
     padding: 0.4rem 0.5rem; border-radius: var(--radius-sm);
     color: var(--text-secondary);
@@ -102,7 +103,7 @@ const STYLES = `
   canvas { display: block; width: 100%; height: 9rem; }
   .status {
     position: absolute; top: 0.6rem; right: 0.75rem;
-    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-regular);
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light);
     color: var(--text-secondary); font-variant-numeric: tabular-nums;
   }
 
@@ -126,7 +127,7 @@ const STYLES = `
   .switch input:focus-visible ~ .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .test-btn {
-    font-family: var(--font-body); font-weight: var(--weight-regular); font-size: var(--text-small);
+    font-family: var(--font-body); font-weight: var(--weight-light); font-size: var(--text-small);
     border: var(--border-width) solid var(--border); background: var(--surface);
     color: var(--text-primary); border-radius: 999px;
     padding: 0.5rem 0.85rem; cursor: pointer;
@@ -160,11 +161,11 @@ const STYLES = `
   }
   .slider-row .label {
     position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
-    font-size: var(--text-small); font-weight: var(--weight-regular); color: var(--text-secondary); pointer-events: none;
+    font-size: var(--text-small); font-weight: var(--weight-light); color: var(--text-secondary); pointer-events: none;
   }
   .slider-row .val {
     position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
-    font-family: 'Roboto Mono', monospace; font-size: var(--text-small); font-weight: var(--weight-medium);
+    font-family: 'Roboto Mono', monospace; font-size: var(--text-small); font-weight: var(--weight-light);
     color: var(--text-primary); font-variant-numeric: tabular-nums; pointer-events: none;
   }
   .slider-row input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
@@ -172,7 +173,7 @@ const STYLES = `
 
   .mute-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
   .mute-row button {
-    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-regular);
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light);
     border: var(--border-width) solid var(--border); background: var(--surface);
     border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
   }
@@ -180,7 +181,7 @@ const STYLES = `
   .code-export {
     margin-top: 1.25rem; background: var(--page-bg); border: var(--border-width) solid var(--border);
     border-radius: var(--radius-md); padding: 0.85rem;
-    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-regular); color: var(--text-primary);
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light); color: var(--text-primary);
     white-space: pre; overflow-x: auto;
   }
 `;
