@@ -169,13 +169,6 @@ const errorNotes: Note[] = [
   { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.7 },
 ];
 
-// submit: a single voice lifting through a real fifth (1 -> 1.5x) over a note long enough
-// (150-220ms across families) for the glide to read as a deliberate "it's on its way," not
-// the flutter a much shorter sweep produced on click's release. Modeled on Cuelume's own
-// "loading" recipe — "a brief unresolved lift... user-initiated work has started" — which
-// is exactly this: no percussive knock, one voice rising a fifth over ~180ms, nothing else.
-const submitNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5 }];
-
 // Mechanical toggle click — down-stroke + a quiet settle, reused by the two "switch-like" families.
 const toggleClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 1 },
@@ -282,6 +275,25 @@ const glassCrystalToggleNotes: Note[] = [
   { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 0.78, volumeMultiplier: 0.7 },
 ];
 
+// submit: same loading-recipe structure as soft-bubble's exact match (slow-attack tone
+// glide + soft lowpass breath, no shimmer on the breath), tuned to glass-crystal's own
+// register and filter safety instead of copying soft-bubble's numbers. pitchMultiplier
+// 0.8 keeps the tone comfortably above this family's highpass cutoff at submit's own tone
+// value (0.45 -> ~702Hz cutoff; 0.8x = ~837Hz start, clear margin) — the same safety
+// margin every other glass-crystal instance already respects.
+const glassCrystalSubmitNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.8, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.85,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.65,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1900, filterQ: 1 },
+    useDelay: false,
+    attack: 0.03,
+  },
+];
+
 // --- chime: bespoke per-instance gestures, not the shared templates. Cuelume's own
 // chime is two clean unfiltered sine layers a fifth apart, spaced 90ms with 220-260ms
 // of individual decay each — the "bell" comes from real interval + room to ring, not
@@ -323,6 +335,21 @@ const chimeToggleNotes: Note[] = [
   { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 0.82, volumeMultiplier: 0.75 },
 ];
 
+// submit: same loading-recipe structure, at chime's own transparent-filter register
+// (940Hz, no highpass-safety concern the way glass-crystal/tiny-sparkle have).
+const chimeSubmitNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.85,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.65,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1500, filterQ: 1 },
+    useDelay: false,
+    attack: 0.032,
+  },
+];
+
 // paper-snap: a real jump (not a semitone nudge) — the bandpass center shifts a fifth
 // up on the second tap, audible even without a true pitched fundamental.
 const paperSnapCongratsNotes: Note[] = [
@@ -344,9 +371,11 @@ const paperSnapClickNotes: Note[] = [
 // paper-snap submit: sweepTo is ignored for noise (the engine never sweeps a bandpass
 // center), so "lifting" here is a discrete two-step bandpass rise (root -> a real fifth)
 // instead of a continuous glide — the same substitution already used for its congrats/click.
+// Doesn't need a separate breath layer (this family's whole voice already is noise); the
+// slow attack on both steps is what borrows the loading-recipe "swell" quality instead.
 const paperSnapSubmitNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 0.85 },
-  { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 0.85, attack: 0.03 },
+  { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 1, attack: 0.035 },
 ];
 
 // metallic-tact: three evenly-spaced clicks climbing a fourth then a fifth — a mechanical
@@ -364,6 +393,22 @@ const metallicTactClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 0.96, volumeMultiplier: 1 },
   { offsetFraction: 0.54, lengthFraction: 0.3, pitchMultiplier: 1.28, volumeMultiplier: 0.5 },
   { offsetFraction: 0.54, lengthFraction: 0.22, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+];
+
+// submit: same loading-recipe structure, at metallic-tact's own register — the square
+// wave's odd-harmonic content still carries through its narrow bandpass same as every
+// other instance in this family.
+const metallicTactSubmitNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.85,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.65,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1600, filterQ: 1 },
+    useDelay: false,
+    attack: 0.03,
+  },
 ];
 
 // digital-blip: a real upward leap (fifth) with a sweep on the landing note — reads as
@@ -385,6 +430,22 @@ const digitalBlipClickNotes: Note[] = [
   { offsetFraction: 0.56, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true },
 ];
 
+// submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
+// breath's cutoff is pulled down to match rather than reusing a register tuned for a
+// family sitting an octave-plus higher.
+const digitalBlipSubmitNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.85,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.65,
+    useTexture: { filterType: 'lowpass', filterCutoff: 900, filterQ: 1 },
+    useDelay: false,
+    attack: 0.03,
+  },
+];
+
 // --- spring: bespoke per-instance gestures built around a real physical overshoot —
 // compress, then rebound past rest before settling — using sweepTo for the rebound rather
 // than a flat second pitch.
@@ -397,10 +458,21 @@ const springClickNotes: Note[] = [
   { offsetFraction: 0.38, lengthFraction: 0.25, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
-// submit: the same fifth-lift idea as every other family, but with a small overshoot past
-// the fifth before it would settle — spring's own physical signature applied to "lifting
-// off" rather than a plain, unadorned glide.
-const springSubmitNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.58 }];
+// submit: the loading-recipe structure (slow-attack tone + soft breath), but with a small
+// overshoot past the fifth before it would settle — spring's own physical signature kept
+// on top of the shared structure rather than a plain, unadorned glide.
+const springSubmitNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.58, attack: 0.025 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.85,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.65,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1100, filterQ: 1 },
+    useDelay: false,
+    attack: 0.032,
+  },
+];
 
 // congrats: a bouncy ascending run (root, fourth, fifth) where the final note overshoots
 // upward before relaxing — the spring settling past its target, not a clean landing.
@@ -459,6 +531,24 @@ const tinySparkleToggleNotes: Note[] = [
   { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.79, volumeMultiplier: 0.6 },
 ];
 
+// submit: same loading-recipe structure, quickest attacks of any family (still well clear
+// of flutter territory, matching this family's own established "fast" identity). Preset
+// tone is pinned low (0.1) rather than this family's usual mid-range — its highpass cutoff
+// climbs to 2240Hz at tone=1, and pitchMultiplier 1.15 only clears the cutoff at this low
+// tone value; going any higher risked the same silence bug glass-crystal's highpass had.
+const tinySparkleSubmitNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1.15, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.02 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.85,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.65,
+    useTexture: { filterType: 'lowpass', filterCutoff: 2200, filterQ: 1 },
+    useDelay: false,
+    attack: 0.025,
+  },
+];
+
 // snap: a real fourth-ish jump on the second hit — still snappy, but with somewhere to land.
 const snapCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.8 },
@@ -472,6 +562,20 @@ const snapClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 0.96, volumeMultiplier: 1 },
   { offsetFraction: 0.52, lengthFraction: 0.28, pitchMultiplier: 1.3, volumeMultiplier: 0.5 },
   { offsetFraction: 0.52, lengthFraction: 0.2, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+];
+
+// submit: same loading-recipe structure, at snap's own triangle-wave register.
+const snapSubmitNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.85,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.65,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1400, filterQ: 1 },
+    useDelay: false,
+    attack: 0.03,
+  },
 ];
 
 export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
@@ -601,7 +705,7 @@ const INSTANCE_PITCH: Record<SoundInstance, number> = {
   congrats: 1.05,
   error: 0.91,
   toggle: 1.0,
-  // Neutral start — the fifth-glide itself (see submitNote) carries it upward regardless.
+  // Neutral start — the fifth-glide each family's own submit notes carry it upward regardless.
   submit: 1.0,
 };
 
@@ -637,7 +741,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     congrats: preset(0.3, 0.22, 0.65, 'congrats', glassCrystalCongratsNotes),
     error: preset(0.22, 0.13, 0.3, 'error', errorNotes),
     toggle: preset(0.23, 0.024, 0.5, 'toggle', glassCrystalToggleNotes),
-    submit: preset(0.22, 0.18, 0.45, 'submit', submitNote),
+    submit: preset(0.22, 0.18, 0.45, 'submit', glassCrystalSubmitNotes),
   },
   'paper-snap': {
     hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
@@ -653,7 +757,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     congrats: preset(0.3, 0.14, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.22, 0.13, 0.3, 'error', errorNotes),
     toggle: preset(0.24, 0.02, 0.45, 'toggle', toggleClickNotes),
-    submit: preset(0.22, 0.18, 0.45, 'submit', submitNote),
+    submit: preset(0.22, 0.18, 0.45, 'submit', metallicTactSubmitNotes),
   },
   chime: {
     // Volumes pulled well below the shared limiter's -8dB (~0.4) threshold — Cuelume's
@@ -670,7 +774,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     congrats: preset(0.18, 0.356, 0.55, 'congrats', chimeCongratsNotes),
     error: preset(0.21, 0.16, 0.28, 'error', errorNotes),
     toggle: preset(0.23, 0.028, 0.5, 'toggle', chimeToggleNotes),
-    submit: preset(0.2, 0.2, 0.45, 'submit', submitNote),
+    submit: preset(0.2, 0.2, 0.45, 'submit', chimeSubmitNotes),
   },
   'digital-blip': {
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
@@ -678,7 +782,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     congrats: preset(0.3, 0.12, 0.45, 'congrats', digitalBlipCongratsNotes),
     error: preset(0.22, 0.12, 0.25, 'error', errorNotes),
     toggle: preset(0.22, 0.014, 0.4, 'toggle', toggleClickNotes),
-    submit: preset(0.2, 0.16, 0.4, 'submit', submitNote),
+    submit: preset(0.2, 0.16, 0.4, 'submit', digitalBlipSubmitNotes),
   },
   spring: {
     hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
@@ -701,8 +805,9 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.2, 0.11, 0.12, 'error', errorNotes),
     toggle: preset(0.2, 0.022, 0.2, 'toggle', tinySparkleToggleNotes),
     // shortest submit of any family, still well clear of flutter territory (150ms vs
-    // click's 6ms release), matching tiny-sparkle's own "quick" identity.
-    submit: preset(0.19, 0.15, 0.4, 'submit', submitNote),
+    // click's 6ms release), matching tiny-sparkle's own "quick" identity. tone pinned to
+    // 0.1 — see tinySparkleSubmitNotes for why (highpass-cutoff safety).
+    submit: preset(0.19, 0.15, 0.1, 'submit', tinySparkleSubmitNotes),
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
@@ -710,7 +815,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     congrats: preset(0.3, 0.1, 0.55, 'congrats', snapCongratsNotes),
     error: preset(0.22, 0.12, 0.32, 'error', errorNotes),
     toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
-    submit: preset(0.21, 0.17, 0.45, 'submit', submitNote),
+    submit: preset(0.21, 0.17, 0.45, 'submit', snapSubmitNotes),
   },
 };
 
