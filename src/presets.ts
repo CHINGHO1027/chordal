@@ -135,11 +135,13 @@ const singleNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultipl
 // hover doesn't get one — it's a weightless probe, not a struck object.
 const hoverNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false }];
 
-// Down-stroke + a real minor-third release lift — a physical couplet with a genuine
-// interval on the "spring pushing back" note, not a ~1-semitone token nudge.
+// press: low, solid, weighted — sweeps down into the hit. release: high, brief, crisp —
+// sweeps up on landing. Real minor-third interval between them (not a ~1-semitone token
+// nudge), release deliberately shorter than press (brief, not lingering) rather than the
+// reverse.
 const clickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.19, volumeMultiplier: 0.4 },
+  { offsetFraction: 0, lengthFraction: 0.64, pitchMultiplier: 0.96, volumeMultiplier: 1, sweepTo: 0.82 },
+  { offsetFraction: 0.56, lengthFraction: 0.3, pitchMultiplier: 1.26, volumeMultiplier: 0.5, sweepTo: 1.15 },
 ];
 
 // A muted, barely-descending click — a "blocked" signal, not a dramatic downward scoop.
@@ -168,8 +170,8 @@ const congratsArpeggio: Note[] = [
 // click: a soft squeeze-down + a quieter spring-back lift — the sweep gives it real
 // physical "give" rather than a static click.
 const softBubbleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.92 },
-  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.12, volumeMultiplier: 0.4 },
+  { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88 },
+  { offsetFraction: 0.54, lengthFraction: 0.32, pitchMultiplier: 1.19, volumeMultiplier: 0.45, sweepTo: 1.12 },
 ];
 
 // congrats: three bubbles blooping upward — root, major third, fifth — each with its own
@@ -196,10 +198,12 @@ const softBubbleToggleNotes: Note[] = [
 // highpass — real intervals given room so the resonance can actually ring, rather than
 // generic clicks riding on top of the brightness.
 
-// click: a sharp glassy tap + a brighter fourth-up release ring.
+// click: press dips down into the tap (weighted), release sweeps up into a brighter
+// fourth (crisp) — and stays the shorter of the two, so the lift reads as brief, not
+// lingering.
 const glassCrystalClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 1.33, volumeMultiplier: 0.4 },
+  { offsetFraction: 0, lengthFraction: 0.56, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.85 },
+  { offsetFraction: 0.48, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.45, sweepTo: 1.15 },
 ];
 
 // congrats: an ascending "ting-ting-TING" — root, fifth, octave — the biggest interval
@@ -228,12 +232,13 @@ const glassCrystalToggleNotes: Note[] = [
 // from more notes packed tighter. Applied here at chime's own register or without
 // literally copying their numbers.
 
-// click: down-stroke + a real-interval release lift (a minor third, not a token nudge) —
-// two distinct textures for the couplet, echoing how Cuelume's press/release are two
-// separate recipes rather than one sound scaled down.
+// click: press sweeps down (weighted) into the tap, release sweeps up a minor third
+// (crisp) and stays the shorter of the two — echoing how Cuelume's press/release are two
+// separate recipes rather than one sound scaled down, now with the down/up motion the
+// static-pitch version was missing.
 const chimeClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 1.19, volumeMultiplier: 0.55 },
+  { offsetFraction: 0, lengthFraction: 0.58, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88 },
+  { offsetFraction: 0.5, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5, sweepTo: 1.12 },
 ];
 
 // congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
@@ -306,8 +311,8 @@ const digitalBlipClickNotes: Note[] = [
 // click: compress down, then rebound overshoots upward before it would settle — a genuine
 // spring release, not a static two-note click.
 const springClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82 },
-  { offsetFraction: 0.36, lengthFraction: 0.64, pitchMultiplier: 0.88, volumeMultiplier: 0.55, sweepTo: 1.15 },
+  { offsetFraction: 0, lengthFraction: 0.44, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82 },
+  { offsetFraction: 0.38, lengthFraction: 0.4, pitchMultiplier: 0.94, volumeMultiplier: 0.55, sweepTo: 1.28 },
 ];
 
 // congrats: a bouncy ascending run (root, fourth, fifth) where the final note overshoots
@@ -333,10 +338,12 @@ const springToggleNotes: Note[] = [
 // --- tiny-sparkle: bespoke per-instance gestures — quick, bright, and light, distinct
 // from every other family's timing by being genuinely fast rather than just quiet.
 
-// click: a very light two-part twinkle, a real fifth up on the (quiet) second note.
+// click: a very light two-part twinkle — press dips slightly (still weighted, just a
+// featherweight version of it), release leaps a real fifth up and stays the shorter of
+// the two notes.
 const tinySparkleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.45, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 0.5 },
+  { offsetFraction: 0, lengthFraction: 0.46, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.92 },
+  { offsetFraction: 0.4, lengthFraction: 0.3, pitchMultiplier: 1.5, volumeMultiplier: 0.5, sweepTo: 1.15 },
 ];
 
 // congrats: tuned toward Cuelume's own sparkle recipe — root/third/fifth/octave was
