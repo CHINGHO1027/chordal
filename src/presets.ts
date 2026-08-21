@@ -220,12 +220,15 @@ const softBubbleCongratsNotes: Note[] = [
 // like a jammed latch) instead of one; (3) the descending pair still lands after both taps,
 // so the "obstruction" reads before the "refusal." A touch of soft-bubble's tone-scaled
 // give kept on the root tone as family flavor.
+// Knock rebalanced quieter than the tones (was the loudest element at 1.0/0.7) — it's a
+// decorative/textural accent establishing the "jam" before the real signal, not the
+// signal itself; the descending tritone pair should be what actually reads as "error."
 const softBubbleErrorNotes: Note[] = [
   {
     offsetFraction: 0,
     lengthFraction: 0.075,
     pitchMultiplier: 1,
-    volumeMultiplier: 1,
+    volumeMultiplier: 0.55,
     useTexture: { filterType: 'bandpass', filterCutoff: 1000, filterQ: 1.1 },
     useDelay: false,
     attack: 0.001,
@@ -234,13 +237,13 @@ const softBubbleErrorNotes: Note[] = [
     offsetFraction: 0.2,
     lengthFraction: 0.075,
     pitchMultiplier: 1,
-    volumeMultiplier: 0.7,
+    volumeMultiplier: 0.38,
     useTexture: { filterType: 'bandpass', filterCutoff: 1000, filterQ: 1.1 },
     useDelay: false,
     attack: 0.001,
   },
-  { offsetFraction: 0.35, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.4, useFilter: false, useDelay: false, attack: 0.004, sweepTo: 0.92 },
-  { offsetFraction: 0.65, lengthFraction: 0.35, pitchMultiplier: 0.7071, volumeMultiplier: 0.42, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.35, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.55, useFilter: false, useDelay: false, attack: 0.004, sweepTo: 0.92 },
+  { offsetFraction: 0.65, lengthFraction: 0.35, pitchMultiplier: 0.7071, volumeMultiplier: 0.58, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
 // toggle: two soft bubbles, a real minor-third step between them.
@@ -327,12 +330,13 @@ const glassCrystalSubmitNotes: Note[] = [
 // jammed mechanism) ahead of the tones, and the descent widened to a real dissonant
 // tritone (0.7071) instead of a consonant major third. useFilter:false on the tones still
 // sidesteps this family's highpass entirely.
+// Knock rebalanced quieter than the tones — decorative accent, not the signal itself.
 const glassCrystalErrorNotes: Note[] = [
   {
     offsetFraction: 0,
     lengthFraction: 0.075,
     pitchMultiplier: 1,
-    volumeMultiplier: 1,
+    volumeMultiplier: 0.55,
     useTexture: { filterType: 'bandpass', filterCutoff: 1800, filterQ: 1.1 },
     useDelay: false,
     attack: 0.001,
@@ -341,13 +345,13 @@ const glassCrystalErrorNotes: Note[] = [
     offsetFraction: 0.2,
     lengthFraction: 0.075,
     pitchMultiplier: 1,
-    volumeMultiplier: 0.7,
+    volumeMultiplier: 0.38,
     useTexture: { filterType: 'bandpass', filterCutoff: 1800, filterQ: 1.1 },
     useDelay: false,
     attack: 0.001,
   },
-  { offsetFraction: 0.35, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.4, useFilter: false, useDelay: false, attack: 0.004 },
-  { offsetFraction: 0.65, lengthFraction: 0.35, pitchMultiplier: 0.7071, volumeMultiplier: 0.42, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.35, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.55, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.65, lengthFraction: 0.35, pitchMultiplier: 0.7071, volumeMultiplier: 0.58, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
 // --- chime: bespoke per-instance gestures, not the shared templates. Cuelume's own
@@ -461,14 +465,15 @@ const paperSnapSubmitNotes: Note[] = [
 // for an actual tone rather than reusing this family's noise-bandpass-tuned 3200Hz base,
 // which would read as unusually shrill for a pitch. The two knocks stay pure noise — this
 // family's own percussive character, contrasting against the now-clean tonal descent.
+// Knock rebalanced quieter than the tones — decorative accent, not the signal itself.
 const paperSnapErrorNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.075, pitchMultiplier: 1.3, volumeMultiplier: 1, attack: 0.001 },
-  { offsetFraction: 0.2, lengthFraction: 0.075, pitchMultiplier: 1.3, volumeMultiplier: 0.7, attack: 0.001 },
+  { offsetFraction: 0, lengthFraction: 0.075, pitchMultiplier: 1.3, volumeMultiplier: 0.55, attack: 0.001 },
+  { offsetFraction: 0.2, lengthFraction: 0.075, pitchMultiplier: 1.3, volumeMultiplier: 0.38, attack: 0.001 },
   {
     offsetFraction: 0.35,
     lengthFraction: 0.3,
     pitchMultiplier: 0.3,
-    volumeMultiplier: 0.4,
+    volumeMultiplier: 0.55,
     waveformOverride: 'sine',
     useFilter: false,
     attack: 0.004,
@@ -477,7 +482,7 @@ const paperSnapErrorNotes: Note[] = [
     offsetFraction: 0.65,
     lengthFraction: 0.35,
     pitchMultiplier: 0.2121,
-    volumeMultiplier: 0.42,
+    volumeMultiplier: 0.58,
     waveformOverride: 'sine',
     useFilter: false,
     attack: 0.004,
@@ -709,12 +714,13 @@ const tinySparkleSubmitNotes: Note[] = [
 // genuine double-tap knock (two muted pulses ~34ms apart) and the descent widened to a
 // real dissonant tritone (0.7071). useFilter:false on the tones still sidesteps this
 // family's highpass entirely.
+// Knock rebalanced quieter than the tones — decorative accent, not the signal itself.
 const tinySparkleErrorNotes: Note[] = [
   {
     offsetFraction: 0,
     lengthFraction: 0.075,
     pitchMultiplier: 1,
-    volumeMultiplier: 1,
+    volumeMultiplier: 0.55,
     useTexture: { filterType: 'bandpass', filterCutoff: 1800, filterQ: 1.1 },
     useDelay: false,
     attack: 0.001,
@@ -723,13 +729,13 @@ const tinySparkleErrorNotes: Note[] = [
     offsetFraction: 0.19,
     lengthFraction: 0.075,
     pitchMultiplier: 1,
-    volumeMultiplier: 0.7,
+    volumeMultiplier: 0.38,
     useTexture: { filterType: 'bandpass', filterCutoff: 1800, filterQ: 1.1 },
     useDelay: false,
     attack: 0.001,
   },
-  { offsetFraction: 0.34, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.45, useFilter: false, useDelay: false, attack: 0.004 },
-  { offsetFraction: 0.64, lengthFraction: 0.36, pitchMultiplier: 0.7071, volumeMultiplier: 0.47, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.34, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.6, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.64, lengthFraction: 0.36, pitchMultiplier: 0.7071, volumeMultiplier: 0.63, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
 // snap: a real fourth-ish jump on the second hit — still snappy, but with somewhere to land.
@@ -1036,7 +1042,9 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
     click: preset(0.24, 0.016, 0.5, 'click', snapClickNotes),
-    congrats: preset(0.3, 0.1, 0.55, 'congrats', snapCongratsNotes),
+    // 160ms, up from 100ms — was genuinely the shortest congrats of any family (next
+    // shortest was paper-snap at 110ms), not giving the fourth-interval jump room to land.
+    congrats: preset(0.3, 0.16, 0.55, 'congrats', snapCongratsNotes),
     // 244ms and 0.2184 volume: exact reference match — see snapErrorNotes. tone is unused
     // (neither tone note reads the interpolated filter now), kept at a neutral value.
     error: preset(0.2184, 0.244, 0.3, 'error', snapErrorNotes),
