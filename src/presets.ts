@@ -23,7 +23,7 @@ export type SoundFamily =
   | 'tiny-sparkle'
   | 'snap';
 
-export type SoundInstance = 'hover' | 'click' | 'congrats' | 'error' | 'toggle' | 'submit';
+export type SoundInstance = 'hover' | 'click' | 'congrats' | 'error' | 'toggle' | 'submit' | 'notification';
 
 export const SOUND_FAMILIES: SoundFamily[] = [
   'soft-bubble',
@@ -37,7 +37,7 @@ export const SOUND_FAMILIES: SoundFamily[] = [
   'snap',
 ];
 
-export const SOUND_INSTANCES: SoundInstance[] = ['hover', 'click', 'congrats', 'error', 'toggle', 'submit'];
+export const SOUND_INSTANCES: SoundInstance[] = ['hover', 'click', 'congrats', 'error', 'toggle', 'submit', 'notification'];
 
 /** The 4 tunable parameters exposed per instance. */
 export interface InstanceTuning {
@@ -276,6 +276,19 @@ const softBubbleSubmitNotes: Note[] = [
   },
 ];
 
+// notification: modeled on Cuelume's own "bloom" — "a warm, slow-swelling pad from two
+// gently detuned sines." Same pattern at soft-bubble's own 587Hz register: two layers at
+// the *same* pitch (no interval, no glide — the movement is purely the detune beating),
+// one detuned +12 cents, both with a genuinely slow 60ms attack (the slowest attack of
+// anything in this project) and a long ~320-340ms decay. Filter left on — soft-bubble's
+// lowpass is already essentially transparent at this register, no need for useFilter:false.
+// Shimmer left on too (unlike error/click's useDelay:false elsewhere) — bloom leans on its
+// tail for warmth.
+const softBubbleNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, detuneCents: 12, attack: 0.06 },
+];
+
 // --- glass-crystal: bespoke per-instance gestures, leaning into the family's resonant
 // highpass — real intervals given room so the resonance can actually ring, rather than
 // generic clicks riding on top of the brightness.
@@ -322,6 +335,15 @@ const glassCrystalSubmitNotes: Note[] = [
     useDelay: false,
     attack: 0.03,
   },
+];
+
+// notification: same bloom pattern as soft-bubble — two same-pitch sines, one detuned +12
+// cents, 60ms attack, long decay, no glide. useFilter:false keeps it a clean static tone
+// (this family's own highpass is safe here regardless, but consistent with how every
+// other clean tone in this family is handled).
+const glassCrystalNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
 ];
 
 // error: glass-crystal's resonant brightness was making a plain major-third descent read
@@ -410,6 +432,13 @@ const chimeSubmitNotes: Note[] = [
   },
 ];
 
+// notification: same bloom pattern, at chime's own 940Hz register — already essentially
+// unfiltered by design, so no useFilter override needed.
+const chimeNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, detuneCents: 12, attack: 0.06 },
+];
+
 // error: same knock+2-tone pattern as snap's exact Cuelume match, at chime's own 940Hz
 // register.
 const chimeErrorNotes: Note[] = [
@@ -489,6 +518,17 @@ const paperSnapErrorNotes: Note[] = [
   },
 ];
 
+// notification: same lesson as error's descending pair — filtered noise can't produce a
+// stable pitch to beat/detune against, so bloom's whole "two sines gently detuned" premise
+// needs a real oscillator here too (waveformOverride), same as error's tones. Same
+// pattern as every other family: same-pitch pair, one detuned +12 cents, 60ms attack, long
+// decay, no glide. Register (pitchMultiplier 0.2, ~640Hz) picked for a genuine warm tone
+// rather than reusing this family's noise-bandpass-tuned 3200Hz base.
+const paperSnapNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 0.2, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.2, volumeMultiplier: 0.83, waveformOverride: 'sine', useFilter: false, detuneCents: 12, attack: 0.06 },
+];
+
 // metallic-tact: three evenly-spaced clicks climbing a fourth then a fifth — a mechanical
 // ratchet with a real interval, not three near-identical taps.
 const metallicTactCongratsNotes: Note[] = [
@@ -520,6 +560,15 @@ const metallicTactSubmitNotes: Note[] = [
     useDelay: false,
     attack: 0.03,
   },
+];
+
+// notification: same bloom pattern, at metallic-tact's own 784Hz register. useFilter:false
+// here unlike click/error — this family's narrow Q12 bandpass through a genuinely warm,
+// slow swell reads as harsh/buzzy rather than "warm"; a clean square wave (still has real
+// harmonic bite of its own) carries the character better for this specific instance.
+const metallicTactNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
 ];
 
 // error: same knock+2-tone pattern as snap's exact Cuelume match, at metallic-tact's own
@@ -579,6 +628,13 @@ const digitalBlipSubmitNotes: Note[] = [
   },
 ];
 
+// notification: same bloom pattern, at digital-blip's own low 360Hz register.
+// useFilter:false for warmth, same reasoning as metallic-tact.
+const digitalBlipNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
+];
+
 // error: same knock+2-tone pattern as snap's exact Cuelume match, at digital-blip's own
 // low 360Hz register. Reconsidered: filtered tones plus a short length made the compound
 // read as one indistinct blip rather than a clear descending pair — switched to
@@ -624,6 +680,20 @@ const springSubmitNotes: Note[] = [
     useDelay: false,
     attack: 0.032,
   },
+];
+
+// notification (exact reference match): Cuelume's own "bloom" recipe, layer for layer —
+// spring's 520Hz base sits almost exactly on bloom's own 528Hz (pitchMultiplier 1.0154
+// lands there precisely), the closest register match of any family for any Cuelume recipe
+// ported so far. Two sine layers at the same pitch, one detuned +12 cents (their exact
+// detune amount) — no interval, no glide, the only movement is the detune beating. 60ms
+// attack (their exact value, the slowest attack in this whole project), decay long enough
+// that each layer's own total (380ms/400ms) matches their 320ms/340ms decay + attack.
+// Filter left on (spring's lowpass is already essentially transparent this low); shimmer
+// left on too — bloom leans on its own genuine tail for warmth, unlike error's dry knocks.
+const springNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1.0154, volumeMultiplier: 1, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1.0154, volumeMultiplier: 0.83, detuneCents: 12, attack: 0.06 },
 ];
 
 // congrats: a bouncy ascending run (root, fourth, fifth) where the final note overshoots
@@ -709,6 +779,14 @@ const tinySparkleSubmitNotes: Note[] = [
   },
 ];
 
+// notification: same bloom pattern, at tiny-sparkle's own 1040Hz register.
+// useFilter:false sidesteps this family's highpass entirely, same reasoning as everywhere
+// else in this family.
+const tinySparkleNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
+];
+
 // error: tiny-sparkle's delicate brightness had the same problem as glass-crystal/
 // soft-bubble — a plain major-third descent read as pretty, not "wrong." Rebuilt with a
 // genuine double-tap knock (two muted pulses ~34ms apart) and the descent widened to a
@@ -765,6 +843,13 @@ const snapSubmitNotes: Note[] = [
     useDelay: false,
     attack: 0.03,
   },
+];
+
+// notification: same bloom pattern, at snap's own 720Hz triangle register.
+// useFilter:false for a clean warm tone, same reasoning as metallic-tact/digital-blip.
+const snapNotificationNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.95, pitchMultiplier: 1, volumeMultiplier: 1, useFilter: false, attack: 0.06 },
+  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.83, useFilter: false, detuneCents: 12, attack: 0.06 },
 ];
 
 // error (exact reference match): Cuelume's own error recipe, layer for layer. It's the
@@ -937,6 +1022,8 @@ const INSTANCE_PITCH: Record<SoundInstance, number> = {
   toggle: 1.0,
   // Neutral start — the fifth-glide each family's own submit notes carry it upward regardless.
   submit: 1.0,
+  // Neutral — bloom has no directional pitch movement at all, just a static detuned pair.
+  notification: 1.0,
 };
 
 function preset(volume: number, length: number, tone: number, instance: SoundInstance, notes: Note[]): InstancePreset {
@@ -964,6 +1051,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // high tone so the tone-scaled sweep gimmick still delivers a real fifth-ish lift
     // rather than a token wobble (softBubble's sweep magnitude scales with tone).
     submit: preset(0.084, 0.205, 1.0, 'submit', softBubbleSubmitNotes),
+    notification: preset(0.2, 0.4, 0.5, 'notification', softBubbleNotificationNotes),
   },
   'glass-crystal': {
     hover: preset(0.18, 0.009, 0.55, 'hover', hoverNote),
@@ -972,6 +1060,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.22, 0.195, 0.3, 'error', glassCrystalErrorNotes),
     toggle: preset(0.23, 0.024, 0.5, 'toggle', glassCrystalToggleNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', glassCrystalSubmitNotes),
+    notification: preset(0.2, 0.4, 0.3, 'notification', glassCrystalNotificationNotes),
   },
   'paper-snap': {
     hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
@@ -980,6 +1069,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.22, 0.195, 0.3, 'error', paperSnapErrorNotes),
     toggle: preset(0.22, 0.014, 0.5, 'toggle', singleNote),
     submit: preset(0.21, 0.16, 0.5, 'submit', paperSnapSubmitNotes),
+    notification: preset(0.2, 0.4, 0.3, 'notification', paperSnapNotificationNotes),
   },
   'metallic-tact': {
     hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
@@ -988,6 +1078,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.22, 0.17, 0.3, 'error', metallicTactErrorNotes),
     toggle: preset(0.24, 0.02, 0.45, 'toggle', toggleClickNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', metallicTactSubmitNotes),
+    notification: preset(0.2, 0.4, 0.3, 'notification', metallicTactNotificationNotes),
   },
   chime: {
     // Volumes pulled well below the shared limiter's -8dB (~0.4) threshold — Cuelume's
@@ -1005,6 +1096,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.21, 0.16, 0.28, 'error', chimeErrorNotes),
     toggle: preset(0.23, 0.028, 0.5, 'toggle', chimeToggleNotes),
     submit: preset(0.2, 0.2, 0.45, 'submit', chimeSubmitNotes),
+    notification: preset(0.2, 0.4, 0.5, 'notification', chimeNotificationNotes),
   },
   'digital-blip': {
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
@@ -1013,6 +1105,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.22, 0.16, 0.25, 'error', digitalBlipErrorNotes),
     toggle: preset(0.22, 0.014, 0.4, 'toggle', toggleClickNotes),
     submit: preset(0.2, 0.16, 0.4, 'submit', digitalBlipSubmitNotes),
+    notification: preset(0.2, 0.4, 0.4, 'notification', digitalBlipNotificationNotes),
   },
   spring: {
     hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
@@ -1021,6 +1114,8 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.22, 0.14, 0.28, 'error', springErrorNotes),
     toggle: preset(0.23, 0.027, 0.42, 'toggle', springToggleNotes),
     submit: preset(0.22, 0.2, 0.45, 'submit', springSubmitNotes),
+    // exact reference match to Cuelume's bloom — see springNotificationNotes.
+    notification: preset(0.12, 0.4, 0.45, 'notification', springNotificationNotes),
   },
   'tiny-sparkle': {
     hover: preset(0.15, 0.008, 0.2, 'hover', hoverNote),
@@ -1038,6 +1133,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // click's 6ms release), matching tiny-sparkle's own "quick" identity. tone pinned to
     // 0.1 — see tinySparkleSubmitNotes for why (highpass-cutoff safety).
     submit: preset(0.19, 0.15, 0.1, 'submit', tinySparkleSubmitNotes),
+    notification: preset(0.19, 0.4, 0.1, 'notification', tinySparkleNotificationNotes),
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
@@ -1050,6 +1146,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     error: preset(0.2184, 0.244, 0.3, 'error', snapErrorNotes),
     toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
     submit: preset(0.21, 0.17, 0.45, 'submit', snapSubmitNotes),
+    notification: preset(0.2, 0.4, 0.45, 'notification', snapNotificationNotes),
   },
 };
 

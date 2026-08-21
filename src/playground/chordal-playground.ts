@@ -391,8 +391,9 @@ export class ChordalPlayground extends HTMLElement {
                 <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover</button>
                 <button type="button" class="test-btn" data-test="click" data-instance-trigger="click">Click</button>
                 <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Success</button>
-                <button type="button" class="test-btn" data-test="submit" data-instance-trigger="submit">Loading</button>
+                <button type="button" class="test-btn" data-test="submit" data-instance-trigger="submit">Sent</button>
                 <button type="button" class="test-btn" data-test="error" data-instance-trigger="error">Error</button>
+                <button type="button" class="test-btn" data-test="notification" data-instance-trigger="notification">Notification</button>
               </div>
               <div class="instance-divider"></div>
               <div class="instance-ctrl-row">
@@ -462,6 +463,9 @@ export class ChordalPlayground extends HTMLElement {
 
     const submitBtn = this.shadow.querySelector<HTMLElement>('[data-test="submit"]');
     submitBtn?.addEventListener('click', () => this.triggerTest('submit'));
+
+    const notificationBtn = this.shadow.querySelector<HTMLElement>('[data-test="notification"]');
+    notificationBtn?.addEventListener('click', () => this.triggerTest('notification'));
 
     const sliderDemo = this.shadow.querySelector<HTMLInputElement>('[data-test="slider"]');
     sliderDemo?.style.setProperty('--fill', `${sliderDemo.value}%`);
