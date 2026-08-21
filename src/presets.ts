@@ -174,20 +174,26 @@ const hoverNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultipli
 // this family's own click length that's a real ~31ms onset-to-onset gap, matching
 // paper-snap's exact-match reference. useDelay:false on both — dry and punchy, not a
 // resonance that should ring on past the gesture.
+// volumeMultiplier scaled up (not the preset default) to compensate digital-blip's Q5
+// bandpass, which passes only a slice of this square wave's energy — the same nominal
+// `volume` as other families' click was reading noticeably quieter here.
 const clickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 0.96, volumeMultiplier: 1, attack: 0.002, useDelay: false },
-  { offsetFraction: 0.71, lengthFraction: 0.28, pitchMultiplier: 1.26, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 0.96, volumeMultiplier: 1.3, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.71, lengthFraction: 0.28, pitchMultiplier: 1.26, volumeMultiplier: 0.72, attack: 0.002, useDelay: false },
 ];
 
 // Mechanical toggle click — two closely-spaced micro-transients (down-stroke + a quiet
-// settle). First note decays out before the second fires (a real gap instead of legato
-// overlap). useDelay:false on both — zero reverb, immediate feedback. Kept filtered
-// (metallic-tact's own resonant Q12 bandpass rings up fast enough even at this length to
-// stay crisp, unlike the families that needed useFilter:false — see digitalBlipToggleNotes
-// for the family that shared this exact note shape but didn't hold up).
+// settle), used by metallic-tact only. First note decays out before the second fires (a
+// real gap instead of legato overlap). useDelay:false on both — zero reverb, immediate
+// feedback. Kept filtered (metallic-tact's own resonant Q12 bandpass rings up fast enough
+// even at this length to stay crisp, unlike the families that needed useFilter:false — see
+// digitalBlipToggleNotes for the family that shared this exact note shape but didn't hold
+// up). volumeMultiplier scaled up (not the preset default) to compensate the Q12 bandpass,
+// whose passband sits well above this family's own fundamental — almost only a harmonic's
+// worth of energy survives, reading noticeably quieter than other families at equal volume.
 const toggleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1, attack: 0.002, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.94, volumeMultiplier: 0.4, attack: 0.002, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 1.42, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.94, volumeMultiplier: 0.57, attack: 0.002, useDelay: false },
 ];
 
 // The shared "task completed" gesture — a real major-triad-ish arpeggio (root, major
@@ -649,9 +655,12 @@ const metallicTactCongratsNotes: Note[] = [
 // release fires (72%) — at this family's own click length that's a real ~36ms
 // onset-to-onset gap, matching paper-snap's exact-match reference. useDelay:false on
 // both — a mechanical key strike is dry and punchy, not a resonance that rings on.
+// volumeMultiplier scaled up (not the preset default) to compensate this family's Q12
+// bandpass, whose passband sits well above the fundamental — almost only a harmonic's
+// worth of energy survives, reading noticeably quieter than other families at equal volume.
 const metallicTactClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1, attack: 0.002, useDelay: false },
-  { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.28, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1.42, attack: 0.002, useDelay: false },
+  { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.28, volumeMultiplier: 0.78, attack: 0.002, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at metallic-tact's own register — the square
@@ -746,9 +755,13 @@ const digitalBlipClickNotes: Note[] = clickNotes;
 // landing ~1080Hz/1015Hz) — 360Hz was the lowest fundamental of any family attempting this
 // pattern; even filter-bypassed, a burst this short only fit ~2-3 cycles at 360Hz, nowhere
 // near enough to resolve a clean pitch. At ~1kHz the same duration holds 8-9 cycles.
+// volumeMultiplier scaled down (not the preset default) — going unfiltered above removed
+// the bandpass attenuation this family's other instances still have, so at the old
+// multiplier this was playing at full unfiltered energy and reading louder than its
+// filtered siblings.
 const digitalBlipToggleNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 3.0, volumeMultiplier: 1, attack: 0.002, useFilter: false, useDelay: false },
-  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 2.82, volumeMultiplier: 0.4, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0, lengthFraction: 0.35, pitchMultiplier: 3.0, volumeMultiplier: 0.73, attack: 0.002, useFilter: false, useDelay: false },
+  { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 2.82, volumeMultiplier: 0.29, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
@@ -1004,11 +1017,21 @@ const snapCongratsNotes: Note[] = [
 // quiet, it's a separate noise onset, which reads as a multi-tap flutter rather than one
 // clean snap. No sweep. Fast 2ms attack on both notes. Timing tuned so press decays out
 // (39%) well before release fires (71%) — at this family's own click length that's a real
-// ~34ms onset-to-onset gap, matching paper-snap's exact-match reference.
+// ~34ms onset-to-onset gap, matching paper-snap's exact-match reference. volumeMultiplier
+// scaled up (not the preset default) to compensate this family's Q3.5 bandpass, which
+// attenuates the fundamental and this triangle wave's naturally weak harmonics — the same
+// nominal `volume` as other families' click was reading noticeably quieter here.
 const snapClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.39, pitchMultiplier: 0.96, volumeMultiplier: 1, attack: 0.002 },
-  { offsetFraction: 0.71, lengthFraction: 0.29, pitchMultiplier: 1.3, volumeMultiplier: 0.55, attack: 0.002 },
+  { offsetFraction: 0, lengthFraction: 0.39, pitchMultiplier: 0.96, volumeMultiplier: 1.33, attack: 0.002 },
+  { offsetFraction: 0.71, lengthFraction: 0.29, pitchMultiplier: 1.3, volumeMultiplier: 0.73, attack: 0.002 },
 ];
+
+// toggle: own note (rather than reusing the generic singleNote paper-snap also uses) so
+// its own bandpass-attenuation compensation lives here at the note level, not blended into
+// paper-snap's baseline. volumeMultiplier scaled up (not the preset default) to compensate
+// this family's Q3.5 bandpass, which — same as click above — attenuates the fundamental
+// and this triangle wave's naturally weak harmonics, reading quiet at equal nominal volume.
+const snapToggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1.39 }];
 
 // submit: same loading-recipe structure, at snap's own triangle-wave register.
 const snapSubmitNotes: Note[] = [
@@ -1259,11 +1282,11 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'metallic-tact': {
     hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
-    click: preset(0.34, 0.05, 0.45, 'click', metallicTactClickNotes),
+    click: preset(0.24, 0.05, 0.45, 'click', metallicTactClickNotes),
     // 220ms, up from 140ms — matches the broader congrats pack.
     congrats: preset(0.3, 0.22, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.22, 0.17, 0.3, 'error', metallicTactErrorNotes),
-    toggle: preset(0.34, 0.018, 0.45, 'toggle', toggleClickNotes),
+    toggle: preset(0.24, 0.018, 0.45, 'toggle', toggleClickNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', metallicTactSubmitNotes),
     notification: preset(0.15, 0.4, 0.3, 'notification', metallicTactNotificationNotes),
   },
@@ -1287,12 +1310,12 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'digital-blip': {
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
-    click: preset(0.3, 0.044, 0.4, 'click', digitalBlipClickNotes),
+    click: preset(0.23, 0.044, 0.4, 'click', digitalBlipClickNotes),
     // 220ms, up from 120ms — matches the broader congrats pack now that this is a real
     // 3-note ascending run instead of a 2-note jump.
     congrats: preset(0.3, 0.22, 0.45, 'congrats', digitalBlipCongratsNotes),
     error: preset(0.22, 0.16, 0.25, 'error', digitalBlipErrorNotes),
-    toggle: preset(0.16, 0.026, 0.4, 'toggle', digitalBlipToggleNotes),
+    toggle: preset(0.22, 0.026, 0.4, 'toggle', digitalBlipToggleNotes),
     submit: preset(0.2, 0.16, 0.4, 'submit', digitalBlipSubmitNotes),
     notification: preset(0.15, 0.4, 0.4, 'notification', digitalBlipNotificationNotes),
   },
@@ -1326,14 +1349,14 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
-    click: preset(0.32, 0.048, 0.5, 'click', snapClickNotes),
+    click: preset(0.24, 0.048, 0.5, 'click', snapClickNotes),
     // 160ms, up from 100ms — was genuinely the shortest congrats of any family (next
     // shortest was paper-snap at 110ms), not giving the fourth-interval jump room to land.
     congrats: preset(0.3, 0.16, 0.55, 'congrats', snapCongratsNotes),
     // 244ms and 0.2184 volume: exact reference match — see snapErrorNotes. tone is unused
     // (neither tone note reads the interpolated filter now), kept at a neutral value.
     error: preset(0.2184, 0.244, 0.3, 'error', snapErrorNotes),
-    toggle: preset(0.32, 0.014, 0.5, 'toggle', singleNote),
+    toggle: preset(0.23, 0.014, 0.5, 'toggle', snapToggleNotes),
     submit: preset(0.21, 0.17, 0.45, 'submit', snapSubmitNotes),
     notification: preset(0.15, 0.4, 0.45, 'notification', snapNotificationNotes),
   },
