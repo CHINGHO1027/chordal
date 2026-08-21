@@ -403,11 +403,15 @@ const glassCrystalErrorNotes: Note[] = [
 // instead of overlapping it, echoing how Cuelume's press/release are two separately-
 // triggered recipes rather than one sound scaled down (same shape as paper-snap's
 // exact-match rebuild). No sweep: Cuelume's own release doesn't glide either, and a
-// forced glide on a note this short read as flutter, not a clean interval jump.
+// forced glide on a note this short read as flutter, not a clean interval jump. Texture
+// companion pulled way down (0.5 -> 0.08) — at equal volume with the release tone it read
+// as a second competing sound instead of press+release reading as exactly two clear hits;
+// paper-snap's own exact match keeps its analogous accent at roughly this same fraction of
+// its dominant layer.
 const chimeClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
   { offsetFraction: 0.56, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true, useDelay: false },
 ];
 
 // congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
@@ -699,12 +703,15 @@ const digitalBlipHoverNotes: Note[] = [
   ...hoverNote,
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true },
 ];
+// Two texture notes (a grit bed under the whole gesture, plus a separate flick on release)
+// piled on top of the two tone notes made this read as more than a press+release compound
+// — four audible layers instead of two clear hits. Collapsed to one quiet accent on
+// release only, matching the treatment every other family's click uses now: paper-snap's
+// own exact match is the model — press and release should read as exactly two sounds, with
+// any texture underneath staying a subordinate color, not a competing third layer.
 const digitalBlipClickNotes: Note[] = [
   ...clickNotes,
-  { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.32, useTexture: true, useDelay: false },
-  // extra flick right on the release, on top of the grit note above — reinforces the
-  // upward snap's crispness specifically, rather than texture spread evenly across both.
-  { offsetFraction: 0.6, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true, useDelay: false },
 ];
 
 // submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
@@ -769,11 +776,14 @@ const digitalBlipErrorNotes: Note[] = [
 // Widened the gap between compress and rebound (same "let press decay out before release
 // fires" principle behind every other family's compound click) so the settle reads as a
 // real pause. useDelay:false on all three — a physical contact sound is dry and punchy,
-// not a resonance that should ring on past the gesture.
+// not a resonance that should ring on past the gesture. Texture companion pulled way down
+// (0.5 -> 0.08) — at equal volume with the release tone it read as a second competing
+// sound; paper-snap's exact match is the model for "press+release as exactly two clear
+// hits," with any texture staying a subordinate color underneath.
 const springClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 0.9, volumeMultiplier: 1, useDelay: false },
   { offsetFraction: 0.5, lengthFraction: 0.42, pitchMultiplier: 1.15, volumeMultiplier: 0.55, useDelay: false },
-  { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
+  { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true, useDelay: false },
 ];
 
 // submit: the loading-recipe structure (slow-attack tone + soft breath), but with a small
@@ -850,11 +860,14 @@ const springToggleNotes: Note[] = [
 // other family's compound click this pass, just kept the tightest of all of them to match
 // this family's genuinely-fast identity. No sweep: nowhere near long enough for a glide to
 // read as anything but flutter — the fifth interval alone already carries plenty of "up."
-// useDelay:false on all three — dry and punchy, no ring-on.
+// useDelay:false on all three — dry and punchy, no ring-on. Texture companion pulled way
+// down (0.5 -> 0.08) — at equal volume with the release tone it read as a second competing
+// sound rather than press+release landing as exactly two clear hits, paper-snap's own
+// exact match being the model for that.
 const tinySparkleClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false },
   { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.5, volumeMultiplier: 0.5, useDelay: false },
-  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, useDelay: false },
+  { offsetFraction: 0.58, lengthFraction: 0.28, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true, useDelay: false },
 ];
 
 // congrats: tuned toward Cuelume's own sparkle recipe — root/third/fifth/octave was
@@ -948,11 +961,14 @@ const snapCongratsNotes: Note[] = [
 // release snaps up a real fourth with a bright texture flick for the crispness — press
 // decays out before release fires rather than overlapping it, same shape as paper-snap's
 // exact-match rebuild of Cuelume's own separately-triggered press/release pair. No sweep —
-// a glide had no room to read as anything but flutter.
+// a glide had no room to read as anything but flutter. Texture companion pulled way down
+// (0.5 -> 0.08) — at equal volume with the release tone it read as a second competing
+// sound rather than press+release landing as exactly two clear hits, paper-snap's own
+// exact match being the model for that.
 const snapClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.38, pitchMultiplier: 0.96, volumeMultiplier: 1 },
   { offsetFraction: 0.56, lengthFraction: 0.32, pitchMultiplier: 1.3, volumeMultiplier: 0.5 },
-  { offsetFraction: 0.58, lengthFraction: 0.26, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+  { offsetFraction: 0.58, lengthFraction: 0.26, pitchMultiplier: 1, volumeMultiplier: 0.08, useTexture: true },
 ];
 
 // submit: same loading-recipe structure, at snap's own triangle-wave register.
