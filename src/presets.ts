@@ -1259,11 +1259,11 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'metallic-tact': {
     hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
-    click: preset(0.24, 0.05, 0.45, 'click', metallicTactClickNotes),
+    click: preset(0.34, 0.05, 0.45, 'click', metallicTactClickNotes),
     // 220ms, up from 140ms — matches the broader congrats pack.
     congrats: preset(0.3, 0.22, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.22, 0.17, 0.3, 'error', metallicTactErrorNotes),
-    toggle: preset(0.24, 0.018, 0.45, 'toggle', toggleClickNotes),
+    toggle: preset(0.34, 0.018, 0.45, 'toggle', toggleClickNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', metallicTactSubmitNotes),
     notification: preset(0.15, 0.4, 0.3, 'notification', metallicTactNotificationNotes),
   },
@@ -1287,12 +1287,12 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'digital-blip': {
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
-    click: preset(0.23, 0.044, 0.4, 'click', digitalBlipClickNotes),
+    click: preset(0.3, 0.044, 0.4, 'click', digitalBlipClickNotes),
     // 220ms, up from 120ms — matches the broader congrats pack now that this is a real
     // 3-note ascending run instead of a 2-note jump.
     congrats: preset(0.3, 0.22, 0.45, 'congrats', digitalBlipCongratsNotes),
     error: preset(0.22, 0.16, 0.25, 'error', digitalBlipErrorNotes),
-    toggle: preset(0.22, 0.026, 0.4, 'toggle', digitalBlipToggleNotes),
+    toggle: preset(0.16, 0.026, 0.4, 'toggle', digitalBlipToggleNotes),
     submit: preset(0.2, 0.16, 0.4, 'submit', digitalBlipSubmitNotes),
     notification: preset(0.15, 0.4, 0.4, 'notification', digitalBlipNotificationNotes),
   },
@@ -1326,14 +1326,14 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
-    click: preset(0.24, 0.048, 0.5, 'click', snapClickNotes),
+    click: preset(0.32, 0.048, 0.5, 'click', snapClickNotes),
     // 160ms, up from 100ms — was genuinely the shortest congrats of any family (next
     // shortest was paper-snap at 110ms), not giving the fourth-interval jump room to land.
     congrats: preset(0.3, 0.16, 0.55, 'congrats', snapCongratsNotes),
     // 244ms and 0.2184 volume: exact reference match — see snapErrorNotes. tone is unused
     // (neither tone note reads the interpolated filter now), kept at a neutral value.
     error: preset(0.2184, 0.244, 0.3, 'error', snapErrorNotes),
-    toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
+    toggle: preset(0.32, 0.014, 0.5, 'toggle', singleNote),
     submit: preset(0.21, 0.17, 0.45, 'submit', snapSubmitNotes),
     notification: preset(0.15, 0.4, 0.45, 'notification', snapNotificationNotes),
   },
