@@ -168,10 +168,13 @@ const congratsArpeggio: Note[] = [
 // for a genuine squeeze/bloop quality instead of a flat pitch.
 
 // click: a soft squeeze-down + a quieter spring-back lift — the sweep gives it real
-// physical "give" rather than a static click.
+// physical "give" rather than a static click. Release also gets a quiet bright-noise
+// flick layered under its tonal sweep — the actual source of "crisp," per Cuelume's own
+// release recipe, which a sine sweep alone can't produce.
 const softBubbleClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88 },
   { offsetFraction: 0.54, lengthFraction: 0.32, pitchMultiplier: 1.19, volumeMultiplier: 0.45, sweepTo: 1.12 },
+  { offsetFraction: 0.54, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: three bubbles blooping upward — root, major third, fifth — each with its own
@@ -204,6 +207,7 @@ const softBubbleToggleNotes: Note[] = [
 const glassCrystalClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.56, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.85 },
   { offsetFraction: 0.48, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.45, sweepTo: 1.15 },
+  { offsetFraction: 0.48, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: an ascending "ting-ting-TING" — root, fifth, octave — the biggest interval
@@ -239,6 +243,7 @@ const glassCrystalToggleNotes: Note[] = [
 const chimeClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.58, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88 },
   { offsetFraction: 0.5, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5, sweepTo: 1.12 },
+  { offsetFraction: 0.5, lengthFraction: 0.34, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
@@ -280,12 +285,32 @@ const paperSnapCongratsNotes: Note[] = [
   { offsetFraction: 0.4, lengthFraction: 0.5, pitchMultiplier: 1.5, volumeMultiplier: 1 },
 ];
 
+// paper-snap click: noise-native, so this is the one family that can mirror Cuelume's
+// actual press/release technique directly — theirs is entirely built from bandpass-noise
+// filter brightness (a dull ~1700Hz knock vs a bright ~4600Hz flick), not a pitch sweep at
+// all. pitchMultiplier here scales the bandpass center, not a fundamental, so a wide swing
+// (0.65 -> 1.8, vs the ~1x -> ~1.2x every pitched family uses) reproduces that same
+// dull-knock / bright-flick contrast on our own register.
+const paperSnapClickNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 0.65, volumeMultiplier: 1 },
+  { offsetFraction: 0.5, lengthFraction: 0.28, pitchMultiplier: 1.8, volumeMultiplier: 0.55 },
+];
+
 // metallic-tact: three evenly-spaced clicks climbing a fourth then a fifth — a mechanical
 // ratchet with a real interval, not three near-identical taps.
 const metallicTactCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.8 },
   { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.9 },
   { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+];
+
+// metallic-tact click: press bottoms out low (mechanical), release pings back up with a
+// bright metallic-sheen texture flick reinforcing the crispness a square-wave sweep alone
+// can't give it.
+const metallicTactClickNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 0.96, volumeMultiplier: 1, sweepTo: 0.8 },
+  { offsetFraction: 0.54, lengthFraction: 0.3, pitchMultiplier: 1.28, volumeMultiplier: 0.5, sweepTo: 1.18 },
+  { offsetFraction: 0.54, lengthFraction: 0.22, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // digital-blip: a real upward leap (fifth) with a sweep on the landing note — reads as
@@ -302,6 +327,9 @@ const digitalBlipHoverNotes: Note[] = [
 const digitalBlipClickNotes: Note[] = [
   ...clickNotes,
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.32, useTexture: true },
+  // extra flick right on the release, on top of the grit note above — reinforces the
+  // upward snap's crispness specifically, rather than texture spread evenly across both.
+  { offsetFraction: 0.56, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true },
 ];
 
 // --- spring: bespoke per-instance gestures built around a real physical overshoot —
@@ -313,6 +341,7 @@ const digitalBlipClickNotes: Note[] = [
 const springClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.44, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82 },
   { offsetFraction: 0.38, lengthFraction: 0.4, pitchMultiplier: 0.94, volumeMultiplier: 0.55, sweepTo: 1.28 },
+  { offsetFraction: 0.38, lengthFraction: 0.25, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: a bouncy ascending run (root, fourth, fifth) where the final note overshoots
@@ -344,6 +373,7 @@ const springToggleNotes: Note[] = [
 const tinySparkleClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.46, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.92 },
   { offsetFraction: 0.4, lengthFraction: 0.3, pitchMultiplier: 1.5, volumeMultiplier: 0.5, sweepTo: 1.15 },
+  { offsetFraction: 0.4, lengthFraction: 0.22, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
 // congrats: tuned toward Cuelume's own sparkle recipe — root/third/fifth/octave was
@@ -380,6 +410,14 @@ const snapCongratsNotes: Note[] = [
   { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
 
+// snap click: press dips low (weighted bottoming-out), release snaps up a real fourth
+// with a bright texture flick for the crispness.
+const snapClickNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 0.96, volumeMultiplier: 1, sweepTo: 0.8 },
+  { offsetFraction: 0.52, lengthFraction: 0.28, pitchMultiplier: 1.3, volumeMultiplier: 0.5, sweepTo: 1.2 },
+  { offsetFraction: 0.52, lengthFraction: 0.2, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
+];
+
 export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
   'soft-bubble': {
     waveform: 'sine',
@@ -388,6 +426,10 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterCutoffRange: [1200, 2600],
     filterQ: 0.8,
     delay: { time: 0.09, feedback: 0.22, wet: 0.18, lowpass: 2800 },
+    // Bright noise "glint" for click's release — Cuelume's release recipe is mostly a
+    // bright filtered-noise flick, not a pitch sweep; a pure sine sweep alone can't
+    // produce that broadband crispness. Kept quiet/brief, an accent under the tonal sweep.
+    textureLayer: { filterType: 'bandpass', filterCutoff: 3200, filterQ: 2.5, volumeMultiplier: 0.42, lengthFraction: 0.24 },
   },
   'glass-crystal': {
     waveform: 'sine',
@@ -400,6 +442,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     qRange: [1, 8],
     delay: { time: 0.11, feedback: 0.25, wet: 0.2, lowpass: 4500 },
     pitchRange: [0.7, 1.8],
+    textureLayer: { filterType: 'bandpass', filterCutoff: 5400, filterQ: 3, volumeMultiplier: 0.42, lengthFraction: 0.22 },
   },
   'paper-snap': {
     waveform: 'noise',
@@ -416,6 +459,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterQ: 12,
     // Short comb-like metallic ring — a real physical resonance, not just a click.
     delay: { time: 0.002, feedback: 0.28, wet: 0.4, lowpass: 3800 },
+    textureLayer: { filterType: 'bandpass', filterCutoff: 4200, filterQ: 4, volumeMultiplier: 0.42, lengthFraction: 0.22 },
   },
   chime: {
     waveform: 'sine',
@@ -431,6 +475,9 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     // brighter feedback lowpass than our other families' shimmer (4000 vs ~3200) so the
     // repeats stay airy instead of darkening into a dull wash.
     delay: { time: 0.12, feedback: 0.25, wet: 0.18, lowpass: 4000 },
+    // 4600Hz — happens to land close to Cuelume's own release noise center; a coincidence
+    // of both of us picking "bright glint above the tonal register," not a copied number.
+    textureLayer: { filterType: 'bandpass', filterCutoff: 4600, filterQ: 2.5, volumeMultiplier: 0.4, lengthFraction: 0.24 },
   },
   'digital-blip': {
     waveform: 'square',
@@ -448,6 +495,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterCutoffRange: [520, 940],
     qRange: [1, 5], // resonance bump scales with tone
     delay: { time: 0.07, feedback: 0.25, wet: 0.18, lowpass: 3200 },
+    textureLayer: { filterType: 'bandpass', filterCutoff: 2900, filterQ: 2.5, volumeMultiplier: 0.42, lengthFraction: 0.24 },
   },
   'tiny-sparkle': {
     waveform: 'sine',
@@ -459,6 +507,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     // lowpass 6000) — denser, brighter repeats than our other families' shimmer, matching
     // how much more aggressively they shape sparkle's tail than chime's.
     delay: { time: 0.06, feedback: 0.32, wet: 0.22, lowpass: 5600 },
+    textureLayer: { filterType: 'bandpass', filterCutoff: 6200, filterQ: 3, volumeMultiplier: 0.4, lengthFraction: 0.2 },
   },
   snap: {
     waveform: 'triangle',
@@ -466,6 +515,7 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     filterType: 'bandpass',
     filterCutoffRange: [720, 1620],
     filterQ: 3.5,
+    textureLayer: { filterType: 'bandpass', filterCutoff: 3600, filterQ: 3, volumeMultiplier: 0.42, lengthFraction: 0.22 },
   },
 };
 
@@ -513,14 +563,14 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'paper-snap': {
     hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
-    click: preset(0.23, 0.015, 0.5, 'click', clickNotes),
+    click: preset(0.23, 0.015, 0.5, 'click', paperSnapClickNotes),
     congrats: preset(0.3, 0.11, 0.55, 'congrats', paperSnapCongratsNotes),
     error: preset(0.22, 0.035, 0.3, 'error', errorNotes),
     toggle: preset(0.22, 0.014, 0.5, 'toggle', singleNote),
   },
   'metallic-tact': {
     hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
-    click: preset(0.24, 0.022, 0.45, 'click', clickNotes),
+    click: preset(0.24, 0.022, 0.45, 'click', metallicTactClickNotes),
     congrats: preset(0.3, 0.14, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.22, 0.05, 0.3, 'error', errorNotes),
     toggle: preset(0.24, 0.02, 0.45, 'toggle', toggleClickNotes),
@@ -570,7 +620,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   snap: {
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
-    click: preset(0.24, 0.016, 0.5, 'click', clickNotes),
+    click: preset(0.24, 0.016, 0.5, 'click', snapClickNotes),
     congrats: preset(0.3, 0.1, 0.55, 'congrats', snapCongratsNotes),
     error: preset(0.22, 0.035, 0.32, 'error', errorNotes),
     toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
