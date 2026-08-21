@@ -186,16 +186,40 @@ const STYLES = `
   }
 `;
 
+// Grace period the frozen waveform stays on screen after its capture window completes,
+// before the canvas clears to blank. Short — long enough to register as "still there for a
+// beat," not long enough to read as a persistent scope trace.
+const CAPTURE_CLEAR_DELAY_MS = 200;
+
+// "Nice" tick intervals for the millisecond grid — smallest candidate that keeps the total
+// tick count near `targetTicks` for whatever a gesture's own captured duration turns out
+// to be, from an 8ms hover up to a 400ms notification.
+function niceMsStep(totalMs: number, targetTicks = 7): number {
+  const candidates = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+  const raw = totalMs / targetTicks;
+  return candidates.find((c) => c >= raw) ?? candidates[candidates.length - 1]!;
+}
+
 export class ChordalPlayground extends HTMLElement {
   private shadow: ShadowRoot;
   private family: SoundFamily = getFamily();
   private instance: SoundInstance = 'hover';
   private overrides = new Map<string, Partial<InstanceTuning>>();
   private analyser: AnalyserNode | null = null;
-  private waveData: Uint8Array | null = null;
   private rafId: number | null = null;
   private idleTimer: number | null = null;
   private toggleState: 'on' | 'off' = 'off';
+
+  // Trigger-scoped waveform capture — see drawWaveform()'s doc comment for why this
+  // replaced a live rolling-analyser draw.
+  private captureScratch: Float32Array | null = null;
+  private captureBuffer: Float32Array | null = null;
+  private captureWriteIndex = 0;
+  private captureAudioMs = 0; // captured window: gesture length + tail padding
+  private capturePreRollMs = 0; // left margin before the gesture's own t=0, drawn blank
+  private captureLastReadAt = 0;
+  private captureActive = false;
+  private captureFinishedAt: number | null = null;
 
   constructor() {
     super();
@@ -226,47 +250,141 @@ export class ChordalPlayground extends HTMLElement {
     const output = engine.getMasterGain();
     if (!context || !output) return; // SSR or Web Audio unavailable — no scope to draw
 
+    // fftSize sized well above a typical rAF interval (~16ms) so a single read always has
+    // enough fresh samples to cover the gap since the last one, even under frame jitter —
+    // see drawWaveform()'s capture step, which polls this rolling buffer and stitches
+    // together only the newest samples each frame rather than redrawing it directly.
     this.analyser = context.createAnalyser();
-    this.analyser.fftSize = 1024;
+    this.analyser.fftSize = 4096;
     output.connect(this.analyser);
-    this.waveData = new Uint8Array(this.analyser.frequencyBinCount);
+    this.captureScratch = new Float32Array(this.analyser.frequencyBinCount);
     this.drawWaveform();
   }
 
+  /**
+   * Starts a fresh capture for a gesture of `lengthSeconds`, sized to hold the gesture
+   * itself plus a little tail (so a release transient near the end isn't clipped) with a
+   * blank pre-roll margin before it (so the attack isn't flush against the left edge).
+   * Padding is proportional (15% of length) with a 3ms floor, so both an 8ms hover and a
+   * 400ms notification keep the gesture itself comfortably over half the visible width.
+   */
+  private startCapture(lengthSeconds: number): void {
+    const context = engine.getContext();
+    if (!context || !this.analyser) return;
+    const lengthMs = lengthSeconds * 1000;
+    const pad = Math.max(3, lengthMs * 0.15);
+    this.capturePreRollMs = pad;
+    this.captureAudioMs = lengthMs + pad;
+    const totalSamples = Math.max(1, Math.ceil((this.captureAudioMs / 1000) * context.sampleRate));
+    this.captureBuffer = new Float32Array(totalSamples);
+    this.captureWriteIndex = 0;
+    this.captureLastReadAt = performance.now();
+    this.captureActive = true;
+    this.captureFinishedAt = null;
+  }
+
+  private drawGrid(ctx2d: CanvasRenderingContext2D, w: number, h: number, preRollPx: number): void {
+    const step = niceMsStep(this.captureAudioMs);
+    const plotW = w - preRollPx;
+    ctx2d.font = '9px system-ui, sans-serif';
+    ctx2d.textBaseline = 'alphabetic';
+    for (let t = 0; t <= this.captureAudioMs + 0.001; t += step) {
+      const x = preRollPx + (t / this.captureAudioMs) * plotW;
+      ctx2d.strokeStyle = '#00000012';
+      ctx2d.lineWidth = 1;
+      ctx2d.beginPath();
+      ctx2d.moveTo(x, 0);
+      ctx2d.lineTo(x, h);
+      ctx2d.stroke();
+      ctx2d.fillStyle = '#00000055';
+      ctx2d.fillText(`${Math.round(t)}ms`, x + 2, h - 3);
+    }
+    ctx2d.strokeStyle = '#00000018';
+    ctx2d.beginPath();
+    ctx2d.moveTo(preRollPx, h / 2);
+    ctx2d.lineTo(w, h / 2);
+    ctx2d.stroke();
+  }
+
+  /**
+   * Not a live oscilloscope — a trigger-scoped capture. A permanently-live rolling
+   * analyser window (the old approach) was fixed at ~11ms regardless of what's playing, so
+   * a 40-90ms click only ever showed a random ~11ms slice of itself per frame: sometimes
+   * press, sometimes the silent gap, sometimes release, sometimes nothing — reading as a
+   * blink rather than a shape. Instead, startCapture() sizes a buffer to the gesture's own
+   * known length, and each frame here appends only the newest samples (by elapsed real
+   * time, not a raw redraw of the rolling window) until that buffer is full, then freezes
+   * it — so the whole press-then-release shape is visible at once, auto-zoomed to fill the
+   * canvas because the window IS the gesture. Idle (no capture, or past its clear delay) is
+   * fully blank — no resting line, no grid — matching a UI meter that only lights up when
+   * something actually happened.
+   */
   private drawWaveform = (): void => {
     this.rafId = requestAnimationFrame(this.drawWaveform);
     const canvas = this.shadow.querySelector<HTMLCanvasElement>('canvas');
-    if (!canvas || !this.analyser || !this.waveData) return;
+    if (!canvas || !this.analyser || !this.captureScratch) return;
     const ctx2d = canvas.getContext('2d');
     if (!ctx2d) return;
 
     const w = canvas.width;
     const h = canvas.height;
-    this.analyser.getByteTimeDomainData(this.waveData as Uint8Array<ArrayBuffer>);
+    const now = performance.now();
+
+    if (this.captureActive && this.captureBuffer) {
+      const context = engine.getContext();
+      const sampleRate = context?.sampleRate ?? 48000;
+      this.analyser.getFloatTimeDomainData(this.captureScratch as Float32Array<ArrayBuffer>);
+      const elapsedSamples = Math.round(((now - this.captureLastReadAt) / 1000) * sampleRate);
+      const newSamples = Math.max(0, Math.min(elapsedSamples, this.captureScratch.length));
+      const remaining = this.captureBuffer.length - this.captureWriteIndex;
+      const toCopy = Math.min(newSamples, remaining);
+      if (toCopy > 0) {
+        // getFloatTimeDomainData's newest samples sit at the end of the buffer.
+        this.captureBuffer.set(this.captureScratch.subarray(this.captureScratch.length - toCopy), this.captureWriteIndex);
+        this.captureWriteIndex += toCopy;
+      }
+      this.captureLastReadAt = now;
+      if (this.captureWriteIndex >= this.captureBuffer.length) {
+        this.captureActive = false;
+        this.captureFinishedAt = now;
+      }
+    }
+
+    const withinClearDelay = this.captureFinishedAt !== null && now - this.captureFinishedAt < CAPTURE_CLEAR_DELAY_MS;
+    const showingCapture = this.captureBuffer !== null && (this.captureActive || withinClearDelay);
 
     ctx2d.clearRect(0, 0, w, h);
-    ctx2d.strokeStyle = '#00000014';
-    ctx2d.beginPath();
-    ctx2d.moveTo(0, h / 2);
-    ctx2d.lineTo(w, h / 2);
-    ctx2d.stroke();
-
-    ctx2d.beginPath();
-    const slice = w / this.waveData.length;
-    let x = 0;
-    for (let i = 0; i < this.waveData.length; i++) {
-      const v = (this.waveData[i] ?? 128) / 128.0;
-      const y = (v * h) / 2;
-      if (i === 0) ctx2d.moveTo(x, y);
-      else ctx2d.lineTo(x, y);
-      x += slice;
+    if (!showingCapture) {
+      if (this.captureBuffer !== null && this.captureFinishedAt !== null && !withinClearDelay) {
+        this.captureBuffer = null; // fully done — stop re-checking every frame
+      }
+      return; // idle: blank canvas, no curve, no grid
     }
-    ctx2d.strokeStyle = FAMILY_ACCENTS[this.family];
-    ctx2d.lineWidth = 1.5;
-    ctx2d.stroke();
+
+    const totalMs = this.capturePreRollMs + this.captureAudioMs;
+    const preRollPx = w * (this.capturePreRollMs / totalMs);
+    this.drawGrid(ctx2d, w, h, preRollPx);
+
+    const buf = this.captureBuffer!;
+    const n = this.captureWriteIndex;
+    if (n > 1) {
+      const plotW = w - preRollPx;
+      const stepPx = plotW / buf.length;
+      ctx2d.beginPath();
+      for (let i = 0; i < n; i++) {
+        const x = preRollPx + i * stepPx;
+        const y = h / 2 - (buf[i] ?? 0) * (h / 2) * 0.95;
+        if (i === 0) ctx2d.moveTo(x, y);
+        else ctx2d.lineTo(x, y);
+      }
+      ctx2d.strokeStyle = FAMILY_ACCENTS[this.family];
+      ctx2d.lineWidth = 1;
+      ctx2d.stroke();
+    }
   };
 
   private showStatus(instance: SoundInstance, tuning: InstanceTuning): void {
+    this.startCapture(tuning.length);
     const status = this.shadow.querySelector<HTMLElement>('.status');
     if (!status) return;
     if (this.idleTimer !== null) window.clearTimeout(this.idleTimer);
@@ -473,6 +591,10 @@ export class ChordalPlayground extends HTMLElement {
       const ratio = Number(sliderDemo.value) / 100;
       sliderDemo.style.setProperty('--fill', `${sliderDemo.value}%`);
       playContinuous('slider', ratio, { family: this.family });
+      // playContinuous's own tick length isn't exposed here — 30ms is a reasonable
+      // estimate for its body+click layers, close enough for the capture window to catch
+      // the tick without needing the exact internal duration plumbed through.
+      this.startCapture(0.03);
       const status = this.shadow.querySelector<HTMLElement>('.status');
       if (status) status.textContent = `${this.family} · slider · ${ratio.toFixed(2)}`;
     });
