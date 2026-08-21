@@ -442,11 +442,16 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     baseFrequency: 1046, // C6
     filterType: 'highpass',
     // Kept below the 1046Hz fundamental across the practical pitch range so a highpass
-    // on a pure sine actually passes signal (see engine notes from the volume fix);
-    // qRange still colors it via resonance as tone rises.
+    // on a pure sine actually passes signal (see engine notes from the volume fix).
     filterCutoffRange: [500, 950],
-    qRange: [1, 8],
-    delay: { time: 0.11, feedback: 0.25, wet: 0.2, lowpass: 4500 },
+    // Pushed more resonant than tiny-sparkle's (which went the opposite way, toward
+    // broadband) — this is the family's actual distinguishing character now: a narrow,
+    // singing resonant peak, not just "highpass + shimmer" shared with tiny-sparkle.
+    qRange: [2.5, 11],
+    // Slower, longer shimmer than tiny-sparkle — one spacious ring, not a flurry of
+    // glints. Tail lands near chime's (~0.78s vs ~0.72s) rather than exceeding every other
+    // family's, which would risk the same always-heavy problem chime's gain staging fixed.
+    delay: { time: 0.13, feedback: 0.24, wet: 0.22, lowpass: 4200 },
     pitchRange: [0.7, 1.8],
     textureLayer: { filterType: 'bandpass', filterCutoff: 5400, filterQ: 3, volumeMultiplier: 0.42, lengthFraction: 0.22 },
   },
@@ -508,11 +513,14 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     baseFrequency: 1040,
     filterType: 'highpass',
     filterCutoffRange: [1040, 2240],
-    qRange: [1, 7],
-    // Nudged toward Cuelume's own sparkle shimmer (delay 0.07/feedback 0.35/wet 0.22/
-    // lowpass 6000) — denser, brighter repeats than our other families' shimmer, matching
-    // how much more aggressively they shape sparkle's tail than chime's.
-    delay: { time: 0.06, feedback: 0.32, wet: 0.22, lowpass: 5600 },
+    // Pushed toward broadband/airy rather than glass-crystal's resonant peak — no single
+    // "singing" frequency, just an open, breathy brightness. This is the actual
+    // differentiator between the two now; before, both families used near-identical
+    // highpass+moderate-Q, which is most of why they read as interchangeable.
+    qRange: [0.6, 2.5],
+    // Nudged toward Cuelume's own sparkle shimmer, then pushed further — faster and denser
+    // than glass-crystal's single slow ring, more like a flurry of quick glints.
+    delay: { time: 0.045, feedback: 0.4, wet: 0.26, lowpass: 6200 },
     textureLayer: { filterType: 'bandpass', filterCutoff: 6200, filterQ: 3, volumeMultiplier: 0.4, lengthFraction: 0.2 },
   },
   snap: {
@@ -525,17 +533,23 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
   },
 };
 
-// Pitch offsets applied uniformly across families per instance. hover and click used to
-// sit almost on top of each other (1.0 vs 0.95) — widened so hover genuinely sits above a
-// family's home register (light, weightless probe) and click sits into it (grounded,
-// physical actuation), matching the hover-vs-click acoustic split alongside hoverNote's
-// useDelay:false and clickNotes' real-interval release. error sits noticeably lower,
-// congrats sits brighter.
+// Pitch offsets applied uniformly across families per instance. hover and click keep their
+// established split (hover sits above the family's home register, light/weightless; click
+// sits into it, grounded) — that contrast wasn't the issue.
+//
+// congrats is deliberately kept as the family's bright peak (its own note-level intervals
+// already climb up to an octave above this baseline — see e.g. glassCrystalCongratsNotes).
+// What was wrong: click and especially error sat far enough below congrats's baseline, and
+// their own note-level intervals compound further downward from there, that the family's
+// overall register spread (error's lowest note to congrats's highest) could reach 1.5-1.7
+// octaves — wide enough to stop reading as one voice. Raised click and error toward the
+// family's center so they still stay clearly the "grounded"/"muted" instances relative to
+// hover and congrats, just without dragging the whole family's floor down so far.
 const INSTANCE_PITCH: Record<SoundInstance, number> = {
   hover: 1.08,
-  click: 0.92,
+  click: 0.96,
   congrats: 1.05,
-  error: 0.85,
+  error: 0.91,
   toggle: 1.0,
 };
 
