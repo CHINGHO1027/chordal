@@ -441,20 +441,35 @@ const paperSnapSubmitNotes: Note[] = [
   { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 1, attack: 0.035 },
 ];
 
-// error: a plain major-third descent wasn't reading as "error" here either, and since
-// this family's whole voice already is noise there's no separate "knock vs. tone" to
-// build a double-tap out of — every event is the same kind of burst, just at different
-// bandpass centers. Rebuilt with the same double-tap + dissonance principles as the other
-// three: two same-pitch bursts ~35ms apart (the mechanical "jam"), then a descending pair
-// widened to a real tritone (0.7071) instead of the previous major third. Kept
-// deliberately shorter (150ms) than the other three (190-200ms) — paper-snap's whole
-// identity is quick/snappy, and stretching it that far risked reading as a generic
-// extended click rather than this family's own crisp voice.
+// error: the previous descending pair used this family's normal broad bandpass (Q3, the
+// same width as its ordinary snappy texture) — diffuse noise doesn't carry a clear sense
+// of pitch the way an actual tone does, so a bandpass-center shift through that much
+// width just read as two similar-sounding taps, not a "descent." Redesigned: the two
+// descending notes now use an inline high-Q (12) bandpass override — much narrower, so
+// each one rings at something close to an actual perceivable pitch instead of a wash of
+// texture — root then a real tritone down (0.7071), the same interval every other
+// family's error uses. The two knocks stay on this family's normal broad/percussive
+// texture (Q3) for contrast — thump vs. ring. Length matched to the other three families
+// (195ms, was 150ms) using the same offset/length proportions they all share.
 const paperSnapErrorNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.08, pitchMultiplier: 1.3, volumeMultiplier: 1, attack: 0.001 },
-  { offsetFraction: 0.233, lengthFraction: 0.08, pitchMultiplier: 1.3, volumeMultiplier: 0.7, attack: 0.001 },
-  { offsetFraction: 0.4, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.42, attack: 0.004 },
-  { offsetFraction: 0.7, lengthFraction: 0.3, pitchMultiplier: 0.7071, volumeMultiplier: 0.44, attack: 0.004 },
+  { offsetFraction: 0, lengthFraction: 0.075, pitchMultiplier: 1.3, volumeMultiplier: 1, attack: 0.001 },
+  { offsetFraction: 0.2, lengthFraction: 0.075, pitchMultiplier: 1.3, volumeMultiplier: 0.7, attack: 0.001 },
+  {
+    offsetFraction: 0.35,
+    lengthFraction: 0.3,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.55,
+    useTexture: { filterType: 'bandpass', filterCutoff: 2912, filterQ: 12 },
+    attack: 0.004,
+  },
+  {
+    offsetFraction: 0.65,
+    lengthFraction: 0.35,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.58,
+    useTexture: { filterType: 'bandpass', filterCutoff: 2059, filterQ: 12 },
+    attack: 0.004,
+  },
 ];
 
 // metallic-tact: three evenly-spaced clicks climbing a fourth then a fifth — a mechanical
@@ -944,7 +959,7 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
     click: preset(0.23, 0.015, 0.5, 'click', paperSnapClickNotes),
     congrats: preset(0.3, 0.11, 0.55, 'congrats', paperSnapCongratsNotes),
-    error: preset(0.22, 0.15, 0.3, 'error', paperSnapErrorNotes),
+    error: preset(0.22, 0.195, 0.3, 'error', paperSnapErrorNotes),
     toggle: preset(0.22, 0.014, 0.5, 'toggle', singleNote),
     submit: preset(0.21, 0.16, 0.5, 'submit', paperSnapSubmitNotes),
   },
