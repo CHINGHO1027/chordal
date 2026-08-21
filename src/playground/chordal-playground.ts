@@ -390,8 +390,8 @@ export class ChordalPlayground extends HTMLElement {
               <div class="instance-pills">
                 <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover</button>
                 <button type="button" class="test-btn" data-test="click" data-instance-trigger="click">Click</button>
-                <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Complete task</button>
-                <button type="button" class="test-btn" data-test="submit" data-instance-trigger="submit">Submit</button>
+                <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Success</button>
+                <button type="button" class="test-btn" data-test="submit" data-instance-trigger="submit">Loading</button>
                 <button type="button" class="test-btn" data-test="error" data-instance-trigger="error">Error</button>
               </div>
               <div class="instance-divider"></div>
