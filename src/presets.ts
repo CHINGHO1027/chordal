@@ -455,11 +455,20 @@ const chimeErrorNotes: Note[] = [
   { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
-// paper-snap: a real jump (not a semitone nudge) — the bandpass center shifts a fifth
-// up on the second tap, audible even without a true pitched fundamental.
+// paper-snap: reconsidered — a bandpass-noise jump reads as gritty/textured, not the
+// bright, clean, airy ascending run this instance needs. Filtered noise can't hold a
+// stable, trackable pitch (same lesson as error's descending pair), so the actual
+// ascending content now runs on real sine tones (waveformOverride, useFilter:false) — a
+// genuine 3-note consonant climb (root, major third, fifth) instead of a 2-note bandpass
+// jump. A brief bright noise "snap" opens the gesture so this family's own texture
+// character isn't lost entirely, just no longer carrying the pitch itself. Register
+// (pitchMultiplier ~0.26) picked for a bright register rather than this family's
+// noise-bandpass-tuned 3200Hz base.
 const paperSnapCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.45, pitchMultiplier: 1, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.4, lengthFraction: 0.5, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1.4, volumeMultiplier: 0.5, attack: 0.001 },
+  { offsetFraction: 0.06, lengthFraction: 0.34, pitchMultiplier: 0.26, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
+  { offsetFraction: 0.34, lengthFraction: 0.34, pitchMultiplier: 0.3276, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
+  { offsetFraction: 0.62, lengthFraction: 0.38, pitchMultiplier: 0.39, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
 ];
 
 // paper-snap click: noise-native, so this is the one family that can mirror Cuelume's
@@ -530,11 +539,15 @@ const paperSnapNotificationNotes: Note[] = [
 ];
 
 // metallic-tact: three evenly-spaced clicks climbing a fourth then a fifth — a mechanical
-// ratchet with a real interval, not three near-identical taps.
+// ratchet with a real interval, not three near-identical taps. Reconsidered: routing
+// these through this family's own narrow bandpass (the source of its "metallic" identity
+// everywhere else) read as buzzy/mechanical, not the bright, clean, airy run this instance
+// needs — same lesson as notification. waveformOverride:'sine' + useFilter:false here
+// specifically; same pitches/timing, just a clean voice instead of a colored one.
 const metallicTactCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.9 },
-  { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 1 },
+  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false },
 ];
 
 // metallic-tact click: press sits low (mechanical), release pings up a real interval
@@ -597,11 +610,17 @@ const metallicTactErrorNotes: Note[] = [
   { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.4, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
-// digital-blip: a real upward leap (fifth) with a sweep on the landing note — reads as
-// "confirmed," not a barely-there wobble.
+// digital-blip: reconsidered — this family's own bandpass coloring plus a 2-note jump
+// (with a wobbly landing sweep) read as a "blip," not the bright, clean, airy ascending
+// run this instance needs. waveformOverride:'sine' + useFilter:false, expanded to a
+// genuine 3-note consonant climb (root, major third, fifth) for real ascending motion, no
+// sweep (clean landing instead of a wobble). Register raised (pitchMultiplier ~2.2, vs
+// this family's usual ~1x) — its native 360Hz base reads as warm/low, not bright, once
+// it's a clean sine rather than a filtered square.
 const digitalBlipCongratsNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 0.8 },
-  { offsetFraction: 0.34, lengthFraction: 0.55, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.12 },
+  { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 2.2, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 2.772, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false },
+  { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 3.3, volumeMultiplier: 1, waveformOverride: 'sine', useFilter: false },
 ];
 // hover/click keep a quick, quiet click layered under the square tone for a little grit.
 const digitalBlipHoverNotes: Note[] = [
@@ -1077,7 +1096,9 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   'paper-snap': {
     hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
     click: preset(0.23, 0.015, 0.5, 'click', paperSnapClickNotes),
-    congrats: preset(0.3, 0.11, 0.55, 'congrats', paperSnapCongratsNotes),
+    // 220ms, up from 110ms — matches the broader congrats pack now that this is a real
+    // 3-note ascending run instead of a 2-note bandpass jump.
+    congrats: preset(0.3, 0.22, 0.55, 'congrats', paperSnapCongratsNotes),
     error: preset(0.22, 0.195, 0.3, 'error', paperSnapErrorNotes),
     toggle: preset(0.22, 0.014, 0.5, 'toggle', singleNote),
     submit: preset(0.21, 0.16, 0.5, 'submit', paperSnapSubmitNotes),
@@ -1086,7 +1107,8 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   'metallic-tact': {
     hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
     click: preset(0.24, 0.022, 0.45, 'click', metallicTactClickNotes),
-    congrats: preset(0.3, 0.14, 0.5, 'congrats', metallicTactCongratsNotes),
+    // 220ms, up from 140ms — matches the broader congrats pack.
+    congrats: preset(0.3, 0.22, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.22, 0.17, 0.3, 'error', metallicTactErrorNotes),
     toggle: preset(0.24, 0.02, 0.45, 'toggle', toggleClickNotes),
     submit: preset(0.22, 0.18, 0.45, 'submit', metallicTactSubmitNotes),
@@ -1113,7 +1135,9 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   'digital-blip': {
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
     click: preset(0.23, 0.016, 0.4, 'click', digitalBlipClickNotes),
-    congrats: preset(0.3, 0.12, 0.45, 'congrats', digitalBlipCongratsNotes),
+    // 220ms, up from 120ms — matches the broader congrats pack now that this is a real
+    // 3-note ascending run instead of a 2-note jump.
+    congrats: preset(0.3, 0.22, 0.45, 'congrats', digitalBlipCongratsNotes),
     error: preset(0.22, 0.16, 0.25, 'error', digitalBlipErrorNotes),
     toggle: preset(0.22, 0.014, 0.4, 'toggle', toggleClickNotes),
     submit: preset(0.2, 0.16, 0.4, 'submit', digitalBlipSubmitNotes),
