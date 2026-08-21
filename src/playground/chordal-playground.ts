@@ -283,27 +283,29 @@ export class ChordalPlayground extends HTMLElement {
     this.captureFinishedAt = null;
   }
 
+  // Faint vertical ticks only — no per-line text (the corner .status label already carries
+  // the duration), and a dotted center reference line, matching a scope-style readout
+  // rather than a labeled chart axis.
   private drawGrid(ctx2d: CanvasRenderingContext2D, w: number, h: number, preRollPx: number): void {
     const step = niceMsStep(this.captureAudioMs);
     const plotW = w - preRollPx;
-    ctx2d.font = '9px system-ui, sans-serif';
-    ctx2d.textBaseline = 'alphabetic';
+    ctx2d.strokeStyle = '#00000012';
+    ctx2d.lineWidth = 1;
+    ctx2d.setLineDash([]);
     for (let t = 0; t <= this.captureAudioMs + 0.001; t += step) {
       const x = preRollPx + (t / this.captureAudioMs) * plotW;
-      ctx2d.strokeStyle = '#00000012';
-      ctx2d.lineWidth = 1;
       ctx2d.beginPath();
       ctx2d.moveTo(x, 0);
       ctx2d.lineTo(x, h);
       ctx2d.stroke();
-      ctx2d.fillStyle = '#00000055';
-      ctx2d.fillText(`${Math.round(t)}ms`, x + 2, h - 3);
     }
-    ctx2d.strokeStyle = '#00000018';
+    ctx2d.strokeStyle = '#00000022';
+    ctx2d.setLineDash([1, 3]);
     ctx2d.beginPath();
     ctx2d.moveTo(preRollPx, h / 2);
     ctx2d.lineTo(w, h / 2);
     ctx2d.stroke();
+    ctx2d.setLineDash([]);
   }
 
   /**
@@ -369,16 +371,37 @@ export class ChordalPlayground extends HTMLElement {
     const n = this.captureWriteIndex;
     if (n > 1) {
       const plotW = w - preRollPx;
-      const stepPx = plotW / buf.length;
-      ctx2d.beginPath();
-      for (let i = 0; i < n; i++) {
-        const x = preRollPx + i * stepPx;
-        const y = h / 2 - (buf[i] ?? 0) * (h / 2) * 0.95;
-        if (i === 0) ctx2d.moveTo(x, y);
-        else ctx2d.lineTo(x, y);
+      // One point per pixel column, not one per sample — plotting every raw sample at
+      // typical sample rates produces a dense, jittery line (many cycles per pixel for
+      // this library's higher-register tones) rather than the clean, readable hump shape
+      // a UI meter should show. Each column takes the largest-magnitude sample in its
+      // span (preserves peaks instead of averaging them away), then the points are
+      // connected with quadratic curves for smooth, rounded transitions.
+      const points: Array<{ x: number; y: number }> = [];
+      const samplesPerCol = n / plotW;
+      for (let px = 0; preRollPx + px <= w; px++) {
+        const start = Math.floor(px * samplesPerCol);
+        const end = Math.min(n, Math.max(start + 1, Math.floor((px + 1) * samplesPerCol)));
+        let peak = 0;
+        for (let i = start; i < end; i++) {
+          const v = buf[i] ?? 0;
+          if (Math.abs(v) > Math.abs(peak)) peak = v;
+        }
+        points.push({ x: preRollPx + px, y: h / 2 - peak * (h / 2) * 0.95 });
       }
+
       ctx2d.strokeStyle = FAMILY_ACCENTS[this.family];
       ctx2d.lineWidth = 1;
+      ctx2d.lineJoin = 'round';
+      ctx2d.lineCap = 'round';
+      ctx2d.beginPath();
+      ctx2d.moveTo(points[0]!.x, points[0]!.y);
+      for (let i = 1; i < points.length - 1; i++) {
+        const mid = { x: (points[i]!.x + points[i + 1]!.x) / 2, y: (points[i]!.y + points[i + 1]!.y) / 2 };
+        ctx2d.quadraticCurveTo(points[i]!.x, points[i]!.y, mid.x, mid.y);
+      }
+      const last = points[points.length - 1]!;
+      ctx2d.lineTo(last.x, last.y);
       ctx2d.stroke();
     }
   };
