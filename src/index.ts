@@ -169,12 +169,17 @@ interface BindingConfig {
 // One attribute per instance, each firing on the DOM event that instance naturally maps to.
 // error binds to the native 'invalid' event — the one real DOM event that already means
 // "this input is in an error state" — rather than requiring a bespoke trigger call.
+//
+// submit binds to 'click' as a reasonable declarative default, but its more typical real
+// usage is programmatic — call play('submit', ...) at the moment an async submission
+// actually starts, since that's not a DOM event bind() can observe on its own.
 const BINDINGS: BindingConfig[] = [
   { attr: 'data-sound-hover', instance: 'hover', event: 'pointerenter' },
   { attr: 'data-sound-click', instance: 'click', event: 'pointerdown' },
   { attr: 'data-sound-congrats', instance: 'congrats', event: 'click' },
   { attr: 'data-sound-error', instance: 'error', event: 'invalid' },
   { attr: 'data-sound-toggle', instance: 'toggle', event: 'click' },
+  { attr: 'data-sound-submit', instance: 'submit', event: 'click' },
 ];
 
 const boundAttrsByElement = new WeakMap<Element, Set<string>>();
