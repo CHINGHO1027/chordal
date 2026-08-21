@@ -135,13 +135,15 @@ const singleNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultipl
 // hover doesn't get one — it's a weightless probe, not a struck object.
 const hoverNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false }];
 
-// press: low, solid, weighted — sweeps down into the hit. release: high, brief, crisp —
-// sweeps up on landing. Real minor-third interval between them (not a ~1-semitone token
-// nudge), release deliberately shorter than press (brief, not lingering) rather than the
-// reverse.
+// press: low, solid, weighted. release: high, brief, crisp. Real minor-third interval
+// between them (not a ~1-semitone token nudge), release deliberately shorter than press
+// (brief, not lingering) rather than the reverse. No pitch sweep on either note — Cuelume's
+// own press/release don't sweep at all (static frequency + filter brightness + decay
+// length do all the work); forcing a glide into a note this short read as an unstable
+// flutter rather than a clean transition.
 const clickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.64, pitchMultiplier: 0.96, volumeMultiplier: 1, sweepTo: 0.82 },
-  { offsetFraction: 0.56, lengthFraction: 0.3, pitchMultiplier: 1.26, volumeMultiplier: 0.5, sweepTo: 1.15 },
+  { offsetFraction: 0, lengthFraction: 0.64, pitchMultiplier: 0.96, volumeMultiplier: 1 },
+  { offsetFraction: 0.56, lengthFraction: 0.3, pitchMultiplier: 1.26, volumeMultiplier: 0.5 },
 ];
 
 // A muted, barely-descending click — a "blocked" signal, not a dramatic downward scoop.
@@ -201,12 +203,14 @@ const softBubbleToggleNotes: Note[] = [
 // highpass — real intervals given room so the resonance can actually ring, rather than
 // generic clicks riding on top of the brightness.
 
-// click: press dips down into the tap (weighted), release sweeps up into a brighter
-// fourth (crisp) — and stays the shorter of the two, so the lift reads as brief, not
-// lingering.
+// click: press sits at the tap (weighted), release jumps to a brighter fourth (crisp) —
+// and stays the shorter of the two, so the lift reads as brief, not lingering. No pitch
+// sweep — on a note this short a glide read as flutter, not a clean interval jump; the
+// resonant highpass Q made it worse (a swept pitch passing near the filter's own resonant
+// peak rings/wobbles). The static fourth plus the texture flick below carry "crisp" now.
 const glassCrystalClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.56, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.85 },
-  { offsetFraction: 0.48, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.45, sweepTo: 1.15 },
+  { offsetFraction: 0, lengthFraction: 0.56, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.48, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.45 },
   { offsetFraction: 0.48, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
@@ -236,13 +240,13 @@ const glassCrystalToggleNotes: Note[] = [
 // from more notes packed tighter. Applied here at chime's own register or without
 // literally copying their numbers.
 
-// click: press sweeps down (weighted) into the tap, release sweeps up a minor third
-// (crisp) and stays the shorter of the two — echoing how Cuelume's press/release are two
-// separate recipes rather than one sound scaled down, now with the down/up motion the
-// static-pitch version was missing.
+// click: press sits at the tap (weighted), release jumps a minor third up (crisp) and
+// stays the shorter of the two — echoing how Cuelume's press/release are two separate
+// recipes rather than one sound scaled down. No sweep: Cuelume's own release doesn't glide
+// either, and a forced glide on a ~10ms note read as flutter, not a clean interval jump.
 const chimeClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.58, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.88 },
-  { offsetFraction: 0.5, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5, sweepTo: 1.12 },
+  { offsetFraction: 0, lengthFraction: 0.58, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.5, lengthFraction: 0.34, pitchMultiplier: 1.19, volumeMultiplier: 0.5 },
   { offsetFraction: 0.5, lengthFraction: 0.34, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
@@ -304,12 +308,12 @@ const metallicTactCongratsNotes: Note[] = [
   { offsetFraction: 0.56, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 1 },
 ];
 
-// metallic-tact click: press bottoms out low (mechanical), release pings back up with a
-// bright metallic-sheen texture flick reinforcing the crispness a square-wave sweep alone
-// can't give it.
+// metallic-tact click: press sits low (mechanical), release pings up a real interval
+// with a bright metallic-sheen texture flick for the crispness. No sweep — a glide
+// squeezed into a ~7ms note read as flutter rather than a clean ping.
 const metallicTactClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 0.96, volumeMultiplier: 1, sweepTo: 0.8 },
-  { offsetFraction: 0.54, lengthFraction: 0.3, pitchMultiplier: 1.28, volumeMultiplier: 0.5, sweepTo: 1.18 },
+  { offsetFraction: 0, lengthFraction: 0.62, pitchMultiplier: 0.96, volumeMultiplier: 1 },
+  { offsetFraction: 0.54, lengthFraction: 0.3, pitchMultiplier: 1.28, volumeMultiplier: 0.5 },
   { offsetFraction: 0.54, lengthFraction: 0.22, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
@@ -367,12 +371,13 @@ const springToggleNotes: Note[] = [
 // --- tiny-sparkle: bespoke per-instance gestures — quick, bright, and light, distinct
 // from every other family's timing by being genuinely fast rather than just quiet.
 
-// click: a very light two-part twinkle — press dips slightly (still weighted, just a
-// featherweight version of it), release leaps a real fifth up and stays the shorter of
-// the two notes.
+// click: a very light two-part twinkle — press sits at the root, release leaps a real
+// fifth up and stays the shorter of the two notes. No sweep: at ~6ms this note is the
+// shortest of any family's release, nowhere near long enough for a glide to read as
+// anything but flutter — the fifth interval alone already carries plenty of "up."
 const tinySparkleClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.46, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.92 },
-  { offsetFraction: 0.4, lengthFraction: 0.3, pitchMultiplier: 1.5, volumeMultiplier: 0.5, sweepTo: 1.15 },
+  { offsetFraction: 0, lengthFraction: 0.46, pitchMultiplier: 1, volumeMultiplier: 1 },
+  { offsetFraction: 0.4, lengthFraction: 0.3, pitchMultiplier: 1.5, volumeMultiplier: 0.5 },
   { offsetFraction: 0.4, lengthFraction: 0.22, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
@@ -410,11 +415,12 @@ const snapCongratsNotes: Note[] = [
   { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
 
-// snap click: press dips low (weighted bottoming-out), release snaps up a real fourth
-// with a bright texture flick for the crispness.
+// snap click: press sits low (weighted), release snaps up a real fourth with a bright
+// texture flick for the crispness. No sweep — at ~4.5ms this is close to tiny-sparkle's
+// release for shortness; a glide had no room to read as anything but flutter.
 const snapClickNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 0.96, volumeMultiplier: 1, sweepTo: 0.8 },
-  { offsetFraction: 0.52, lengthFraction: 0.28, pitchMultiplier: 1.3, volumeMultiplier: 0.5, sweepTo: 1.2 },
+  { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 0.96, volumeMultiplier: 1 },
+  { offsetFraction: 0.52, lengthFraction: 0.28, pitchMultiplier: 1.3, volumeMultiplier: 0.5 },
   { offsetFraction: 0.52, lengthFraction: 0.2, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true },
 ];
 
