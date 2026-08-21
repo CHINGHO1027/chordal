@@ -93,6 +93,14 @@ export interface Note {
    * on the engine's default fast attack.
    */
   attack?: number;
+  /**
+   * Set false to skip the family's filter entirely for this note — a raw, unfiltered
+   * oscillator. Defaults to true. Cuelume's own tone layers never carry a filter at all
+   * (only their noise layers do); reusing a family's own filter on a note tuned to sit
+   * well outside its passband (e.g. a low reference-match tone under a family whose
+   * bandpass centers much higher) would attenuate it rather than leave it clean.
+   */
+  useFilter?: boolean;
 }
 
 export interface InstancePreset extends InstanceTuning {
@@ -578,6 +586,47 @@ const snapSubmitNotes: Note[] = [
   },
 ];
 
+// error (exact reference match): Cuelume's own error recipe, layer for layer. It's the
+// only family recipe of theirs built on triangle-wave tones — snap is our only
+// triangle-waveform family, an unambiguous fit the same way soft-bubble was for loading.
+// A bandpass-noise knock (850Hz, Q1.1, 1ms attack, 35ms decay, the loudest layer) then two
+// raw unfiltered triangle tones: A4 (440Hz) at 25ms, then F4 (349.23Hz, a real major third
+// down — 0.7937, Cuelume's exact interval) at 100ms. useFilter:false on both tones matters
+// here specifically — snap's own bandpass centers at 720-1620Hz, well above these
+// reference frequencies, and Cuelume's tone layers were never filtered in the first place.
+// No shimmer anywhere (useDelay:false on all three) — their error recipe has none.
+// Volumes solved to match their exact post-gain-stage amplitudes (knock ~0.218, tones
+// ~0.076/0.067), the same approach used for chime and soft-bubble's exact matches.
+const snapErrorNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.1475,
+    pitchMultiplier: 1,
+    volumeMultiplier: 1,
+    useTexture: { filterType: 'bandpass', filterCutoff: 850, filterQ: 1.1 },
+    useDelay: false,
+    attack: 0.001,
+  },
+  {
+    offsetFraction: 0.1025,
+    lengthFraction: 0.3852,
+    pitchMultiplier: 0.6717,
+    volumeMultiplier: 0.3462,
+    useFilter: false,
+    useDelay: false,
+    attack: 0.004,
+  },
+  {
+    offsetFraction: 0.4098,
+    lengthFraction: 0.5902,
+    pitchMultiplier: 0.5331,
+    volumeMultiplier: 0.3077,
+    useFilter: false,
+    useDelay: false,
+    attack: 0.004,
+  },
+];
+
 export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
   'soft-bubble': {
     waveform: 'sine',
@@ -813,7 +862,9 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
     click: preset(0.24, 0.016, 0.5, 'click', snapClickNotes),
     congrats: preset(0.3, 0.1, 0.55, 'congrats', snapCongratsNotes),
-    error: preset(0.22, 0.12, 0.32, 'error', errorNotes),
+    // 244ms and 0.2184 volume: exact reference match — see snapErrorNotes. tone is unused
+    // (neither tone note reads the interpolated filter now), kept at a neutral value.
+    error: preset(0.2184, 0.244, 0.3, 'error', snapErrorNotes),
     toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
     submit: preset(0.21, 0.17, 0.45, 'submit', snapSubmitNotes),
   },
@@ -897,13 +948,15 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
     sweepTo = 1 + (sweepTo - 1) * toneT;
   }
 
+  const useFilter = note.useFilter !== false;
+
   return {
     waveform: recipe.waveform,
     frequency,
     endFrequency: sweepTo !== undefined ? frequency * sweepTo : undefined,
-    filterType: recipe.filterType,
-    filterCutoff,
-    filterQ,
+    filterType: useFilter ? recipe.filterType : undefined,
+    filterCutoff: useFilter ? filterCutoff : undefined,
+    filterQ: useFilter ? filterQ : undefined,
     volume: noteVolume,
     length: noteLength,
     attack: note.attack,
