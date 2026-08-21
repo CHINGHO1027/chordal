@@ -171,7 +171,7 @@ interface BindingConfig {
 // "this input is in an error state" — rather than requiring a bespoke trigger call.
 const BINDINGS: BindingConfig[] = [
   { attr: 'data-sound-hover', instance: 'hover', event: 'pointerenter' },
-  { attr: 'data-sound-press', instance: 'press', event: 'pointerdown' },
+  { attr: 'data-sound-click', instance: 'click', event: 'pointerdown' },
   { attr: 'data-sound-congrats', instance: 'congrats', event: 'click' },
   { attr: 'data-sound-error', instance: 'error', event: 'invalid' },
   { attr: 'data-sound-toggle', instance: 'toggle', event: 'click' },

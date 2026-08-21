@@ -388,7 +388,7 @@ export class ChordalPlayground extends HTMLElement {
             <div class="instance-group">
               <div class="instance-pills">
                 <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover</button>
-                <button type="button" class="test-btn" data-test="press" data-instance-trigger="press">Press</button>
+                <button type="button" class="test-btn" data-test="click" data-instance-trigger="click">Click</button>
                 <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Complete task</button>
                 <button type="button" class="test-btn" data-test="error" data-instance-trigger="error">Submit</button>
               </div>
@@ -443,8 +443,8 @@ export class ChordalPlayground extends HTMLElement {
     const hoverBtn = this.shadow.querySelector<HTMLElement>('[data-test="hover"]');
     hoverBtn?.addEventListener('pointerenter', () => this.triggerTest('hover'));
 
-    const pressBtn = this.shadow.querySelector<HTMLElement>('[data-test="press"]');
-    pressBtn?.addEventListener('pointerdown', () => this.triggerTest('press'));
+    const clickBtn = this.shadow.querySelector<HTMLElement>('[data-test="click"]');
+    clickBtn?.addEventListener('pointerdown', () => this.triggerTest('click'));
 
     const congratsBtn = this.shadow.querySelector<HTMLElement>('[data-test="congrats"]');
     congratsBtn?.addEventListener('click', () => this.triggerTest('congrats'));

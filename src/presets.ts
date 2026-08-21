@@ -23,7 +23,7 @@ export type SoundFamily =
   | 'tiny-sparkle'
   | 'snap';
 
-export type SoundInstance = 'hover' | 'press' | 'congrats' | 'error' | 'toggle';
+export type SoundInstance = 'hover' | 'click' | 'congrats' | 'error' | 'toggle';
 
 export const SOUND_FAMILIES: SoundFamily[] = [
   'soft-bubble',
@@ -37,7 +37,7 @@ export const SOUND_FAMILIES: SoundFamily[] = [
   'snap',
 ];
 
-export const SOUND_INSTANCES: SoundInstance[] = ['hover', 'press', 'congrats', 'error', 'toggle'];
+export const SOUND_INSTANCES: SoundInstance[] = ['hover', 'click', 'congrats', 'error', 'toggle'];
 
 /** The 4 tunable parameters exposed per instance. */
 export interface InstanceTuning {
@@ -75,6 +75,13 @@ export interface Note {
    * a tonal note. Ignored if the family has no textureLayer.
    */
   useTexture?: boolean;
+  /**
+   * Set false to skip the family's shimmer/delay on this note specifically. Defaults to
+   * true. The delay's feedback tail runs for a fixed duration independent of note length
+   * (see engine.shimmerTailSeconds) — for an instant, weightless cue like hover, that tail
+   * lingers long after the note itself has ended, which reads as heavy rather than light.
+   */
+  useDelay?: boolean;
 }
 
 export interface InstancePreset extends InstanceTuning {
@@ -120,10 +127,19 @@ export function getPitchRange(family: SoundFamily): [number, number] {
 // Generic note shapes, reused by families that don't need a custom gesture.
 const singleNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 }];
 
-// Down-stroke + a much quieter release tick — a physical couplet, not two equal hits.
-const pressNotes: Note[] = [
+// hover: genuinely dry — no shimmer tail. A family's shimmer feedback tail runs for a
+// fixed duration independent of note length (see engine.shimmerTailSeconds), so without
+// useDelay:false an "instant" 8-12ms hover would still trail hundreds of ms of tail behind
+// it — the same latent issue chime had before its shimmer was fixed, just never addressed
+// for the other 8 families' hover. Click keeps its family's shimmer as its "solid body";
+// hover doesn't get one — it's a weightless probe, not a struck object.
+const hoverNote: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, useDelay: false }];
+
+// Down-stroke + a real minor-third release lift — a physical couplet with a genuine
+// interval on the "spring pushing back" note, not a ~1-semitone token nudge.
+const clickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 1, volumeMultiplier: 1 },
-  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.06, volumeMultiplier: 0.35 },
+  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.19, volumeMultiplier: 0.4 },
 ];
 
 // A muted, barely-descending click — a "blocked" signal, not a dramatic downward scoop.
@@ -149,9 +165,9 @@ const congratsArpeggio: Note[] = [
 // "gimmick" from resolveNoteParams — a sweepTo glide whose magnitude scales with `tone` —
 // for a genuine squeeze/bloop quality instead of a flat pitch.
 
-// press: a soft squeeze-down + a quieter spring-back lift — the sweep gives it real
+// click: a soft squeeze-down + a quieter spring-back lift — the sweep gives it real
 // physical "give" rather than a static click.
-const softBubblePressNotes: Note[] = [
+const softBubbleClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.6, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.92 },
   { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.12, volumeMultiplier: 0.4 },
 ];
@@ -180,8 +196,8 @@ const softBubbleToggleNotes: Note[] = [
 // highpass — real intervals given room so the resonance can actually ring, rather than
 // generic clicks riding on top of the brightness.
 
-// press: a sharp glassy tap + a brighter fourth-up release ring.
-const glassCrystalPressNotes: Note[] = [
+// click: a sharp glassy tap + a brighter fourth-up release ring.
+const glassCrystalClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1 },
   { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 1.33, volumeMultiplier: 0.4 },
 ];
@@ -212,10 +228,10 @@ const glassCrystalToggleNotes: Note[] = [
 // from more notes packed tighter. Applied here at chime's own register or without
 // literally copying their numbers.
 
-// press: down-stroke + a real-interval release lift (a minor third, not a token nudge) —
+// click: down-stroke + a real-interval release lift (a minor third, not a token nudge) —
 // two distinct textures for the couplet, echoing how Cuelume's press/release are two
 // separate recipes rather than one sound scaled down.
-const chimePressNotes: Note[] = [
+const chimeClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.5, pitchMultiplier: 1, volumeMultiplier: 1 },
   { offsetFraction: 0.45, lengthFraction: 0.55, pitchMultiplier: 1.19, volumeMultiplier: 0.55 },
 ];
@@ -273,13 +289,13 @@ const digitalBlipCongratsNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.4, pitchMultiplier: 1, volumeMultiplier: 0.8 },
   { offsetFraction: 0.34, lengthFraction: 0.55, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.12 },
 ];
-// hover/press keep a quick, quiet click layered under the square tone for a little grit.
+// hover/click keep a quick, quiet click layered under the square tone for a little grit.
 const digitalBlipHoverNotes: Note[] = [
-  ...singleNote,
+  ...hoverNote,
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.35, useTexture: true },
 ];
-const digitalBlipPressNotes: Note[] = [
-  ...pressNotes,
+const digitalBlipClickNotes: Note[] = [
+  ...clickNotes,
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 0.32, useTexture: true },
 ];
 
@@ -287,9 +303,9 @@ const digitalBlipPressNotes: Note[] = [
 // compress, then rebound past rest before settling — using sweepTo for the rebound rather
 // than a flat second pitch.
 
-// press: compress down, then rebound overshoots upward before it would settle — a genuine
+// click: compress down, then rebound overshoots upward before it would settle — a genuine
 // spring release, not a static two-note click.
-const springPressNotes: Note[] = [
+const springClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 0.82 },
   { offsetFraction: 0.36, lengthFraction: 0.64, pitchMultiplier: 0.88, volumeMultiplier: 0.55, sweepTo: 1.15 },
 ];
@@ -317,8 +333,8 @@ const springToggleNotes: Note[] = [
 // --- tiny-sparkle: bespoke per-instance gestures — quick, bright, and light, distinct
 // from every other family's timing by being genuinely fast rather than just quiet.
 
-// press: a very light two-part twinkle, a real fifth up on the (quiet) second note.
-const tinySparklePressNotes: Note[] = [
+// click: a very light two-part twinkle, a real fifth up on the (quiet) second note.
+const tinySparkleClickNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.45, pitchMultiplier: 1, volumeMultiplier: 1 },
   { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 0.5 },
 ];
@@ -446,11 +462,15 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
   },
 };
 
-// Pitch offsets applied uniformly across families per instance — hover sits at the
-// family's home register, error sits noticeably lower, congrats sits brighter.
+// Pitch offsets applied uniformly across families per instance. hover and click used to
+// sit almost on top of each other (1.0 vs 0.95) — widened so hover genuinely sits above a
+// family's home register (light, weightless probe) and click sits into it (grounded,
+// physical actuation), matching the hover-vs-click acoustic split alongside hoverNote's
+// useDelay:false and clickNotes' real-interval release. error sits noticeably lower,
+// congrats sits brighter.
 const INSTANCE_PITCH: Record<SoundInstance, number> = {
-  hover: 1.0,
-  press: 0.95,
+  hover: 1.08,
+  click: 0.92,
   congrats: 1.05,
   error: 0.85,
   toggle: 1.0,
@@ -469,8 +489,8 @@ function preset(volume: number, length: number, tone: number, instance: SoundIns
 // back to being a genuine polyphony safety net instead of shaping every single trigger.
 export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>> = {
   'soft-bubble': {
-    hover: preset(0.18, 0.011, 0.45, 'hover', singleNote),
-    press: preset(0.24, 0.028, 0.42, 'press', softBubblePressNotes),
+    hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
+    click: preset(0.24, 0.028, 0.42, 'click', softBubbleClickNotes),
     // 220ms, up from 160ms — 3 real-interval notes need more room than the old flat
     // arpeggio timing gave them.
     congrats: preset(0.3, 0.22, 0.5, 'congrats', softBubbleCongratsNotes),
@@ -478,22 +498,22 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     toggle: preset(0.22, 0.026, 0.42, 'toggle', softBubbleToggleNotes),
   },
   'glass-crystal': {
-    hover: preset(0.18, 0.009, 0.55, 'hover', singleNote),
-    press: preset(0.24, 0.024, 0.5, 'press', glassCrystalPressNotes),
+    hover: preset(0.18, 0.009, 0.55, 'hover', hoverNote),
+    click: preset(0.24, 0.024, 0.5, 'click', glassCrystalClickNotes),
     congrats: preset(0.3, 0.22, 0.65, 'congrats', glassCrystalCongratsNotes),
     error: preset(0.22, 0.05, 0.3, 'error', glassCrystalErrorNotes),
     toggle: preset(0.23, 0.024, 0.5, 'toggle', glassCrystalToggleNotes),
   },
   'paper-snap': {
-    hover: preset(0.17, 0.008, 0.5, 'hover', singleNote),
-    press: preset(0.23, 0.015, 0.5, 'press', pressNotes),
+    hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
+    click: preset(0.23, 0.015, 0.5, 'click', clickNotes),
     congrats: preset(0.3, 0.11, 0.55, 'congrats', paperSnapCongratsNotes),
     error: preset(0.22, 0.035, 0.3, 'error', errorNotes),
     toggle: preset(0.22, 0.014, 0.5, 'toggle', singleNote),
   },
   'metallic-tact': {
-    hover: preset(0.18, 0.012, 0.45, 'hover', singleNote),
-    press: preset(0.24, 0.022, 0.45, 'press', pressNotes),
+    hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
+    click: preset(0.24, 0.022, 0.45, 'click', clickNotes),
     congrats: preset(0.3, 0.14, 0.5, 'congrats', metallicTactCongratsNotes),
     error: preset(0.22, 0.05, 0.3, 'error', errorNotes),
     toggle: preset(0.24, 0.02, 0.45, 'toggle', toggleClickNotes),
@@ -504,8 +524,8 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     // their limiter too, so a single note never gets compressed. Ours were sitting at or
     // above threshold, so the limiter was squashing almost every chime hit — that
     // gain-reduction pumping is what read as "heavy" next to their untouched transients.
-    hover: preset(0.18, 0.012, 0.5, 'hover', singleNote),
-    press: preset(0.23, 0.03, 0.5, 'press', chimePressNotes),
+    hover: preset(0.18, 0.012, 0.5, 'hover', hoverNote),
+    click: preset(0.23, 0.03, 0.5, 'click', chimeClickNotes),
     // 0.18 volume + 356ms length: solved to land at the exact same final amplitude
     // (~0.18/0.16 post-limiter-headroom) and total decay time as Cuelume's own two chime
     // layers (226ms + 266ms decay, second note entering at the 90ms mark) — see
@@ -516,21 +536,21 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
   },
   'digital-blip': {
     hover: preset(0.17, 0.009, 0.4, 'hover', digitalBlipHoverNotes),
-    press: preset(0.23, 0.016, 0.4, 'press', digitalBlipPressNotes),
+    click: preset(0.23, 0.016, 0.4, 'click', digitalBlipClickNotes),
     congrats: preset(0.3, 0.12, 0.45, 'congrats', digitalBlipCongratsNotes),
     error: preset(0.22, 0.038, 0.25, 'error', errorNotes),
     toggle: preset(0.22, 0.014, 0.4, 'toggle', toggleClickNotes),
   },
   spring: {
-    hover: preset(0.18, 0.011, 0.45, 'hover', singleNote),
-    press: preset(0.24, 0.03, 0.42, 'press', springPressNotes),
+    hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
+    click: preset(0.24, 0.03, 0.42, 'click', springClickNotes),
     congrats: preset(0.3, 0.22, 0.48, 'congrats', springCongratsNotes),
     error: preset(0.22, 0.055, 0.28, 'error', springErrorNotes),
     toggle: preset(0.23, 0.027, 0.42, 'toggle', springToggleNotes),
   },
   'tiny-sparkle': {
-    hover: preset(0.15, 0.008, 0.2, 'hover', singleNote),
-    press: preset(0.22, 0.02, 0.2, 'press', tinySparklePressNotes),
+    hover: preset(0.15, 0.008, 0.2, 'hover', hoverNote),
+    click: preset(0.22, 0.02, 0.2, 'click', tinySparkleClickNotes),
     // 280ms — matches Cuelume's own sparkle's real total span (last note starts at 135ms,
     // decays 120ms, ≈255ms) now that the notes carry their real individual decay times
     // instead of a compressed fixed fraction. Volume kept in family (still the loudest of
@@ -542,8 +562,8 @@ export const PRESETS: Record<SoundFamily, Record<SoundInstance, InstancePreset>>
     toggle: preset(0.2, 0.022, 0.2, 'toggle', tinySparkleToggleNotes),
   },
   snap: {
-    hover: preset(0.18, 0.009, 0.5, 'hover', singleNote),
-    press: preset(0.24, 0.016, 0.5, 'press', pressNotes),
+    hover: preset(0.18, 0.009, 0.5, 'hover', hoverNote),
+    click: preset(0.24, 0.016, 0.5, 'click', clickNotes),
     congrats: preset(0.3, 0.1, 0.55, 'congrats', snapCongratsNotes),
     error: preset(0.22, 0.035, 0.32, 'error', errorNotes),
     toggle: preset(0.23, 0.014, 0.5, 'toggle', singleNote),
@@ -571,6 +591,7 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
   const noteLength = Math.max(tuning.length * note.lengthFraction, 0.005);
   const noteVolume = Math.min(Math.max(tuning.volume * note.volumeMultiplier, 0), 1);
   const pitchMultiplier = tuning.pitch * note.pitchMultiplier;
+  const delay = note.useDelay === false ? undefined : recipe.delay;
 
   if (note.useTexture && recipe.textureLayer) {
     const tex = recipe.textureLayer;
@@ -599,7 +620,7 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
       filterQ,
       volume: noteVolume,
       length: noteLength,
-      delay: recipe.delay,
+      delay,
       detuneCents: note.detuneCents ?? 0,
     };
   }
@@ -620,7 +641,7 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
     filterQ,
     volume: noteVolume,
     length: noteLength,
-    delay: recipe.delay,
+    delay,
     detuneCents: note.detuneCents ?? 0,
   };
 }
