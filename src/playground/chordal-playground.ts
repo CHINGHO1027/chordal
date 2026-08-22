@@ -366,8 +366,22 @@ export class ChordalPlayground extends HTMLElement {
 
     if (Math.abs(peakVal) <= NOISE_FLOOR) return; // nothing audible this interval — grid only
 
+    // Trigger-align to the onset: find where the signal first clears the noise floor and
+    // draw from *there* to the end of the window, not from raw sample 0. Without this, the
+    // held window's onset can land anywhere inside it depending on exactly when that rAF
+    // tick happened to sample — a short transient starting partway through reads as the
+    // trace starting mid-canvas instead of consistently from the left edge.
+    let onsetIndex = 0;
+    for (let i = 0; i < buf.length; i++) {
+      if (Math.abs(buf[i] ?? 0) > NOISE_FLOOR) {
+        onsetIndex = i;
+        break;
+      }
+    }
+    const segment = buf.subarray(onsetIndex);
+    const n = segment.length;
+
     const gain = (TARGET_PEAK_FRACTION * (h / 2)) / Math.abs(peakVal);
-    const n = buf.length;
 
     // One point per pixel column, not one per sample — the peak-preserving decimation keeps
     // a fast transient's true peak from being averaged away, then quadratic curves between
@@ -380,7 +394,7 @@ export class ChordalPlayground extends HTMLElement {
       const end = Math.min(n, Math.max(start + 1, Math.floor((px + 1) * samplesPerCol)));
       let peak = 0;
       for (let i = start; i < end; i++) {
-        const v = buf[i] ?? 0;
+        const v = segment[i] ?? 0;
         if (Math.abs(v) > Math.abs(peak)) peak = v;
       }
       points.push({ x: px, y: h / 2 - peak * gain, peak });
