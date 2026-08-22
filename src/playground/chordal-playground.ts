@@ -190,6 +190,13 @@ const STYLES = `
 // decay/shimmer tail the engine may still be rendering after the "note" technically ends.
 const ACTIVE_GRACE_MS = 120;
 
+// Minimum time between actual redraws. Redrawing every rAF tick (~60/sec) from a fast-
+// moving ~10.7ms rolling window reads as flicker, not a readable trace — the window slides
+// forward and the auto-gain recomputes faster than the eye can track. Throttling to this
+// cadence keeps it genuinely live (still updating continuously) while giving each frame
+// enough time on screen to actually register.
+const DRAW_INTERVAL_MS = 70;
+
 // Target fraction of half-height the loudest sample in the current live window should
 // reach — auto-gain recomputed every frame, so it tracks the signal's own envelope (loud
 // attack, quiet decay) as it plays, not a single value fixed at trigger time.
@@ -224,6 +231,7 @@ export class ChordalPlayground extends HTMLElement {
   // live display window itself, not a separate crop
   private activeUntil = 0; // performance.now() timestamp; blank canvas once passed
   private gestureLengthMs = 0; // last-triggered instance's own length, for the status label
+  private lastDrawAt = 0; // throttles actual redraws — see DRAW_INTERVAL_MS
 
   constructor() {
     super();
@@ -316,9 +324,18 @@ export class ChordalPlayground extends HTMLElement {
     const h = canvas.height;
     const now = performance.now();
 
-    ctx2d.clearRect(0, 0, w, h);
-    if (now >= this.activeUntil) return; // idle: blank canvas, no curve, no grid
+    if (now >= this.activeUntil) {
+      ctx2d.clearRect(0, 0, w, h); // idle: blank canvas, no curve, no grid — clears promptly,
+      return; // not throttled, so it never lingers after a gesture actually finishes
+    }
 
+    // Throttled to DRAW_INTERVAL_MS, not every rAF tick — leaves the previous frame on
+    // screen in between instead of clearing (which would flicker to blank every skipped
+    // tick) so each redraw actually gets enough time to register before the next one.
+    if (now - this.lastDrawAt < DRAW_INTERVAL_MS) return;
+    this.lastDrawAt = now;
+
+    ctx2d.clearRect(0, 0, w, h);
     this.analyser.getFloatTimeDomainData(this.liveScratch as Float32Array<ArrayBuffer>);
     const buf = this.liveScratch;
     const n = buf.length;
