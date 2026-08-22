@@ -873,8 +873,12 @@ const springCongratsNotes: Note[] = [
   { offsetFraction: 0.52, lengthFraction: 0.48, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.08, useFilter: false },
 ];
 
-// Same knock+2-tone pattern as snap's exact Cuelume match, at spring's own 520Hz register,
-// with its own compressed "boing-down" sweep kept on both tones rather than replaced.
+// Same knock+2-tone pattern as snap's exact Cuelume match, at spring's own 520Hz register.
+// Dropped the "boing-down" sweep this used to carry on both tones — the only family's error
+// tones still doing this (every other family settled on static pitch here). A pitch sweep
+// makes each cycle within a live analyser window a slightly different width as the
+// frequency ramps, which reads as the waveform bunching up lopsided to one side rather than
+// centered — the actual bug report. Static pitch, matching every other family's error.
 const springErrorNotes: Note[] = [
   {
     offsetFraction: 0,
@@ -885,8 +889,8 @@ const springErrorNotes: Note[] = [
     useDelay: false,
     attack: 0.001,
   },
-  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useFilter: false, useDelay: false, attack: 0.004, sweepTo: 0.85 },
-  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useFilter: false, useDelay: false, attack: 0.004, sweepTo: 0.9 },
+  { offsetFraction: 0.1, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.35, useFilter: false, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.58, pitchMultiplier: 0.7937, volumeMultiplier: 0.31, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
 // toggle: two closely-spaced micro-transients, a mechanical latch rather than a musical

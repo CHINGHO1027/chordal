@@ -191,11 +191,12 @@ const STYLES = `
 const ACTIVE_GRACE_MS = 120;
 
 // Minimum time between actual redraws. Redrawing every rAF tick (~60/sec) from a fast-
-// moving ~10.7ms rolling window reads as flicker, not a readable trace — the window slides
-// forward and the auto-gain recomputes faster than the eye can track. Throttling to this
-// cadence keeps it genuinely live (still updating continuously) while giving each frame
-// enough time on screen to actually register.
-const DRAW_INTERVAL_MS = 70;
+// moving ~10.7ms rolling window reads as flicker, not a readable trace. This is deliberately
+// slow for readability — sampling for content (see peakHold* fields) runs every rAF tick
+// regardless, so a brief transient between two redraws still gets caught and shown at the
+// next one instead of being missed the way a naively-throttled "read only at redraw time"
+// approach would miss it.
+const DRAW_INTERVAL_MS = 80;
 
 // Target fraction of half-height the loudest sample in the current live window should
 // reach — auto-gain recomputed every frame, so it tracks the signal's own envelope (loud
@@ -225,7 +226,9 @@ export class ChordalPlayground extends HTMLElement {
   private toggleState: 'on' | 'off' = 'off';
 
   // Live waveform — see drawWaveform()'s doc comment.
-  private liveScratch: Float32Array | null = null;
+  private liveScratch: Float32Array | null = null; // per-rAF read target
+  private peakHoldScratch: Float32Array | null = null; // loudest window seen since last redraw
+  private peakHoldValue = 0;
   private sampleRate = 48000;
   private analyserWindowMs = 0; // real time one getFloatTimeDomainData read spans — the
   // live display window itself, not a separate crop
@@ -270,6 +273,7 @@ export class ChordalPlayground extends HTMLElement {
     output.connect(this.analyser);
     this.sampleRate = context.sampleRate;
     this.liveScratch = new Float32Array(this.analyser.frequencyBinCount);
+    this.peakHoldScratch = new Float32Array(this.analyser.frequencyBinCount);
     this.analyserWindowMs = (this.liveScratch.length / this.sampleRate) * 1000;
     this.drawWaveform();
   }
@@ -306,17 +310,21 @@ export class ChordalPlayground extends HTMLElement {
   }
 
   /**
-   * Genuinely live: no capture buffer, no freeze, no crop. Every frame reads whatever the
-   * analyser's own short rolling window (~10.7ms, see setupWaveform) currently shows and
-   * draws it directly, auto-gained fresh each frame so the trace tracks the signal's own
-   * envelope (a loud attack reads big, a quiet decay tail still reads clearly) as it plays
-   * in real time — not a single gain computed once from a frozen recording. Idle (nothing
-   * triggered within markActive's window) is fully blank — no resting line, no grid.
+   * Genuinely live: no capture buffer, no freeze, no crop — but sampling and redrawing run
+   * at two different rates. Every single rAF tick reads the analyser's short rolling window
+   * (~10.7ms, see setupWaveform) and keeps whichever one seen so far this interval had the
+   * largest peak (peakHold*) — cheap, and it means a brief transient (a knock, a few ms
+   * wide) landing between two redraws still gets caught rather than silently missed. Actual
+   * redraws only happen every DRAW_INTERVAL_MS, using that held peak window — redrawing
+   * every tick reads as flicker (the window slides and gain recomputes faster than the eye
+   * can track), so the two concerns (catch brief content / stay readable) are handled by
+   * separate rates instead of trading off against each other on a single throttle value.
+   * Idle (nothing triggered within markActive's window) is fully blank — no line, no grid.
    */
   private drawWaveform = (): void => {
     this.rafId = requestAnimationFrame(this.drawWaveform);
     const canvas = this.shadow.querySelector<HTMLCanvasElement>('canvas');
-    if (!canvas || !this.analyser || !this.liveScratch) return;
+    if (!canvas || !this.analyser || !this.liveScratch || !this.peakHoldScratch) return;
     const ctx2d = canvas.getContext('2d');
     if (!ctx2d) return;
 
@@ -326,7 +334,20 @@ export class ChordalPlayground extends HTMLElement {
 
     if (now >= this.activeUntil) {
       ctx2d.clearRect(0, 0, w, h); // idle: blank canvas, no curve, no grid — clears promptly,
-      return; // not throttled, so it never lingers after a gesture actually finishes
+      this.peakHoldValue = 0; // not throttled, so it never lingers after a gesture ends
+      return;
+    }
+
+    // Sample every tick regardless of redraw throttling — see doc comment above.
+    this.analyser.getFloatTimeDomainData(this.liveScratch as Float32Array<ArrayBuffer>);
+    let framePeak = 0;
+    for (let i = 0; i < this.liveScratch.length; i++) {
+      const v = this.liveScratch[i] ?? 0;
+      if (Math.abs(v) > Math.abs(framePeak)) framePeak = v;
+    }
+    if (Math.abs(framePeak) > Math.abs(this.peakHoldValue)) {
+      this.peakHoldValue = framePeak;
+      this.peakHoldScratch.set(this.liveScratch);
     }
 
     // Throttled to DRAW_INTERVAL_MS, not every rAF tick — leaves the previous frame on
@@ -335,23 +356,18 @@ export class ChordalPlayground extends HTMLElement {
     if (now - this.lastDrawAt < DRAW_INTERVAL_MS) return;
     this.lastDrawAt = now;
 
+    const buf = this.peakHoldScratch;
+    const peakVal = this.peakHoldValue;
+    this.peakHoldValue = 0; // reset the hold for the next interval
+
     ctx2d.clearRect(0, 0, w, h);
-    this.analyser.getFloatTimeDomainData(this.liveScratch as Float32Array<ArrayBuffer>);
-    const buf = this.liveScratch;
-    const n = buf.length;
-
-    let peakVal = 0;
-    for (let i = 0; i < n; i++) {
-      const v = buf[i] ?? 0;
-      if (Math.abs(v) > Math.abs(peakVal)) peakVal = v;
-    }
-
     this.drawGrid(ctx2d, w, h);
     this.updateFrequencyLabel(buf);
 
-    if (Math.abs(peakVal) <= NOISE_FLOOR) return; // nothing audible this instant — grid only
+    if (Math.abs(peakVal) <= NOISE_FLOOR) return; // nothing audible this interval — grid only
 
     const gain = (TARGET_PEAK_FRACTION * (h / 2)) / Math.abs(peakVal);
+    const n = buf.length;
 
     // One point per pixel column, not one per sample — the peak-preserving decimation keeps
     // a fast transient's true peak from being averaged away, then quadratic curves between
