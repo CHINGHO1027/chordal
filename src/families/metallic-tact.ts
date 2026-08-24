@@ -122,7 +122,11 @@ const toggleNotes: Note[] = [
 // Replaced with a soft lowpass breath layer instead (this family's own submit already
 // does exactly this — same technique as submitNotes above: a slow 30ms attack, starting
 // at the same instant as the steps it sits under, not before them, so it swells in as
-// texture rather than announcing itself first.
+// texture rather than announcing itself first. Root step pinned to pitchMultiplier 0.8
+// (627Hz, down from this family's own 784Hz base) as the "on" state's default starting
+// pitch; the octave step and the landing tone scale off that same 0.8 so the 1:2:3
+// harmonic series (shared with every other family's listening — see families/snap.ts)
+// stays intact at the new register (627 -> 1254 -> 1882Hz).
 const listeningNotes: Note[] = [
   {
     offsetFraction: 0.0333,
@@ -136,7 +140,7 @@ const listeningNotes: Note[] = [
   {
     offsetFraction: 0.0333,
     lengthFraction: 0.15,
-    pitchMultiplier: 1,
+    pitchMultiplier: 0.8,
     volumeMultiplier: 0.5,
     waveformOverride: 'sine',
     useFilter: false,
@@ -145,7 +149,7 @@ const listeningNotes: Note[] = [
   {
     offsetFraction: 0.1833,
     lengthFraction: 0.1833,
-    pitchMultiplier: 2,
+    pitchMultiplier: 1.6,
     volumeMultiplier: 0.65,
     waveformOverride: 'sine',
     useFilter: false,
@@ -154,7 +158,7 @@ const listeningNotes: Note[] = [
   {
     offsetFraction: 0.3611,
     lengthFraction: 0.6389,
-    pitchMultiplier: 3,
+    pitchMultiplier: 2.4,
     volumeMultiplier: 1,
     waveformOverride: 'sine',
     useFilter: false,
