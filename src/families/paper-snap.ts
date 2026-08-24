@@ -123,6 +123,55 @@ const notificationNotes: Note[] = [
 // whole voice is noise, so toggle just needs one dry hit, no sweep/interval logic to reuse.
 const toggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 }];
 
+// listening: noise can't glide a continuous pitch (the engine never sweeps a bandpass
+// center — same limitation this family's own submit already works around), so the
+// "rising, locking on" shape becomes a discrete two-step bandpass rise instead of the
+// smooth glide the other 8 families get, then a real sine landing tone (waveformOverride,
+// same technique as this family's own error/notification, since noise can't resolve a
+// clean pitch either) at a register sized for an actual tone rather than this family's
+// noise-bandpass-tuned 3200Hz base. First pass — not yet validated by ear.
+const listeningNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1.4, volumeMultiplier: 0.5, attack: 0.001 },
+  { offsetFraction: 0.08, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.6, attack: 0.02 },
+  { offsetFraction: 0.38, lengthFraction: 0.25, pitchMultiplier: 2, volumeMultiplier: 0.7, attack: 0.02 },
+  {
+    offsetFraction: 0.6,
+    lengthFraction: 0.4,
+    pitchMultiplier: 0.3,
+    volumeMultiplier: 1,
+    waveformOverride: 'sine',
+    useFilter: false,
+    attack: 0.004,
+  },
+];
+
+// delete (reference family for this instance): this family's own register and filter
+// [2200, 6000] already sit close to Cuelume's own "page" recipe (1800Hz lowpass, 4200Hz
+// bandpass), so the flick and crackle below reproduce their literal cutoffs directly —
+// the same exact-match technique this family's click/error already use. A soft lowpass
+// flick, then a brighter bandpass crackle, then a tiny unfiltered sine tick as an accent
+// (page's own quietest layer). No delay field on this family's recipe at all, so nothing
+// needs useDelay:false here — there's no shimmer to skip in the first place.
+const deleteNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.35,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.85,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1800, filterQ: 0.7 },
+    attack: 0.006,
+  },
+  {
+    offsetFraction: 0.22,
+    lengthFraction: 0.3,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.6,
+    useTexture: { filterType: 'bandpass', filterCutoff: 4200, filterQ: 1.2 },
+    attack: 0.004,
+  },
+  { offsetFraction: 0.42, lengthFraction: 0.3, pitchMultiplier: 0.75, volumeMultiplier: 0.16, waveformOverride: 'sine', useFilter: false, attack: 0.002 },
+];
+
 export const recipe: FamilyRecipe = {
   waveform: 'noise',
   baseFrequency: 3200, // bandpass center, since noise has no fundamental pitch
@@ -141,6 +190,8 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   toggle: preset(0.22, 0.014, 0.5, 'toggle', toggleNotes),
   submit: preset(0.21, 0.16, 0.5, 'submit', submitNotes),
   notification: preset(0.2, 0.4, 0.3, 'notification', notificationNotes),
+  listening: preset(0.22, 0.32, 0.5, 'listening', listeningNotes),
+  delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
 };
 
 const paperSnap: SoundFamilyModule = { name: 'paper-snap', recipe, presets };

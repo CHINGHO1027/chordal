@@ -105,6 +105,41 @@ const congratsNotes: Note[] = [
   { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
 
+// listening (reference family for this instance): snap is chordal's only triangle-wave
+// family, matching the waveform Cuelume's own "ready" cue uses for its melodic layer — and
+// this family's own textureLayer (3600Hz) already sits almost exactly on their tick's own
+// 3600Hz. Three parts: a quick tick (this family's own texture) marking the trigger, a
+// triangle note gliding a real octave up (sweepTo, filtered — this family's own bandpass
+// colors the sweep as it rises through it), then a landing tone a further fifth above that
+// (1:2:3, the same harmonic series their own ready recipe lands on), unfiltered so the
+// "locked on" resolve reads clean rather than getting clipped by this family's own narrow
+// bandpass. Structurally distinct from congrats above (one continuous glide, not discrete
+// stepped notes) so the two are never confusable. First pass — not yet validated by ear.
+const listeningNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, attack: 0.001 },
+  { offsetFraction: 0.06, lengthFraction: 0.55, pitchMultiplier: 1, sweepTo: 2, volumeMultiplier: 0.75, attack: 0.006 },
+  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 3, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
+];
+
+// delete: adapted to this family's own bright texture register rather than the literal
+// paper-snap reference (see families/paper-snap.ts for that). A soft lowpass flick, then
+// this family's own textureLayer (3600Hz) as the brighter "crackle," then a tiny unfiltered
+// tick — dry throughout (useDelay:false), reading as discarded rather than lingering. One-
+// shot, no on/off state, unlike listening above.
+const deleteNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.35,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.8,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1400, filterQ: 0.7 },
+    useDelay: false,
+    attack: 0.006,
+  },
+  { offsetFraction: 0.22, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 0.55, useTexture: true, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.3, pitchMultiplier: 2, volumeMultiplier: 0.16, useFilter: false, useDelay: false, attack: 0.002 },
+];
+
 export const recipe: FamilyRecipe = {
   waveform: 'triangle',
   baseFrequency: 720,
@@ -126,6 +161,10 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   toggle: preset(0.23, 0.014, 0.5, 'toggle', toggleNotes),
   submit: preset(0.21, 0.17, 0.45, 'submit', submitNotes),
   notification: preset(0.15, 0.4, 0.45, 'notification', notificationNotes),
+  // 320ms — tick, octave glide, and a resolving landing tone all need real room; too fast
+  // and the glide reads as a pitch-bent click rather than a genuine sweep.
+  listening: preset(0.22, 0.32, 0.5, 'listening', listeningNotes),
+  delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
 };
 
 const snap: SoundFamilyModule = { name: 'snap', recipe, presets };

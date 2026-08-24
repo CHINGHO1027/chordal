@@ -11,7 +11,12 @@ import type { FamilyRecipe, InstanceTuning, Note } from './types';
 
 const TOGGLE_PITCH_BY_STATE: Record<'on' | 'off', number> = { on: 1, off: 0.82 };
 
-/** Toggle's "off" state sits noticeably lower than "on" — the two states should read as distinct. */
+/**
+ * A stateful instance's "off" sits noticeably lower than "on" — the two states should read
+ * as distinct without needing a whole separate note shape per state. Used by both `toggle`
+ * (a UI switch flipping) and `listening` (a mic/voice-input session starting and stopping) —
+ * anything with a genuine on/off lifecycle, not just the literally-named toggle instance.
+ */
 export function resolveToggleTuning(base: InstanceTuning, state: 'on' | 'off'): InstanceTuning {
   return { ...base, pitch: base.pitch * TOGGLE_PITCH_BY_STATE[state] };
 }

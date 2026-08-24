@@ -138,6 +138,8 @@ Exported readonly arrays for building your own family/instance picker UI without
 | `error` | A descending, dissonant phrase signaling something went wrong, bound to the native `invalid` event. |
 | `submit` | For the moment an async action actually starts. |
 | `notification` | For when something appears without user action, like a toast. |
+| `listening` | A stateful on/off cue for a mic or voice-input session starting and stopping — pass `{ state: 'on' \| 'off' }`, same as `toggle`. |
+| `delete` | An item being removed or discarded. Programmatic only — trigger it yourself via `play('delete', ...)`; there's no `data-sound-delete` binding, since deletions should never fire from a raw DOM event without your own confirmation logic. |
 | `slider` | Continuous, pitch-quantized feedback while dragging a range input (`playContinuous()` only). |
 
 ## License

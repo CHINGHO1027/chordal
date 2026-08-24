@@ -16,7 +16,7 @@ export type SoundFamily =
   | 'tiny-sparkle'
   | 'snap';
 
-export type SoundInstance = 'hover' | 'click' | 'congrats' | 'error' | 'toggle' | 'submit' | 'notification';
+export type SoundInstance = 'hover' | 'click' | 'congrats' | 'error' | 'toggle' | 'submit' | 'notification' | 'listening' | 'delete';
 
 export const SOUND_FAMILIES: SoundFamily[] = [
   'soft-bubble',
@@ -30,7 +30,17 @@ export const SOUND_FAMILIES: SoundFamily[] = [
   'snap',
 ];
 
-export const SOUND_INSTANCES: SoundInstance[] = ['hover', 'click', 'congrats', 'error', 'toggle', 'submit', 'notification'];
+export const SOUND_INSTANCES: SoundInstance[] = [
+  'hover',
+  'click',
+  'congrats',
+  'error',
+  'toggle',
+  'submit',
+  'notification',
+  'listening',
+  'delete',
+];
 
 /** The 4 tunable parameters exposed per instance. */
 export interface InstanceTuning {

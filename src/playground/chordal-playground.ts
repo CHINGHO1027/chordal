@@ -329,6 +329,7 @@ export class ChordalPlayground extends HTMLElement {
   private rafId: number | null = null;
   private idleTimer: number | null = null;
   private toggleState: 'on' | 'off' = 'off';
+  private listeningState: 'on' | 'off' = 'off';
 
   // Synthesized (not captured) waveform — see the constants block above and startVisual().
   private voices: VisualVoice[] = [];
@@ -681,12 +682,20 @@ export class ChordalPlayground extends HTMLElement {
                 <button type="button" class="test-btn" data-test="submit" data-instance-trigger="submit">Sent</button>
                 <button type="button" class="test-btn" data-test="error" data-instance-trigger="error">Error</button>
                 <button type="button" class="test-btn" data-test="notification" data-instance-trigger="notification">Notification</button>
+                <button type="button" class="test-btn" data-test="delete" data-instance-trigger="delete">Delete</button>
               </div>
               <div class="instance-divider"></div>
               <div class="instance-ctrl-row">
                 <span class="instance-ctrl-label">Toggle switch</span>
                 <label class="switch">
                   <input type="checkbox" data-test="toggle" />
+                  <span class="switch-track"><span class="switch-knob"></span></span>
+                </label>
+              </div>
+              <div class="instance-ctrl-row">
+                <span class="instance-ctrl-label">Listening (voice input)</span>
+                <label class="switch">
+                  <input type="checkbox" data-test="listening" />
                   <span class="switch-track"><span class="switch-knob"></span></span>
                 </label>
               </div>
@@ -765,6 +774,15 @@ export class ChordalPlayground extends HTMLElement {
 
     const notificationBtn = this.shadow.querySelector<HTMLElement>('[data-test="notification"]');
     notificationBtn?.addEventListener('click', () => this.triggerTest('notification'));
+
+    const deleteBtn = this.shadow.querySelector<HTMLElement>('[data-test="delete"]');
+    deleteBtn?.addEventListener('click', () => this.triggerTest('delete'));
+
+    const listeningInput = this.shadow.querySelector<HTMLInputElement>('[data-test="listening"]');
+    listeningInput?.addEventListener('change', () => {
+      this.listeningState = listeningInput.checked ? 'on' : 'off';
+      this.triggerTest('listening', { state: this.listeningState });
+    });
 
     const sliderDemo = this.shadow.querySelector<HTMLInputElement>('[data-test="slider"]');
     sliderDemo?.style.setProperty('--fill', `${sliderDemo.value}%`);

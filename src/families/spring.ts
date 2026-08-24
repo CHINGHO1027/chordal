@@ -97,6 +97,35 @@ const toggleNotes: Note[] = [
   { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 2.38, volumeMultiplier: 0.55, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
+// listening: tick, an octave glide, then a landing tone a further fifth up (1:2:3, same
+// harmonic series as this instance's reference across every family — see
+// families/snap.ts). Glide filtered (this family's own lowpass colors it as it climbs);
+// landing (1560Hz) already sits above this family's own filterCutoffRange top (940Hz), so
+// useFilter:false there reads clean without needing any extra override. First pass — not
+// yet validated by ear.
+const listeningNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, attack: 0.001 },
+  { offsetFraction: 0.06, lengthFraction: 0.55, pitchMultiplier: 1, sweepTo: 2, volumeMultiplier: 0.75, attack: 0.006 },
+  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 3, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
+];
+
+// delete: a soft lowpass flick, then this family's own textureLayer as the brighter
+// crackle, then a tiny unfiltered tick — dry (useDelay:false), reading as discarded
+// rather than lingering. See families/paper-snap.ts for this instance's reference family.
+const deleteNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.35,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.8,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1300, filterQ: 0.7 },
+    useDelay: false,
+    attack: 0.006,
+  },
+  { offsetFraction: 0.22, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 0.55, useTexture: true, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.3, pitchMultiplier: 2, volumeMultiplier: 0.16, useFilter: false, useDelay: false, attack: 0.002 },
+];
+
 export const recipe: FamilyRecipe = {
   waveform: 'sine',
   baseFrequency: 520,
@@ -116,6 +145,8 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   submit: preset(0.22, 0.2, 0.45, 'submit', submitNotes),
   // exact reference match to Cuelume's bloom — see notificationNotes.
   notification: preset(0.12, 0.4, 0.45, 'notification', notificationNotes),
+  listening: preset(0.22, 0.32, 0.5, 'listening', listeningNotes),
+  delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
 };
 
 const spring: SoundFamilyModule = { name: 'spring', recipe, presets };

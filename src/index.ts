@@ -42,7 +42,7 @@ export function getFamily(): SoundFamily {
 export interface PlayOptions extends Partial<InstanceTuning> {
   /** Override the active family for this call only. */
   family?: SoundFamily;
-  /** Only meaningful for the `toggle` instance — which state just became active. */
+  /** Only meaningful for stateful instances (`toggle`, `listening`) — which state just became active. */
   state?: 'on' | 'off';
 }
 
@@ -73,7 +73,7 @@ export function play(instance: SoundInstance, options: PlayOptions = {}): void {
   const family = options.family ?? activeFamily;
   let base = PRESETS[family][instance];
 
-  if (instance === 'toggle' && options.state) {
+  if ((instance === 'toggle' || instance === 'listening') && options.state) {
     base = { ...base, ...resolveToggleTuning(base, options.state) };
   }
 

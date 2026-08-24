@@ -105,6 +105,35 @@ const errorNotes: Note[] = [
   { offsetFraction: 0.64, lengthFraction: 0.36, pitchMultiplier: 0.7071, volumeMultiplier: 0.63, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
+// listening: tick, an octave glide, then a landing tone a further fifth up (1:2:3, same
+// harmonic series as this instance's reference across every family — see
+// families/snap.ts). Register dialed down from the family's own 1568Hz base (P=0.5
+// rather than 1) so the landing tone (3x) doesn't push into an extreme high register.
+// Glide filtered (this family's own highpass still passes it cleanly); landing unfiltered
+// so the "locked on" resolve reads clean. First pass — not yet validated by ear.
+const listeningNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 0.5, volumeMultiplier: 0.5, useTexture: true, attack: 0.001 },
+  { offsetFraction: 0.06, lengthFraction: 0.55, pitchMultiplier: 0.5, sweepTo: 1, volumeMultiplier: 0.75, attack: 0.006 },
+  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.5, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
+];
+
+// delete: a soft lowpass flick, then this family's own textureLayer as the brighter
+// crackle, then a tiny unfiltered tick — dry (useDelay:false), reading as discarded
+// rather than lingering. See families/paper-snap.ts for this instance's reference family.
+const deleteNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.35,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.8,
+    useTexture: { filterType: 'lowpass', filterCutoff: 2400, filterQ: 0.7 },
+    useDelay: false,
+    attack: 0.006,
+  },
+  { offsetFraction: 0.22, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 0.55, useTexture: true, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.3, pitchMultiplier: 2, volumeMultiplier: 0.16, useFilter: false, useDelay: false, attack: 0.002 },
+];
+
 export const recipe: FamilyRecipe = {
   waveform: 'sine',
   // Was 1040 — essentially unison with glass-crystal's 1046Hz, which was most of why
@@ -145,6 +174,8 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   // 0.1 — see submitNotes above for why (highpass-cutoff safety).
   submit: preset(0.19, 0.15, 0.1, 'submit', submitNotes),
   notification: preset(0.15, 0.4, 0.1, 'notification', notificationNotes),
+  listening: preset(0.22, 0.32, 0.5, 'listening', listeningNotes),
+  delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
 };
 
 const tinySparkle: SoundFamilyModule = { name: 'tiny-sparkle', recipe, presets };

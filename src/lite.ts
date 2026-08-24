@@ -27,7 +27,7 @@ import type { InstanceTuning, Note, SoundFamilyModule, SoundInstance } from './t
 const FALLBACK_NOTE: Note = { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 };
 
 export interface LitePlayOptions extends Partial<InstanceTuning> {
-  /** Only meaningful for the `toggle` instance — which state just became active. */
+  /** Only meaningful for stateful instances (`toggle`, `listening`) — which state just became active. */
   state?: 'on' | 'off';
 }
 
@@ -40,7 +40,7 @@ export function createPlayer(family: SoundFamilyModule): LitePlayer {
   function play(instance: SoundInstance, options: LitePlayOptions = {}): void {
     let base = family.presets[instance];
 
-    if (instance === 'toggle' && options.state) {
+    if ((instance === 'toggle' || instance === 'listening') && options.state) {
       base = { ...base, ...resolveToggleTuning(base, options.state) };
     }
 

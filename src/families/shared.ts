@@ -28,6 +28,13 @@ const INSTANCE_PITCH: Record<SoundInstance, number> = {
   submit: 1.0,
   // Neutral — bloom has no directional pitch movement at all, just a static detuned pair.
   notification: 1.0,
+  // Neutral — the tick-glide-landing shape's own note-level pitchMultipliers (1x/2x/3x, a
+  // harmonic series) carry the "rising, locking on" character regardless of this baseline,
+  // same reasoning as submit above.
+  listening: 1.0,
+  // Neutral — a noise-based flick+crackle texture; pitch multiplier barely matters to its
+  // character, same reasoning as error/toggle's own knock layers.
+  delete: 1.0,
 };
 
 export function preset(volume: number, length: number, tone: number, instance: SoundInstance, notes: Note[]): InstancePreset {

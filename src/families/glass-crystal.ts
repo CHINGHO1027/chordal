@@ -102,6 +102,35 @@ const errorNotes: Note[] = [
   { offsetFraction: 0.65, lengthFraction: 0.35, pitchMultiplier: 0.7071, volumeMultiplier: 0.58, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
+// listening: tick, an octave glide, then a landing tone a further fifth up (1:2:3, same
+// harmonic series as this instance's reference across every family — see
+// families/snap.ts). Register dialed down from the family's own 1046Hz base (P=0.6
+// rather than 1) so the landing tone (3x) doesn't push into an extreme high register.
+// Glide filtered (this family's own highpass still passes it cleanly); landing unfiltered
+// so the "locked on" resolve reads clean. First pass — not yet validated by ear.
+const listeningNotes: Note[] = [
+  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 0.6, volumeMultiplier: 0.5, useTexture: true, attack: 0.001 },
+  { offsetFraction: 0.06, lengthFraction: 0.55, pitchMultiplier: 0.6, sweepTo: 1.2, volumeMultiplier: 0.75, attack: 0.006 },
+  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.8, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
+];
+
+// delete: a soft lowpass flick, then this family's own textureLayer as the brighter
+// crackle, then a tiny unfiltered tick — dry (useDelay:false), reading as discarded
+// rather than lingering. See families/paper-snap.ts for this instance's reference family.
+const deleteNotes: Note[] = [
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.35,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.8,
+    useTexture: { filterType: 'lowpass', filterCutoff: 2200, filterQ: 0.7 },
+    useDelay: false,
+    attack: 0.006,
+  },
+  { offsetFraction: 0.22, lengthFraction: 0.35, pitchMultiplier: 1, volumeMultiplier: 0.55, useTexture: true, useDelay: false, attack: 0.004 },
+  { offsetFraction: 0.42, lengthFraction: 0.3, pitchMultiplier: 2, volumeMultiplier: 0.16, useFilter: false, useDelay: false, attack: 0.002 },
+];
+
 export const recipe: FamilyRecipe = {
   waveform: 'sine',
   baseFrequency: 1046, // C6
@@ -137,6 +166,8 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   toggle: preset(0.23, 0.022, 0.5, 'toggle', toggleNotes),
   submit: preset(0.22, 0.18, 0.45, 'submit', submitNotes),
   notification: preset(0.2, 0.4, 0.3, 'notification', notificationNotes),
+  listening: preset(0.22, 0.32, 0.5, 'listening', listeningNotes),
+  delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
 };
 
 const glassCrystal: SoundFamilyModule = { name: 'glass-crystal', recipe, presets };
