@@ -13,10 +13,11 @@ describe('resolveNoteParams', () => {
   for (const family of SOUND_FAMILIES) {
     for (const instance of SOUND_INSTANCES) {
       const preset = PRESETS[family][instance];
+      const recipe = FAMILY_RECIPES[family];
 
       it(`produces valid SynthParams for every note of ${family}/${instance}`, () => {
         for (const note of preset.notes) {
-          const params = resolveNoteParams(family, preset, note);
+          const params = resolveNoteParams(recipe, preset, note);
 
           expect(Number.isFinite(params.frequency)).toBe(true);
           expect(params.frequency).toBeGreaterThanOrEqual(0);
@@ -59,34 +60,34 @@ describe('isToneAudible', () => {
   // fundamental — so a filter that never reaches the fundamental makes tone a no-op.
   it('is false for soft-bubble/toggle, which bypasses the filter entirely (useFilter: false)', () => {
     const tuning = PRESETS['soft-bubble'].toggle;
-    expect(isToneAudible('soft-bubble', 'toggle', tuning)).toBe(false);
+    expect(isToneAudible(FAMILY_RECIPES['soft-bubble'], tuning.notes, tuning)).toBe(false);
   });
 
   it('is true for soft-bubble/hover now that the filter range crosses its register', () => {
     const tuning = PRESETS['soft-bubble'].hover;
-    expect(isToneAudible('soft-bubble', 'hover', tuning)).toBe(true);
+    expect(isToneAudible(FAMILY_RECIPES['soft-bubble'], tuning.notes, tuning)).toBe(true);
   });
 
   it('is true for metallic-tact/hover, a square wave with real harmonic content', () => {
     const tuning = PRESETS['metallic-tact'].hover;
-    expect(isToneAudible('metallic-tact', 'hover', tuning)).toBe(true);
+    expect(isToneAudible(FAMILY_RECIPES['metallic-tact'], tuning.notes, tuning)).toBe(true);
   });
 
   it('is true for paper-snap/hover, a noise source with full-spectrum content', () => {
     const tuning = PRESETS['paper-snap'].hover;
-    expect(isToneAudible('paper-snap', 'hover', tuning)).toBe(true);
+    expect(isToneAudible(FAMILY_RECIPES['paper-snap'], tuning.notes, tuning)).toBe(true);
   });
 
   it('is true for soft-bubble/congrats via its tone-scaled sweep, independent of the filter', () => {
     const tuning = PRESETS['soft-bubble'].congrats;
-    expect(isToneAudible('soft-bubble', 'congrats', tuning)).toBe(true);
+    expect(isToneAudible(FAMILY_RECIPES['soft-bubble'], tuning.notes, tuning)).toBe(true);
   });
 
   it('returns a boolean for every family/instance combination without throwing', () => {
     for (const family of SOUND_FAMILIES) {
       for (const instance of SOUND_INSTANCES) {
         const tuning = PRESETS[family][instance];
-        expect(typeof isToneAudible(family, instance, tuning)).toBe('boolean');
+        expect(typeof isToneAudible(FAMILY_RECIPES[family], tuning.notes, tuning)).toBe('boolean');
       }
     }
   });

@@ -180,8 +180,14 @@ const STYLES = `
     border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
   }
 
+  .code-toggle {
+    margin-top: 1.25rem;
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light);
+    border: var(--border-width) solid var(--border); background: var(--surface);
+    border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
+  }
   .code-export {
-    margin-top: 1.25rem; background: var(--page-bg); border: var(--border-width) solid var(--border);
+    margin-top: 0.6rem; background: var(--page-bg); border: var(--border-width) solid var(--border);
     border-radius: var(--radius-md); padding: 0.85rem;
     font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light); color: var(--text-primary);
     white-space: pre; overflow-x: auto;
@@ -580,7 +586,7 @@ export class ChordalPlayground extends HTMLElement {
 
   private refreshSliders(): void {
     const tuning = this.currentTuning();
-    const toneAudible = isToneAudible(this.family, this.instance, tuning);
+    const toneAudible = isToneAudible(FAMILY_RECIPES[this.family], PRESETS[this.family][this.instance].notes, tuning);
     SLIDER_SPECS.forEach((spec) => {
       const input = this.shadow.querySelector<HTMLInputElement>(`input[data-key="${spec.key}"]`);
       const val = this.shadow.querySelector<HTMLElement>(`.val[data-key="${spec.key}"]`);
@@ -690,7 +696,8 @@ export class ChordalPlayground extends HTMLElement {
               </div>
             </div>
           </div>
-          <div class="code-export"></div>
+          <button type="button" class="code-toggle" aria-expanded="false">View code</button>
+          <div class="code-export" hidden></div>
         </div>
         <div class="pane">
           <div class="pane-head">Inspector</div>
@@ -707,6 +714,15 @@ export class ChordalPlayground extends HTMLElement {
   private wireEvents(): void {
     this.shadow.querySelectorAll<HTMLElement>('.family-btn').forEach((btn) => {
       btn.addEventListener('click', () => this.selectFamily(btn.dataset.family as SoundFamily));
+    });
+
+    const codeToggle = this.shadow.querySelector<HTMLButtonElement>('.code-toggle');
+    const codeExport = this.shadow.querySelector<HTMLElement>('.code-export');
+    codeToggle?.addEventListener('click', () => {
+      const nowVisible = codeExport?.hasAttribute('hidden');
+      codeExport?.toggleAttribute('hidden', !nowVisible);
+      codeToggle.setAttribute('aria-expanded', String(nowVisible));
+      codeToggle.textContent = nowVisible ? 'Hide code' : 'View code';
     });
 
     SLIDER_SPECS.forEach((spec) => {

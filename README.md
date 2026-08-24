@@ -24,6 +24,31 @@ import { bind } from 'chordal';
 bind();
 ```
 
+## Only using one family?
+
+Importing `chordal` pulls in all nine families (~5.8KB gzipped, everything included). If your
+app only ever uses one, import that family directly and pull in `createPlayer` from
+`chordal/lite` instead, for a real, measured, ~3.4KB gzipped, about 42% smaller since the other
+eight families' data is never bundled at all, not just hidden behind a runtime check.
+
+```ts
+import chime from 'chordal/chime';
+import { createPlayer } from 'chordal/lite';
+
+const { play, bind } = createPlayer(chime);
+
+play('hover');
+bind(); // same data-sound-* attribute scanning as the main API
+```
+
+Every family is available as its own subpath: `chordal/soft-bubble`, `chordal/glass-crystal`,
+`chordal/paper-snap`, `chordal/metallic-tact`, `chordal/chime`, `chordal/digital-blip`,
+`chordal/spring`, `chordal/tiny-sparkle`, `chordal/snap`.
+
+One real tradeoff: `bind()` from `createPlayer()` has no per-element family override
+(`data-sound-click="chime"`) — there's only ever the one family loaded, so there's nothing to
+switch to. Reach for the main `chordal` import if you need that.
+
 ## Attributes
 
 | Attribute | Fires on | Instance |

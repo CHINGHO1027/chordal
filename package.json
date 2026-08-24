@@ -22,10 +22,60 @@
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./lite": {
+      "types": "./dist/lite.d.ts",
+      "default": "./dist/lite.js"
+    },
+    "./soft-bubble": {
+      "types": "./dist/families/soft-bubble.d.ts",
+      "default": "./dist/families/soft-bubble.js"
+    },
+    "./glass-crystal": {
+      "types": "./dist/families/glass-crystal.d.ts",
+      "default": "./dist/families/glass-crystal.js"
+    },
+    "./paper-snap": {
+      "types": "./dist/families/paper-snap.d.ts",
+      "default": "./dist/families/paper-snap.js"
+    },
+    "./metallic-tact": {
+      "types": "./dist/families/metallic-tact.d.ts",
+      "default": "./dist/families/metallic-tact.js"
+    },
+    "./chime": {
+      "types": "./dist/families/chime.d.ts",
+      "default": "./dist/families/chime.js"
+    },
+    "./digital-blip": {
+      "types": "./dist/families/digital-blip.d.ts",
+      "default": "./dist/families/digital-blip.js"
+    },
+    "./spring": {
+      "types": "./dist/families/spring.d.ts",
+      "default": "./dist/families/spring.js"
+    },
+    "./tiny-sparkle": {
+      "types": "./dist/families/tiny-sparkle.d.ts",
+      "default": "./dist/families/tiny-sparkle.js"
+    },
+    "./snap": {
+      "types": "./dist/families/snap.d.ts",
+      "default": "./dist/families/snap.js"
+    }
+  },
   "files": [
     "dist/index.js",
     "dist/index.d.ts",
-    "dist/chunk-*.js"
+    "dist/lite.js",
+    "dist/lite.d.ts",
+    "dist/families",
+    "dist/chunk-*.js",
+    "dist/types-*.d.ts"
   ],
   "scripts": {
     "build": "tsup",

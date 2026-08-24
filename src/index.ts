@@ -1,6 +1,10 @@
 /**
  * Chordal public API — play(), playContinuous(), bind(), and the active-family
  * setting. This is the only module consumers should import from directly.
+ *
+ * Imports every family. If you only ever use one, `import chime from 'chordal/chime'`
+ * plus `createPlayer` from `chordal/lite` gives the same play()/bind() shape without
+ * pulling in the other eight families' data.
  */
 
 import * as engine from './engine';
@@ -17,6 +21,7 @@ import {
   type SoundFamily,
   type SoundInstance,
 } from './presets';
+import { createBinder } from './bind';
 
 export { SOUND_FAMILIES, SOUND_INSTANCES };
 export type { SoundFamily, SoundInstance };
@@ -53,10 +58,11 @@ export interface PlayOptions extends Partial<InstanceTuning> {
  * so a gesture's notes land sample-accurately regardless of event-loop jitter.
  */
 function scheduleGesture(family: SoundFamily, instance: SoundInstance, tuning: InstanceTuning, notes: Note[]): void {
+  const recipe = FAMILY_RECIPES[family];
   const activeNotes = notes.length > 0 ? notes : [FALLBACK_NOTE];
   activeNotes.forEach((note, index) => {
     const instanceKey = `${family}:${instance}:${index}`;
-    const params = resolveNoteParams(family, tuning, note);
+    const params = resolveNoteParams(recipe, tuning, note);
     const startOffset = note.offsetFraction * tuning.length;
     engine.playVoice(instanceKey, params, startOffset);
   });
@@ -160,72 +166,10 @@ export function playContinuous(action: 'slider', valueRatio: number, options: { 
   engine.playVoice(`${family}:slider-click`, click, 0, { maxVoices: 2 });
 }
 
-interface BindingConfig {
-  attr: string;
-  instance: SoundInstance;
-  event: string;
-}
-
-// One attribute per instance, each firing on the DOM event that instance naturally maps to.
-// error binds to the native 'invalid' event — the one real DOM event that already means
-// "this input is in an error state" — rather than requiring a bespoke trigger call.
-//
-// submit and notification both bind to 'click' as a reasonable declarative default, but
-// their more typical real usage is programmatic — call play('submit', ...) at the moment
-// an async submission actually starts, or play('notification', ...) when a toast/banner
-// appears, since neither is a DOM event bind() can observe on its own.
-const BINDINGS: BindingConfig[] = [
-  { attr: 'data-sound-hover', instance: 'hover', event: 'pointerenter' },
-  { attr: 'data-sound-click', instance: 'click', event: 'pointerdown' },
-  { attr: 'data-sound-congrats', instance: 'congrats', event: 'click' },
-  { attr: 'data-sound-error', instance: 'error', event: 'invalid' },
-  { attr: 'data-sound-toggle', instance: 'toggle', event: 'click' },
-  { attr: 'data-sound-submit', instance: 'submit', event: 'click' },
-  { attr: 'data-sound-notification', instance: 'notification', event: 'click' },
-];
-
-const boundAttrsByElement = new WeakMap<Element, Set<string>>();
-
-function markBound(el: Element, attr: string): boolean {
-  const bound = boundAttrsByElement.get(el) ?? new Set<string>();
-  if (bound.has(attr)) return false;
-  bound.add(attr);
-  boundAttrsByElement.set(el, bound);
-  return true;
-}
-
 /**
- * Reads on/off state at click time from aria-pressed or a checkbox's checked property.
- * Call bind() after your own toggle logic is wired up so this reads the post-toggle value.
- */
-function resolveToggleState(el: Element): 'on' | 'off' {
-  if (el.hasAttribute('aria-pressed')) {
-    return el.getAttribute('aria-pressed') === 'true' ? 'on' : 'off';
-  }
-  if (el instanceof HTMLInputElement && el.type === 'checkbox') {
-    return el.checked ? 'on' : 'off';
-  }
-  return 'on';
-}
-
-/**
- * Scans `root` for data-sound-* attributes and wires up listeners automatically.
+ * Scans `root` (defaults to `document`) for data-sound-* attributes and wires up listeners.
  * Safe to call more than once (e.g. after DOM mutations) — already-bound elements
- * are skipped rather than double-bound.
+ * are skipped rather than double-bound. An attribute's own value (e.g.
+ * data-sound-click="chime") overrides the family for just that element.
  */
-export function bind(root: ParentNode = document): void {
-  for (const { attr, instance, event } of BINDINGS) {
-    root.querySelectorAll(`[${attr}]`).forEach((el) => {
-      if (!markBound(el, attr)) return;
-      const familyOverride = el.getAttribute(attr);
-      const options: PlayOptions = familyOverride ? { family: familyOverride as SoundFamily } : {};
-      el.addEventListener(event, () => {
-        if (instance === 'toggle') {
-          play(instance, { ...options, state: resolveToggleState(el) });
-        } else {
-          play(instance, options);
-        }
-      });
-    });
-  }
-}
+export const bind = createBinder(play, { supportsFamilyOverride: true });
