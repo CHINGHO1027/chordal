@@ -1,3 +1,9 @@
 node_modules/
 dist/
 .DS_Store
+
+# Working docs/planning artifacts — not part of the public repo.
+docs-lofi.html
+home-lofi.html
+tokens.css
+design.md

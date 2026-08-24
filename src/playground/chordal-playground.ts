@@ -4,9 +4,8 @@
  * and a copy-pasteable code snippet. Not part of the core bundle's 5KB budget.
  */
 
-import * as engine from '../engine';
 import { play, playContinuous, setFamily, getFamily, mute, unmute, isMuted, SOUND_FAMILIES } from '../index';
-import { PRESETS, FAMILY_RECIPES, type InstanceTuning } from '../presets';
+import { PRESETS, FAMILY_RECIPES, isToneAudible, type InstancePreset, type InstanceTuning, type Note } from '../presets';
 import type { SoundFamily, SoundInstance } from '../presets';
 
 const FAMILY_ACCENTS: Record<SoundFamily, string> = {
@@ -170,6 +169,9 @@ const STYLES = `
   }
   .slider-row input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
   .slider-row:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .slider-row.is-inert { opacity: 0.45; }
+  .slider-row.is-inert input[type="range"] { cursor: not-allowed; }
+  .slider-row.is-inert .val { font-family: var(--font-body); font-style: italic; }
 
   .mute-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
   .mute-row button {
@@ -186,26 +188,112 @@ const STYLES = `
   }
 `;
 
-// Extra time to keep drawing live past a gesture's own nominal length — covers a natural
-// decay/shimmer tail the engine may still be rendering after the "note" technically ends.
-const ACTIVE_GRACE_MS = 120;
+// The waveform is synthesized directly from each note's own parameters (frequency, volume,
+// envelope) — the same data that drives real playback — rather than captured from live audio
+// via an AnalyserNode. That capture-based approach was the source of every waveform bug this
+// session (hover losing its start to read-timing jitter, scroll jumpiness, buffer sizing):
+// this sidesteps all of it by never racing against real audio timing at all. A cue's full
+// duration is always visible across the canvas width, redrawn every animation frame while
+// playing so it visibly shimmers rather than sitting static — see drawWaveform().
 
-// Minimum time between actual redraws. Redrawing every rAF tick (~60/sec) from a fast-
-// moving ~10.7ms rolling window reads as flicker, not a readable trace. This is deliberately
-// slow for readability — sampling for content (see peakHold* fields) runs every rAF tick
-// regardless, so a brief transient between two redraws still gets caught and shown at the
-// next one instead of being missed the way a naively-throttled "read only at redraw time"
-// approach would miss it.
-const DRAW_INTERVAL_MS = 80;
+// The shape appears by revealing left-to-right in sync with elapsed time, rather than fading
+// in all at once — see drawWaveform's own comment for why that's what actually reads as
+// "playing," not a picture materializing. Below this gesture length, the reveal is stretched
+// to take at least this long — a 10ms hover sound would otherwise finish revealing before an
+// eye could register it moving at all. Longer gestures reveal at close to their own real
+// pace, unstretched.
+const REVEAL_DURATION_FLOOR_MS = 380;
 
-// Target fraction of half-height the loudest sample in the current live window should
-// reach — auto-gain recomputed every frame, so it tracks the signal's own envelope (loud
-// attack, quiet decay) as it plays, not a single value fixed at trigger time.
+// How long the fully-revealed shape holds before fading out, and how long that fade takes.
+const HOLD_MS = 140;
+const FADE_OUT_MS = 160;
+
+// No live phase animation: real acoustic transients are deterministic — the same excitation
+// produces the same waveform, every time, exactly reproducible (a scope with its trigger
+// synced to the signal's own onset shows two identical strikes overlaying perfectly). A term
+// driven by real elapsed wall-clock time would make the shape depend on exactly when a redraw
+// happened to land, which isn't how real sound works — see startVisual's phaseOffset for how
+// visual variety is produced instead: a fixed, deterministic choice per note, not a live one.
+
+// A note's true audio frequency (hundreds to thousands of Hz) is far too dense to render as
+// literal cycles across a ~640px canvas mapped to a gesture that can be under 20ms — it would
+// just look like noise. Real frequency is compressed into this range of visual cycles/sec
+// instead: higher-pitched notes still show visibly tighter oscillation than lower ones, just
+// scaled down to something a canvas this size can actually render as readable detail.
+const MIN_VISUAL_HZ = 6;
+const MAX_VISUAL_HZ = 30;
+const VISUAL_HZ_DIVISOR = 40;
+
+// A note's amplitude envelope: a raised-cosine attack ramp (its own `attack`, or this
+// default) into an exponential decay whose time constant is this fraction of the note's own
+// duration — long enough to still read as "sounding" for most of the note, short enough to
+// audibly/visually taper before the next note (if any) takes over.
+const DEFAULT_ATTACK_SEC = 0.003;
+const ENVELOPE_TAU_FRACTION = 0.35;
+
+// A real synthesis attack can be 1-2ms — physically real, but on a canvas whose x-axis spans
+// the *whole* gesture (which can be 150ms+), that rise occupies only a couple of real
+// pixels: by the 2nd or 3rd pixel the envelope is already most of the way to its peak. No
+// amount of oversampling or curve smoothing fixes that — there's no physical space to show a
+// gradual rise in 2 pixels. Same fix as the frequency compression above: the *visual* attack
+// gets a floor, decoupled from the real audio attack, so the eye has enough width to actually
+// perceive the shape — purely cosmetic, the real sound's own attack is unaffected.
+const MIN_VISUAL_ATTACK_FRACTION = 0.02;
+
+// Target fraction of half-height the loudest point in the gesture's envelope silhouette
+// should reach — computed once per trigger from the envelope alone (see startVisual), not
+// re-normalized every frame, so the trace's scale doesn't visibly shift while it plays.
 const TARGET_PEAK_FRACTION = 0.75;
 
-// Raw (pre-gain) amplitude below which a sample counts as silence for drawing purposes —
-// silent runs are skipped entirely (gap in the line) rather than traced as a flat segment.
-const NOISE_FLOOR = 0.01;
+const FALLBACK_NOTES: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 }];
+
+// Match the canvas's own `width`/`height` attributes in render() — used both there and to
+// build the precomputed shape below, so they never drift apart.
+const CANVAS_WIDTH = 640;
+const CANVAS_HEIGHT = 144;
+
+// Evenly-spaced points across the whole gesture aren't enough on their own: a fast attack
+// (a couple of ms) can be a small fraction of a longer overall gesture, so only 1-3 of these
+// fall inside it — nowhere near enough to trace the attack's actual curvature, so it renders
+// as a sharp corner no matter how smooth attackEnvelope's own math is. This packs extra
+// samples densely across each voice's own attack window specifically, on top of the base
+// grid, so every attack gets properly resolved regardless of how short it is relative to the
+// gesture as a whole. See buildSampleTimes().
+const BASE_SAMPLE_COUNT = CANVAS_WIDTH;
+const ATTACK_OVERSAMPLE_COUNT = 12;
+
+function clampVisualHz(realFrequencyHz: number): number {
+  return Math.min(MAX_VISUAL_HZ, Math.max(MIN_VISUAL_HZ, realFrequencyHz / VISUAL_HZ_DIVISOR));
+}
+
+// Builds the full set of gesture-time (seconds) points to evaluate and draw — a uniform base
+// grid across the whole gesture, plus dense extra points packed across each voice's own
+// attack window (see the constants above for why). Sorted so the render loop can walk it
+// left to right in one pass.
+function buildSampleTimes(durationSec: number, voices: VisualVoice[]): number[] {
+  const times: number[] = [];
+  for (let i = 0; i <= BASE_SAMPLE_COUNT; i++) times.push((i / BASE_SAMPLE_COUNT) * durationSec);
+  for (const v of voices) {
+    for (let i = 0; i <= ATTACK_OVERSAMPLE_COUNT; i++) {
+      times.push(v.onsetSec + (i / ATTACK_OVERSAMPLE_COUNT) * v.attack);
+    }
+  }
+  times.sort((a, b) => a - b);
+  return times;
+}
+
+
+// Raised-cosine (smoothstep) attack, not a linear ramp: a linear ramp arrives at the peak
+// with a constant nonzero slope that almost never matches the exponential decay's own slope
+// there, which reads as a sharp corner right at each note's peak. A raised cosine arrives at
+// the peak with zero slope — matching the decay's smooth start — so the whole envelope stays
+// visually rounded with no kink, at any render resolution, without needing curve-smoothing to
+// paper over it.
+function attackEnvelope(localT: number, attack: number, tau: number): number {
+  const attackProgress = Math.min(1, localT / attack);
+  const attackFactor = 0.5 - 0.5 * Math.cos(Math.PI * attackProgress);
+  return attackFactor * Math.exp(-localT / tau);
+}
 
 // "Nice" tick intervals for the millisecond grid — smallest candidate that keeps the total
 // tick count near `targetTicks` for whatever duration is being displayed.
@@ -215,26 +303,33 @@ function niceMsStep(totalMs: number, targetTicks = 7): number {
   return candidates.find((c) => c >= raw) ?? candidates[candidates.length - 1]!;
 }
 
+interface VisualVoice {
+  onsetSec: number;
+  durationSec: number;
+  visualHzStart: number;
+  visualHzEnd: number;
+  peakAmp: number;
+  tau: number;
+  attack: number;
+  realHz: number; // for the status label — the note's own true audio frequency, unscaled
+  phaseOffset: number; // 0 or Math.PI, fixed per voice — see startVisual for how it's derived
+}
+
 export class ChordalPlayground extends HTMLElement {
   private shadow: ShadowRoot;
   private family: SoundFamily = getFamily();
   private instance: SoundInstance = 'hover';
   private overrides = new Map<string, Partial<InstanceTuning>>();
-  private analyser: AnalyserNode | null = null;
   private rafId: number | null = null;
   private idleTimer: number | null = null;
   private toggleState: 'on' | 'off' = 'off';
 
-  // Live waveform — see drawWaveform()'s doc comment.
-  private liveScratch: Float32Array | null = null; // per-rAF read target
-  private peakHoldScratch: Float32Array | null = null; // loudest window seen since last redraw
-  private peakHoldValue = 0;
-  private sampleRate = 48000;
-  private analyserWindowMs = 0; // real time one getFloatTimeDomainData read spans — the
-  // live display window itself, not a separate crop
-  private activeUntil = 0; // performance.now() timestamp; blank canvas once passed
-  private gestureLengthMs = 0; // last-triggered instance's own length, for the status label
-  private lastDrawAt = 0; // throttles actual redraws — see DRAW_INTERVAL_MS
+  // Synthesized (not captured) waveform — see the constants block above and startVisual().
+  private voices: VisualVoice[] = [];
+  private sampleTimes: number[] = [];
+  private gestureStartedAt = 0;
+  private gestureDurationSec = 0;
+  private visualGain = 1;
 
   constructor() {
     super();
@@ -243,7 +338,7 @@ export class ChordalPlayground extends HTMLElement {
 
   connectedCallback(): void {
     this.render();
-    this.setupWaveform();
+    this.drawWaveform();
   }
 
   disconnectedCallback(): void {
@@ -260,219 +355,199 @@ export class ChordalPlayground extends HTMLElement {
     return { ...base, ...override };
   }
 
-  private setupWaveform(): void {
-    const context = engine.getContext();
-    const output = engine.getMasterGain();
-    if (!context || !output) return; // SSR or Web Audio unavailable — no scope to draw
+  /**
+   * Builds this gesture's voice list directly from its own notes — one VisualVoice per note,
+   * each carrying its onset, duration, frequency (real + visually-compressed), envelope
+   * shape, and amplitude. Also precomputes visualGain from the envelope silhouette alone
+   * (sampled coarsely across the gesture, ignoring the carrier's instantaneous sign) so the
+   * trace's scale is stable for the whole gesture rather than re-normalized every frame.
+   */
+  private startVisual(preset: InstancePreset): void {
+    const baseFrequency = FAMILY_RECIPES[this.family].baseFrequency;
+    const durationSec = Math.max(0.001, preset.length);
+    this.gestureDurationSec = durationSec;
+    const notes = preset.notes.length > 0 ? preset.notes : FALLBACK_NOTES;
 
-    this.analyser = context.createAnalyser();
-    // fftSize 1024 -> 512-sample window, ~10.7ms at 48kHz. This is the live display window
-    // itself now (not a source buffer for a separate crop) — small enough to expose
-    // individual oscillation cycles rather than a compressed envelope.
-    this.analyser.fftSize = 1024;
-    output.connect(this.analyser);
-    this.sampleRate = context.sampleRate;
-    this.liveScratch = new Float32Array(this.analyser.frequencyBinCount);
-    this.peakHoldScratch = new Float32Array(this.analyser.frequencyBinCount);
-    this.analyserWindowMs = (this.liveScratch.length / this.sampleRate) * 1000;
-    this.drawWaveform();
-  }
+    // phaseOffset is a fixed, deliberate stylistic choice tied to the gesture's own pitch
+    // trajectory — not a live/real-time one (see the constants block above for why). A note
+    // whose pitch sweeps downward, or that lands lower than the note right before it, flips
+    // (Math.PI instead of 0) — both are exact zero-crossings of sine, so either choice keeps
+    // the envelope's own zero-crossing at localT=0 intact; only what happens after that point
+    // changes. This gives a gesture's own descending moments (error's falling tritone, a
+    // downward step between notes) a visually distinct signature from its rising/static ones,
+    // deterministically — the same gesture produces the exact same shape every single time.
+    let previousHz: number | null = null;
+    this.voices = notes.map((note) => {
+      const noteDurationSec = Math.max(0.001, note.lengthFraction * durationSec);
+      const realHz = baseFrequency * preset.pitch * note.pitchMultiplier;
+      const realHzEnd = note.sweepTo ? realHz * note.sweepTo : realHz;
+      const sweepsDown = note.sweepTo !== undefined && note.sweepTo < 1;
+      const stepsDown = previousHz !== null && realHz < previousHz;
+      const phaseOffset = sweepsDown || stepsDown ? Math.PI : 0;
+      previousHz = realHzEnd;
+      return {
+        onsetSec: note.offsetFraction * durationSec,
+        durationSec: noteDurationSec,
+        visualHzStart: clampVisualHz(realHz),
+        visualHzEnd: clampVisualHz(realHzEnd),
+        peakAmp: preset.volume * note.volumeMultiplier,
+        tau: Math.max(0.004, noteDurationSec * ENVELOPE_TAU_FRACTION),
+        attack: Math.max(note.attack ?? DEFAULT_ATTACK_SEC, durationSec * MIN_VISUAL_ATTACK_FRACTION),
+        realHz,
+        phaseOffset,
+      };
+    });
 
-  /** Marks the panel active for a gesture of `lengthSeconds` — drawWaveform() draws the
-   *  analyser live every frame until this window (length + a decay-tail grace) elapses. */
-  private markActive(lengthSeconds: number): void {
-    this.gestureLengthMs = lengthSeconds * 1000;
-    this.activeUntil = performance.now() + this.gestureLengthMs + ACTIVE_GRACE_MS;
+    this.sampleTimes = buildSampleTimes(durationSec, this.voices);
+
+    // Reuses the same sample times as rendering (rather than a separate coarse probe grid)
+    // so a narrow attack peak that would've been missed by uniform-only sampling can't also
+    // throw off the gain normalization — the two now see exactly the same resolution. Uses
+    // the envelope alone (no carrier/ripple) so the gain doesn't itself wobble with the ripple.
+    let peakEnvelope = 0;
+    for (const t of this.sampleTimes) {
+      let sum = 0;
+      for (const v of this.voices) {
+        if (t < v.onsetSec) continue;
+        sum += v.peakAmp * attackEnvelope(t - v.onsetSec, v.attack, v.tau);
+      }
+      if (sum > peakEnvelope) peakEnvelope = sum;
+    }
+    this.visualGain = peakEnvelope > 0.001 ? TARGET_PEAK_FRACTION / peakEnvelope : 1;
+
+    this.gestureStartedAt = performance.now();
   }
 
   // Faint vertical ticks only — no per-line text (the corner .status label already carries
-  // the duration), and a dotted center reference line, matching a scope-style readout
-  // rather than a labeled chart axis. Spans the analyser's own live window.
-  private drawGrid(ctx2d: CanvasRenderingContext2D, w: number, h: number): void {
-    const step = niceMsStep(this.analyserWindowMs, 8);
+  // the duration) and no center baseline: the trace itself already breaks around zero during
+  // real silence (see drawWaveform's silence-gap handling), so a separately-drawn horizontal
+  // reference line only doubled up with it, reading as two overlapping lines through any
+  // quiet stretch. Spans however much has been captured so far, not a fixed duration.
+  private drawGrid(ctx2d: CanvasRenderingContext2D, w: number, h: number, visibleMs: number): void {
+    const step = niceMsStep(visibleMs, 8);
     ctx2d.strokeStyle = '#00000012';
     ctx2d.lineWidth = 1;
     ctx2d.setLineDash([]);
-    for (let t = 0; t <= this.analyserWindowMs + 0.001; t += step) {
-      const x = (t / this.analyserWindowMs) * w;
+    for (let t = 0; t <= visibleMs + 0.001; t += step) {
+      const x = (t / visibleMs) * w;
       ctx2d.beginPath();
       ctx2d.moveTo(x, 0);
       ctx2d.lineTo(x, h);
       ctx2d.stroke();
     }
-    ctx2d.strokeStyle = '#00000022';
-    ctx2d.setLineDash([1, 3]);
-    ctx2d.beginPath();
-    ctx2d.moveTo(0, h / 2);
-    ctx2d.lineTo(w, h / 2);
-    ctx2d.stroke();
-    ctx2d.setLineDash([]);
   }
 
   /**
-   * Genuinely live: no capture buffer, no freeze, no crop — but sampling and redrawing run
-   * at two different rates. Every single rAF tick reads the analyser's short rolling window
-   * (~10.7ms, see setupWaveform) and keeps whichever one seen so far this interval had the
-   * largest peak (peakHold*) — cheap, and it means a brief transient (a knock, a few ms
-   * wide) landing between two redraws still gets caught rather than silently missed. Actual
-   * redraws only happen every DRAW_INTERVAL_MS, using that held peak window — redrawing
-   * every tick reads as flicker (the window slides and gain recomputes faster than the eye
-   * can track), so the two concerns (catch brief content / stay readable) are handled by
-   * separate rates instead of trading off against each other on a single throttle value.
-   * Idle (nothing triggered within markActive's window) is fully blank — no line, no grid.
+   * Redraws every animation frame while a gesture is active. The shape itself is fully
+   * deterministic — every value here (envelope, carrier frequency, phaseOffset) is a pure
+   * function of gesture-time and the note's own fixed parameters, none of it driven by real
+   * elapsed time; the same gesture produces the exact same trace every single trigger,
+   * matching how real acoustic transients behave (see the constants above). What *does* move
+   * frame to frame is how much of that fixed trace has been revealed so far — the line draws
+   * itself in left to right in sync with elapsed time, like watching a scope sweep across the
+   * screen as the sound actually plays, rather than the complete picture just fading into
+   * view all at once. That's what makes it read as "playing" instead of "materializing."
+   * Once fully revealed, it holds for HOLD_MS, then fades out — no resting line, no grid at
+   * idle.
    */
   private drawWaveform = (): void => {
     this.rafId = requestAnimationFrame(this.drawWaveform);
     const canvas = this.shadow.querySelector<HTMLCanvasElement>('canvas');
-    if (!canvas || !this.analyser || !this.liveScratch || !this.peakHoldScratch) return;
+    if (!canvas) return;
     const ctx2d = canvas.getContext('2d');
     if (!ctx2d) return;
 
     const w = canvas.width;
     const h = canvas.height;
     const now = performance.now();
+    const elapsedMs = now - this.gestureStartedAt;
+    const totalMs = this.gestureDurationSec * 1000;
+    const revealDurationMs = Math.max(REVEAL_DURATION_FLOOR_MS, totalMs);
+    const fadeOutStart = revealDurationMs + HOLD_MS;
+    const lifecycleMs = fadeOutStart + FADE_OUT_MS;
 
-    if (now >= this.activeUntil) {
-      ctx2d.clearRect(0, 0, w, h); // idle: blank canvas, no curve, no grid — clears promptly,
-      this.peakHoldValue = 0; // not throttled, so it never lingers after a gesture ends
+    if (this.voices.length === 0 || elapsedMs < 0 || elapsedMs > lifecycleMs) {
+      ctx2d.clearRect(0, 0, w, h); // idle: blank canvas, no curve, no grid — clears promptly
       return;
     }
 
-    // Sample every tick regardless of redraw throttling — see doc comment above.
-    this.analyser.getFloatTimeDomainData(this.liveScratch as Float32Array<ArrayBuffer>);
-    let framePeak = 0;
-    for (let i = 0; i < this.liveScratch.length; i++) {
-      const v = this.liveScratch[i] ?? 0;
-      if (Math.abs(v) > Math.abs(framePeak)) framePeak = v;
-    }
-    if (Math.abs(framePeak) > Math.abs(this.peakHoldValue)) {
-      this.peakHoldValue = framePeak;
-      this.peakHoldScratch.set(this.liveScratch);
-    }
-
-    // Throttled to DRAW_INTERVAL_MS, not every rAF tick — leaves the previous frame on
-    // screen in between instead of clearing (which would flicker to blank every skipped
-    // tick) so each redraw actually gets enough time to register before the next one.
-    if (now - this.lastDrawAt < DRAW_INTERVAL_MS) return;
-    this.lastDrawAt = now;
-
-    const buf = this.peakHoldScratch;
-    const peakVal = this.peakHoldValue;
-    this.peakHoldValue = 0; // reset the hold for the next interval
+    const revealGt = Math.min(1, elapsedMs / revealDurationMs) * this.gestureDurationSec;
+    let opacity = 1;
+    if (elapsedMs > fadeOutStart) opacity = Math.max(0, 1 - (elapsedMs - fadeOutStart) / FADE_OUT_MS);
 
     ctx2d.clearRect(0, 0, w, h);
-    this.drawGrid(ctx2d, w, h);
-    this.updateFrequencyLabel(buf);
+    ctx2d.globalAlpha = opacity;
+    this.drawGrid(ctx2d, w, h, totalMs);
 
-    if (Math.abs(peakVal) <= NOISE_FLOOR) return; // nothing audible this interval — grid only
-
-    // Trigger-align to the onset: find where the signal first clears the noise floor and
-    // draw from *there* to the end of the window, not from raw sample 0. Without this, the
-    // held window's onset can land anywhere inside it depending on exactly when that rAF
-    // tick happened to sample — a short transient starting partway through reads as the
-    // trace starting mid-canvas instead of consistently from the left edge.
-    let onsetIndex = 0;
-    for (let i = 0; i < buf.length; i++) {
-      if (Math.abs(buf[i] ?? 0) > NOISE_FLOOR) {
-        onsetIndex = i;
-        break;
-      }
-    }
-    const segment = buf.subarray(onsetIndex);
-    const n = segment.length;
-
-    const gain = (TARGET_PEAK_FRACTION * (h / 2)) / Math.abs(peakVal);
-
-    // One point per pixel column, not one per sample — the peak-preserving decimation keeps
-    // a fast transient's true peak from being averaged away, then quadratic curves between
-    // points give smooth, rounded humps instead of a jagged straight-segment trace. Raw
-    // (pre-gain) peak is kept alongside y so silent columns can be skipped below.
-    const points: Array<{ x: number; y: number; peak: number }> = [];
-    const samplesPerCol = n / w;
-    for (let px = 0; px < w; px++) {
-      const start = Math.floor(px * samplesPerCol);
-      const end = Math.min(n, Math.max(start + 1, Math.floor((px + 1) * samplesPerCol)));
-      let peak = 0;
-      for (let i = start; i < end; i++) {
-        const v = segment[i] ?? 0;
-        if (Math.abs(v) > Math.abs(peak)) peak = v;
-      }
-      points.push({ x: px, y: h / 2 - peak * gain, peak });
-    }
-
-    // Draw only where the signal actually clears the noise floor — but with hold/hysteresis,
-    // not a bare per-column check: a broadband noise waveform (paper-snap) legitimately
-    // crosses back near zero between almost every peak while still fully "active," so a
-    // bare per-column gap fragmented it into dozens of disconnected slivers instead of one
-    // continuous trace. Holding the line through any single short quiet stretch (a handful
-    // of columns, ~1ms) bridges those crossings while still treating a genuinely sustained
-    // silence as a real gap.
-    const holdColumns = Math.max(3, Math.round(w / this.analyserWindowMs));
     ctx2d.strokeStyle = FAMILY_ACCENTS[this.family];
     ctx2d.lineWidth = 1;
     ctx2d.lineJoin = 'round';
     ctx2d.lineCap = 'round';
-    let drawing = false;
-    let silentRun = 0;
-    for (let i = 0; i < points.length; i++) {
-      const p = points[i]!;
-      const active = Math.abs(p.peak) > NOISE_FLOOR;
-      silentRun = active ? 0 : silentRun + 1;
-      const shouldDraw = active || (drawing && silentRun <= holdColumns);
-      if (!shouldDraw) {
-        if (drawing) {
-          ctx2d.stroke();
-          drawing = false;
-        }
-        continue;
+    // Walks this.sampleTimes (the base grid plus dense per-voice attack oversampling — see
+    // buildSampleTimes) rather than one point per pixel, so fast attacks get properly
+    // resolved regardless of how short they are relative to the gesture as a whole. Quadratic
+    // curve through each point's midpoint with the next, rather than straight lineTo
+    // segments, for a fluid line rather than a faceted polyline. One continuous stroke for
+    // the whole gesture, even where a note's decay has become nearly inaudible before the
+    // next one starts — exponential decay never truly reaches zero, so that's a genuinely
+    // continuous (if very quiet) signal, not a hard silence a break should represent. Stops
+    // early at revealGt — samples past it haven't been "drawn in" yet this frame.
+    let started = false;
+    let prevX = 0;
+    let prevY = h / 2;
+    for (const gt of this.sampleTimes) {
+      if (gt > revealGt) break;
+      let sum = 0;
+      for (const v of this.voices) {
+        if (gt < v.onsetSec) continue;
+        const localT = gt - v.onsetSec;
+        const envelope = attackEnvelope(localT, v.attack, v.tau);
+        const noteProgress = Math.min(1, localT / v.durationSec);
+        const visualHz = v.visualHzStart + (v.visualHzEnd - v.visualHzStart) * noteProgress;
+        sum += v.peakAmp * envelope * Math.sin(2 * Math.PI * visualHz * localT + v.phaseOffset);
       }
-      if (!drawing) {
+      const x = (gt / this.gestureDurationSec) * w;
+      const y = h / 2 - sum * this.visualGain * (h / 2);
+      if (!started) {
         ctx2d.beginPath();
-        ctx2d.moveTo(p.x, p.y);
-        drawing = true;
-        continue;
-      }
-      const next = points[i + 1];
-      const nextShouldDraw = next && (Math.abs(next.peak) > NOISE_FLOOR || silentRun < holdColumns);
-      if (nextShouldDraw) {
-        const mid = { x: (p.x + next!.x) / 2, y: (p.y + next!.y) / 2 };
-        ctx2d.quadraticCurveTo(p.x, p.y, mid.x, mid.y);
+        ctx2d.moveTo(x, y);
+        started = true;
       } else {
-        ctx2d.lineTo(p.x, p.y);
+        const midX = (prevX + x) / 2;
+        const midY = (prevY + y) / 2;
+        ctx2d.quadraticCurveTo(prevX, prevY, midX, midY);
       }
+      prevX = x;
+      prevY = y;
     }
-    if (drawing) ctx2d.stroke();
+    if (started) {
+      ctx2d.lineTo(prevX, prevY);
+      ctx2d.stroke();
+    }
+    ctx2d.globalAlpha = 1;
   };
 
-  // Zero-crossing rate over the current live window — a cheap, good-enough dominant-
-  // frequency estimate for the mostly-monotone transients this library produces, not a
-  // real FFT. Duration shown is the triggered gesture's own nominal length, not the tiny
-  // live window itself.
-  private updateFrequencyLabel(buf: Float32Array): void {
-    let crossings = 0;
-    let prev = buf[0] ?? 0;
-    for (let i = 1; i < buf.length; i++) {
-      const v = buf[i] ?? 0;
-      if ((prev >= 0) !== (v >= 0)) crossings++;
-      prev = v;
+  // Reports the loudest voice's own true (unscaled) frequency — exact, since it's read
+  // directly from the synthesis parameters rather than estimated from a waveform.
+  private describeFrequency(): string {
+    let loudest: VisualVoice | null = null;
+    for (const v of this.voices) {
+      if (!loudest || v.peakAmp > loudest.peakAmp) loudest = v;
     }
-    const hz = (crossings / 2 / (buf.length / this.sampleRate)) || 0;
-    const status = this.shadow.querySelector<HTMLElement>('.status');
-    if (!status) return;
-    const freqLabel = hz >= 50 ? `${(hz / 1000).toFixed(1)} kHz, ` : '';
-    const durationLabel = `${(this.gestureLengthMs / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '.0')} s`;
-    status.textContent = `${this.family} · ${this.instance} · ${freqLabel}${durationLabel}`;
+    const hz = loudest?.realHz ?? 0;
+    return hz >= 50 ? `${(hz / 1000).toFixed(1)} kHz, ` : '';
   }
 
-  private showStatus(instance: SoundInstance, tuning: InstanceTuning): void {
-    this.markActive(tuning.length);
+  private showStatus(instance: SoundInstance, preset: InstancePreset): void {
+    this.startVisual(preset);
     const status = this.shadow.querySelector<HTMLElement>('.status');
     if (!status) return;
     if (this.idleTimer !== null) window.clearTimeout(this.idleTimer);
-    status.textContent = `${this.family} · ${instance} · ${Math.round(tuning.length * 1000)}ms`;
+    const durationLabel = `${(preset.length).toFixed(3).replace(/0+$/, '').replace(/\.$/, '.0')} s`;
+    status.textContent = `${this.family} · ${instance} · ${this.describeFrequency()}${durationLabel}`;
     this.idleTimer = window.setTimeout(() => {
       status.textContent = 'idle';
-    }, tuning.length * 1000 + 200);
+    }, preset.length * 1000 + 200);
   }
 
   private triggerTest(instance: SoundInstance, options: { state?: 'on' | 'off' } = {}): void {
@@ -505,12 +580,19 @@ export class ChordalPlayground extends HTMLElement {
 
   private refreshSliders(): void {
     const tuning = this.currentTuning();
+    const toneAudible = isToneAudible(this.family, this.instance, tuning);
     SLIDER_SPECS.forEach((spec) => {
       const input = this.shadow.querySelector<HTMLInputElement>(`input[data-key="${spec.key}"]`);
       const val = this.shadow.querySelector<HTMLElement>(`.val[data-key="${spec.key}"]`);
+      const row = input?.closest<HTMLElement>('.slider-row');
       const value = tuning[spec.key];
-      if (input) input.value = String(value);
-      if (val) val.textContent = spec.format(value, FAMILY_RECIPES[this.family].baseFrequency);
+      const inert = spec.key === 'tone' && !toneAudible;
+      if (input) {
+        input.value = String(value);
+        input.disabled = inert;
+      }
+      if (val) val.textContent = inert ? 'unused here' : spec.format(value, FAMILY_RECIPES[this.family].baseFrequency);
+      row?.classList.toggle('is-inert', inert);
       this.setSliderFill(spec, value);
     });
   }
@@ -580,7 +662,7 @@ export class ChordalPlayground extends HTMLElement {
         <div class="pane">
           <div class="pane-head">Waveform</div>
           <div class="waveform-wrap">
-            <canvas width="640" height="144"></canvas>
+            <canvas width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}"></canvas>
             <div class="status">idle</div>
           </div>
           <div class="test-area">
@@ -634,9 +716,11 @@ export class ChordalPlayground extends HTMLElement {
         const key = this.overrideKey();
         const current = this.overrides.get(key) ?? {};
         this.overrides.set(key, { ...current, [spec.key]: value });
-        const val = this.shadow.querySelector<HTMLElement>(`.val[data-key="${spec.key}"]`);
-        if (val) val.textContent = spec.format(value, FAMILY_RECIPES[this.family].baseFrequency);
-        this.setSliderFill(spec, value);
+        // Re-derives every slider's displayed value/fill from the new tuning rather than
+        // patching just this one — pitch changes can flip whether `tone` is audible at all
+        // (see isToneAudible), so that row needs to re-evaluate on every drag, not just on
+        // family/instance switches.
+        this.refreshSliders();
         this.refreshCodeExport();
         this.triggerTest(this.instance);
       });
@@ -672,10 +756,9 @@ export class ChordalPlayground extends HTMLElement {
       const ratio = Number(sliderDemo.value) / 100;
       sliderDemo.style.setProperty('--fill', `${sliderDemo.value}%`);
       playContinuous('slider', ratio, { family: this.family });
-      // playContinuous's own tick length isn't exposed here — 30ms is a reasonable
-      // estimate for its body+click layers, close enough to keep the panel live for the
-      // tick without needing the exact internal duration plumbed through.
-      this.markActive(0.03);
+      // playContinuous's own note shape isn't exposed here — the family's own hover preset,
+      // forced to a short length, is a reasonable stand-in visual for the tick.
+      this.startVisual({ ...PRESETS[this.family].hover, length: 0.03 });
       const status = this.shadow.querySelector<HTMLElement>('.status');
       if (status) status.textContent = `${this.family} · slider · ${ratio.toFixed(2)}`;
     });

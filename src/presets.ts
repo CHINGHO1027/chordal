@@ -953,8 +953,10 @@ const tinySparkleToggleNotes: Note[] = [
 // submit: same loading-recipe structure, quickest attacks of any family (still well clear
 // of flutter territory, matching this family's own established "fast" identity). Preset
 // tone is pinned low (0.1) rather than this family's usual mid-range — its highpass cutoff
-// climbs to 2240Hz at tone=1, and pitchMultiplier 1.15 only clears the cutoff at this low
-// tone value; going any higher risked the same silence bug glass-crystal's highpass had.
+// climbs toward the top of filterCutoffRange at tone=1, and pitchMultiplier 1.15 only
+// clears the cutoff at this low tone value (same margin as before the family's register
+// was transposed — see filterCutoffRange's own comment); going any higher risked the same
+// silence bug glass-crystal's highpass had.
 const tinySparkleSubmitNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1.15, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.02 },
   {
@@ -1119,9 +1121,18 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     waveform: 'sine',
     baseFrequency: 587, // D5
     filterType: 'lowpass',
-    filterCutoffRange: [1200, 2600],
-    filterQ: 0.8,
-    delay: { time: 0.09, feedback: 0.22, wet: 0.18, lowpass: 2800 },
+    // Was [1200, 2600] — entirely above this family's own register (most instances land
+    // 560-880Hz; toggle's raised ~1060-1175Hz notes bypass the filter with useFilter:false
+    // regardless), so the lowpass never actually attenuated anything and `tone` was
+    // inaudible. Lowered so the range now crosses the family's real register: low tone
+    // genuinely muffles/absorbs the tone (a "soft, sunken" pop), high tone opens it up
+    // clean — giving this family its own distinct envelope-driven character (per the
+    // "warm, round, gentle" brief) instead of reading as an unfiltered sine like chime.
+    filterCutoffRange: [700, 1600],
+    filterQ: 0.7, // was 0.8 — a touch gentler roll-off, rounder rather than resonant.
+    // lowpass was 2800 — darkened so the echo tail itself reads as cushioned/absorbed
+    // rather than a bright ping, reinforcing the same "soft" quality as the filter above.
+    delay: { time: 0.09, feedback: 0.22, wet: 0.18, lowpass: 2200 },
     // Bright noise "glint" for click's release — Cuelume's release recipe is mostly a
     // bright filtered-noise flick, not a pitch sweep; a pure sine sweep alone can't
     // produce that broadband crispness. Kept quiet/brief, an accent under the tonal sweep.
@@ -1131,13 +1142,21 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
     waveform: 'sine',
     baseFrequency: 1046, // C6
     filterType: 'highpass',
-    // Kept below the 1046Hz fundamental across the practical pitch range so a highpass
-    // on a pure sine actually passes signal (see engine notes from the volume fix).
-    filterCutoffRange: [500, 950],
+    // Raised from 950 — that cutoff sat below every note this family actually plays
+    // (hover ~1130Hz, click's press ~1004Hz, congrats's first note ~1098Hz), so a pure
+    // sine had zero energy there for even a high-Q peak to catch: the "singing resonant
+    // peak" qRange below describes was never actually audible, at any tone value. Nudged
+    // up just enough to bring the peak within reach of that cluster — click's press note
+    // in particular now sits right at the edge at high tone, for a genuine ring — while
+    // staying under submit's own margin-tuned pitch (~837Hz) at its default tone so it
+    // isn't newly silenced.
+    filterCutoffRange: [500, 1000],
     // Pushed more resonant than tiny-sparkle's (which went the opposite way, toward
     // broadband) — this is the family's actual distinguishing character now: a narrow,
     // singing resonant peak, not just "highpass + shimmer" shared with tiny-sparkle.
-    qRange: [2.5, 11],
+    // Top raised from 11 now that the cutoff actually reaches real signal — a sharper
+    // peak rings more distinctly on the notes that pass near it instead of coloring silence.
+    qRange: [2.5, 15],
     // Slower, longer shimmer than tiny-sparkle — one spacious ring, not a flurry of
     // glints. Tail lands near chime's (~0.78s vs ~0.72s) rather than exceeding every other
     // family's, which would risk the same always-heavy problem chime's gain staging fixed.
@@ -1200,9 +1219,16 @@ export const FAMILY_RECIPES: Record<SoundFamily, FamilyRecipe> = {
   },
   'tiny-sparkle': {
     waveform: 'sine',
-    baseFrequency: 1040,
+    // Was 1040 — essentially unison with glass-crystal's 1046Hz, which was most of why
+    // the two read as the same family at different volumes rather than distinct
+    // identities, independent of any filter shaping. Raised to G6, a clean fifth above
+    // glass-crystal's C6, so the register itself is unmistakably this family's own.
+    // filterCutoffRange below is scaled by the exact same ratio (1568/1040) so every
+    // instance's existing safety margin — including submit's documented low-tone-only
+    // workaround — stays geometrically identical, just transposed up with it.
+    baseFrequency: 1568,
     filterType: 'highpass',
-    filterCutoffRange: [1040, 2240],
+    filterCutoffRange: [1568, 3380],
     // Pushed toward broadband/airy rather than glass-crystal's resonant peak — no single
     // "singing" frequency, just an open, breathy brightness. This is the actual
     // differentiator between the two now; before, both families used near-identical
@@ -1470,4 +1496,37 @@ export function resolveNoteParams(family: SoundFamily, tuning: InstanceTuning, n
     delay,
     detuneCents: note.detuneCents ?? 0,
   };
+}
+
+/**
+ * Whether adjusting `tone` produces any audible difference for this family+instance at the
+ * given tuning. `tone` only moves a filter's cutoff (see resolveNoteParams above) — a filter
+ * can only shape harmonic content that actually exists in the signal. A pure sine has none
+ * beyond its one fundamental, so a lowpass/highpass positioned entirely on one side of that
+ * fundamental across the whole 0-1 tone range is inaudible no matter where tone sits. Square,
+ * triangle, and noise sources carry real harmonic/broadband content a moving filter can shape,
+ * so those are treated as responsive whenever their filter is active. soft-bubble's tone-scaled
+ * sweep (see the sweepTo branch above) is a second, independent path tone can affect audibly,
+ * checked separately since it doesn't go through the filter at all.
+ */
+export function isToneAudible(family: SoundFamily, instance: SoundInstance, tuning: InstanceTuning): boolean {
+  const recipe = FAMILY_RECIPES[family];
+  const notes = PRESETS[family][instance].notes;
+  const [cutoffLow, cutoffHigh] = recipe.filterCutoffRange;
+
+  return notes.some((note) => {
+    if (family === 'soft-bubble' && note.sweepTo !== undefined) return true;
+    if (note.useFilter === false) return false;
+    // Texture-layer notes carry their own fixed inline cutoff (see the useTexture branches
+    // above) — tone never reaches them.
+    if (note.useTexture) return false;
+
+    const waveform = note.waveformOverride ?? recipe.waveform;
+    if (waveform !== 'sine') return true;
+
+    const fundamental = recipe.baseFrequency * tuning.pitch * note.pitchMultiplier;
+    if (recipe.filterType === 'lowpass') return cutoffLow <= fundamental * 1.3;
+    if (recipe.filterType === 'highpass') return cutoffHigh >= fundamental * 0.77;
+    return true;
+  });
 }

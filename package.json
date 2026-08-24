@@ -4,18 +4,39 @@
   "description": "A tunable, zero-audio-file sonic design system for the web, powered by the Web Audio API.",
   "type": "module",
   "license": "MIT",
+  "author": "CHING",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CHINGHO1027/chordal.git"
+  },
+  "homepage": "https://github.com/CHINGHO1027/chordal#readme",
+  "bugs": {
+    "url": "https://github.com/CHINGHO1027/chordal/issues"
+  },
+  "keywords": [
+    "web-audio",
+    "sound-design",
+    "ui-sounds",
+    "interaction-sound",
+    "synthesis"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/chunk-*.js"
   ],
   "scripts": {
     "build": "tsup",
     "size": "npm run build && gzip -c dist/index.js | wc -c",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
   }
 }
