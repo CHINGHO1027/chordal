@@ -117,9 +117,18 @@ const toggleNotes: Note[] = [
 // (useFilter:false) — this family's own bandpass is narrow and resonant (Q12), and its
 // cutoff at this preset's tone (0.5) sits around 2300Hz, well above the glide's actual
 // 784-1568Hz sweep; leaving the filter on choked most of the note's energy out mid-sweep
-// instead of blending with it. Landing gets waveformOverride:'sine' (raw square judged
-// too harsh for a clean resolve, same technique this family's own notification already
-// uses) plus useFilter:false so the "locked on" tone reads clean.
+// instead of blending with it. But going fully unfiltered also hands the glide the
+// square wave's complete raw harmonic content with no attenuation at all, which read as
+// louder and more playful than submit's own tone — submit's tone stays filtered, so
+// that same Q12 bandpass quietly attenuates it even though it's also poorly aligned with
+// submit's own register; that incidental softening is a real part of why submit reads as
+// a gentle lift-off rather than a bright poke. Rather than reintroducing the choke bug,
+// approximated that same softness two other ways: volumeMultiplier pulled down (0.75 ->
+// 0.4, closer to the breath layer's own level, so the glide sits under the gesture
+// rather than driving it) and a slower attack (6ms -> 20ms, closer to submit's own 25ms)
+// so the onset swells rather than snaps. Landing gets waveformOverride:'sine' (raw
+// square judged too harsh for a clean resolve, same technique this family's own
+// notification already uses) plus useFilter:false so the "locked on" tone reads clean.
 const listeningNotes: Note[] = [
   {
     offsetFraction: 0.0333,
@@ -135,9 +144,9 @@ const listeningNotes: Note[] = [
     lengthFraction: 0.3333,
     pitchMultiplier: 1,
     sweepTo: 2,
-    volumeMultiplier: 0.75,
+    volumeMultiplier: 0.4,
     useFilter: false,
-    attack: 0.006,
+    attack: 0.02,
   },
   {
     offsetFraction: 0.3611,
