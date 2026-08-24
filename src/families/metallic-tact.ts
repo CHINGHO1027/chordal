@@ -103,50 +103,53 @@ const toggleNotes: Note[] = [
   { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.94, volumeMultiplier: 0.57, attack: 0.002, useDelay: false },
 ];
 
-// listening: same overall timing as snap's exact Cuelume "ready" match (see
-// families/snap.ts) — a real octave glide from 12ms lasting 120ms, then a landing tone
-// from 130ms with a longer decay, 360ms total. Reconsidered the leading tick, though: a
-// short, hard-attacked (1ms) bandpass noise hit ahead of the glide read as a separate,
-// dominant noise event competing with the glide rather than supporting it — especially
-// once the glide itself went unfiltered (raw square) below, so two harsh transients were
-// landing back to back. Replaced with a soft lowpass breath layer instead (this family's
-// own submit already does exactly this: same technique as submitNotes above — a slow
-// 30ms attack, starting at the same instant as the tone it sits under, not before it —
-// so it swells in as texture supporting the glide rather than announcing itself first.
-// The glide itself keeps this family's own square waveform (native) but goes unfiltered
-// (useFilter:false) — this family's own bandpass is narrow and resonant (Q12), and its
-// cutoff at this preset's tone (0.5) sits around 2300Hz, well above the glide's actual
-// 784-1568Hz sweep; leaving the filter on choked most of the note's energy out mid-sweep
-// instead of blending with it. But going fully unfiltered also hands the glide the
-// square wave's complete raw harmonic content with no attenuation at all, which read as
-// louder and more playful than submit's own tone — submit's tone stays filtered, so
-// that same Q12 bandpass quietly attenuates it even though it's also poorly aligned with
-// submit's own register; that incidental softening is a real part of why submit reads as
-// a gentle lift-off rather than a bright poke. Rather than reintroducing the choke bug,
-// approximated that same softness two other ways: volumeMultiplier pulled down (0.75 ->
-// 0.4, closer to the breath layer's own level, so the glide sits under the gesture
-// rather than driving it) and a slower attack (6ms -> 20ms, closer to submit's own 25ms)
-// so the onset swells rather than snaps. Landing gets waveformOverride:'sine' (raw
-// square judged too harsh for a clean resolve, same technique this family's own
-// notification already uses) plus useFilter:false so the "locked on" tone reads clean.
+// listening: reconsidered the glide itself — a continuous raw-square sweep is a classic
+// "power-up" game convention regardless of volume or attack (that reading comes from the
+// waveform and the continuous rise, not the level), so softening it further wasn't going
+// to fix the "playful" impression; it needed a different technique, not a quieter one.
+// Replaced the sweep with a two-note stepped ratchet instead (root, then a real octave
+// up), matching this family's own congrats identity above — "a mechanical ratchet with a
+// real interval, not three near-identical taps" — rather than continuing to reach for
+// notification's clean-sine-override trick or submit's swell. Both steps are sine
+// (waveformOverride) and unfiltered (useFilter:false), same reasoning as the landing note
+// below: this family's own resonant Q12 bandpass sits well above this register and would
+// choke them, and raw square would reintroduce the same playful game-sweep character this
+// rework exists to remove. Keeps the same overall timing as snap's exact Cuelume "ready"
+// match (see families/snap.ts) — the two steps fill the same 12-132ms window the sweep
+// used to, then a landing tone from 130ms with a longer decay, 360ms total. The leading
+// tick was also reconsidered: a short, hard-attacked (1ms) bandpass noise hit ahead of
+// the gesture read as a separate, dominant noise event rather than supporting it.
+// Replaced with a soft lowpass breath layer instead (this family's own submit already
+// does exactly this — same technique as submitNotes above: a slow 30ms attack, starting
+// at the same instant as the steps it sits under, not before them, so it swells in as
+// texture rather than announcing itself first.
 const listeningNotes: Note[] = [
   {
     offsetFraction: 0.0333,
     lengthFraction: 0.28,
     pitchMultiplier: 1,
-    volumeMultiplier: 0.35,
+    volumeMultiplier: 0.3,
     useTexture: { filterType: 'lowpass', filterCutoff: 1800, filterQ: 1 },
     useDelay: false,
     attack: 0.03,
   },
   {
     offsetFraction: 0.0333,
-    lengthFraction: 0.3333,
+    lengthFraction: 0.15,
     pitchMultiplier: 1,
-    sweepTo: 2,
-    volumeMultiplier: 0.4,
+    volumeMultiplier: 0.5,
+    waveformOverride: 'sine',
     useFilter: false,
-    attack: 0.02,
+    attack: 0.015,
+  },
+  {
+    offsetFraction: 0.1833,
+    lengthFraction: 0.1833,
+    pitchMultiplier: 2,
+    volumeMultiplier: 0.65,
+    waveformOverride: 'sine',
+    useFilter: false,
+    attack: 0.015,
   },
   {
     offsetFraction: 0.3611,
