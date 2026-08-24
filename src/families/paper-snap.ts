@@ -134,13 +134,17 @@ const toggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultip
 // error/notification, since noise can't resolve a clean pitch either) at a register sized
 // for an actual tone rather than this family's noise-bandpass-tuned 3200Hz base. The tick
 // still anchors to this family's own baseFrequency (3200Hz, not their literal 3600) —
-// own identity, their pattern.
+// own identity, their pattern. Tick volume pulled down further than the other 8
+// families' own tick (0.25, not 0.5) — this whole family's voice is noise, which reads
+// far louder than its nominal volume suggests (same lesson as congrats's own opening
+// snap above), so at the shared multiplier it was competing with the two-step rise
+// instead of sitting under it as a quiet trigger marker.
 const listeningNotes: Note[] = [
   {
     offsetFraction: 0,
     lengthFraction: 0.08,
     pitchMultiplier: 1,
-    volumeMultiplier: 0.5,
+    volumeMultiplier: 0.25,
     useTexture: { filterType: 'bandpass', filterCutoff: 3200, filterQ: 1.8 },
     attack: 0.001,
   },

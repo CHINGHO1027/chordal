@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createPlayer } from './lite';
 import chime from './families/chime';
 import metallicTact from './families/metallic-tact';
 import { SOUND_INSTANCES } from './types';
+import * as engine from './engine';
 
 describe('createPlayer (per-family import path)', () => {
   it('play() does not throw for every instance of a single imported family, with no window present', () => {
@@ -16,6 +17,32 @@ describe('createPlayer (per-family import path)', () => {
     const { play } = createPlayer(chime);
     expect(() => play('toggle', { state: 'on' })).not.toThrow();
     expect(() => play('toggle', { state: 'off' })).not.toThrow();
+  });
+
+  it('a manual pitch override still preserves the on/off pitch gap for stateful instances', () => {
+    // Same regression as index.test.ts's version — createPlayer()'s own play() had the
+    // identical bug (state split applied before the override merge instead of after).
+    const { play } = createPlayer(chime);
+    const spy = vi.spyOn(engine, 'playVoice');
+
+    for (const instance of ['toggle', 'listening'] as const) {
+      // A tonal (non-zero-frequency) note — listening's own first note is a noise tick,
+      // whose frequency field is always 0 regardless of pitch, so calls[0] isn't
+      // representative for every instance.
+      spy.mockClear();
+      play(instance, { pitch: 1.5, state: 'on' });
+      const onFrequency = spy.mock.calls.map((c) => c[1].frequency).find((f) => f > 0);
+
+      spy.mockClear();
+      play(instance, { pitch: 1.5, state: 'off' });
+      const offFrequency = spy.mock.calls.map((c) => c[1].frequency).find((f) => f > 0);
+
+      expect(onFrequency).toBeGreaterThan(0);
+      expect(offFrequency).toBeGreaterThan(0);
+      expect(offFrequency).toBeLessThan(onFrequency!);
+    }
+
+    spy.mockRestore();
   });
 
   it('bind() does not throw when there is no document to scan', () => {

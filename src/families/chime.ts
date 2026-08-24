@@ -95,10 +95,11 @@ const errorNotes: Note[] = [
 // usual texture-layer Q) at 0-29ms, a real octave glide from 12ms lasting 120ms, then a
 // landing tone from 130ms with a longer decay, 360ms total. Register and texture stay
 // this family's own: the tick reuses this family's own textureLayer cutoff (4600Hz, not
-// their literal 3600) and the glide/landing keep this family's own P=1 register rather
-// than their literal 330/660/990Hz — own identity, their pattern. Sine and essentially
-// unfiltered throughout (this family's own filter is already near-transparent), so no
-// filter overrides are needed on the glide or landing.
+// their literal 3600), and the glide/landing use P=0.75 (dialed down from this family's
+// full 940Hz register — landing at pitchMultiplier 3 was landing at 2820Hz, read as too
+// shrill) rather than their literal 330/660/990Hz — own identity, their pattern. Sine
+// and essentially unfiltered throughout (this family's own filter is already
+// near-transparent), so no filter overrides are needed on the glide or landing.
 const listeningNotes: Note[] = [
   {
     offsetFraction: 0,
@@ -108,8 +109,8 @@ const listeningNotes: Note[] = [
     useTexture: { filterType: 'bandpass', filterCutoff: 4600, filterQ: 1.8 },
     attack: 0.001,
   },
-  { offsetFraction: 0.0333, lengthFraction: 0.3333, pitchMultiplier: 1, sweepTo: 2, volumeMultiplier: 0.75, attack: 0.006 },
-  { offsetFraction: 0.3611, lengthFraction: 0.6389, pitchMultiplier: 3, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
+  { offsetFraction: 0.0333, lengthFraction: 0.3333, pitchMultiplier: 0.75, sweepTo: 2, volumeMultiplier: 0.75, attack: 0.006 },
+  { offsetFraction: 0.3611, lengthFraction: 0.6389, pitchMultiplier: 2.25, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
 ];
 
 // delete: a soft lowpass flick, then this family's own textureLayer as the brighter

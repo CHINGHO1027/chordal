@@ -110,9 +110,13 @@ const toggleNotes: Note[] = [
 // this family's own: the tick reuses this family's own textureLayer cutoff (4200Hz, not
 // their literal 3600) and the glide/landing keep this family's own P=1 register rather
 // than their literal 330/660/990Hz — own identity, their pattern. Glide keeps this
-// family's own square waveform (native, filtered); landing gets waveformOverride:'sine'
-// (raw square judged too harsh for a clean resolve, same technique this family's own
-// notification already uses) plus useFilter:false so the "locked on" tone reads clean.
+// family's own square waveform (native) but goes unfiltered (useFilter:false) — this
+// family's own bandpass is narrow and resonant (Q12), and its cutoff at this preset's
+// tone (0.5) sits around 2300Hz, well above the glide's actual 784-1568Hz sweep; leaving
+// the filter on choked most of the note's energy out mid-sweep instead of blending with
+// it. Landing gets waveformOverride:'sine' (raw square judged too harsh for a clean
+// resolve, same technique this family's own notification already uses) plus
+// useFilter:false so the "locked on" tone reads clean.
 const listeningNotes: Note[] = [
   {
     offsetFraction: 0,
@@ -122,7 +126,15 @@ const listeningNotes: Note[] = [
     useTexture: { filterType: 'bandpass', filterCutoff: 4200, filterQ: 1.8 },
     attack: 0.001,
   },
-  { offsetFraction: 0.0333, lengthFraction: 0.3333, pitchMultiplier: 1, sweepTo: 2, volumeMultiplier: 0.75, attack: 0.006 },
+  {
+    offsetFraction: 0.0333,
+    lengthFraction: 0.3333,
+    pitchMultiplier: 1,
+    sweepTo: 2,
+    volumeMultiplier: 0.75,
+    useFilter: false,
+    attack: 0.006,
+  },
   {
     offsetFraction: 0.3611,
     lengthFraction: 0.6389,

@@ -71,18 +71,22 @@ function scheduleGesture(family: SoundFamily, instance: SoundInstance, tuning: I
 /** Plays one instance of the active (or overridden) family, with optional live overrides. */
 export function play(instance: SoundInstance, options: PlayOptions = {}): void {
   const family = options.family ?? activeFamily;
-  let base = PRESETS[family][instance];
+  const base = PRESETS[family][instance];
 
-  if ((instance === 'toggle' || instance === 'listening') && options.state) {
-    base = { ...base, ...resolveToggleTuning(base, options.state) };
-  }
-
-  const tuning: InstanceTuning = {
+  let tuning: InstanceTuning = {
     volume: options.volume ?? base.volume,
     pitch: options.pitch ?? base.pitch,
     length: options.length ?? base.length,
     tone: options.tone ?? base.tone,
   };
+
+  // Applied after options are merged in, not before — so a manual pitch override still
+  // becomes the "on" pitch and "off" still drops proportionally underneath it, rather
+  // than the override silently overwriting the state-driven split and making both states
+  // sound identical.
+  if ((instance === 'toggle' || instance === 'listening') && options.state) {
+    tuning = resolveToggleTuning(tuning, options.state);
+  }
 
   scheduleGesture(family, instance, tuning, base.notes);
 }

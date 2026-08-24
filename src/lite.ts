@@ -38,18 +38,21 @@ export interface LitePlayer {
 
 export function createPlayer(family: SoundFamilyModule): LitePlayer {
   function play(instance: SoundInstance, options: LitePlayOptions = {}): void {
-    let base = family.presets[instance];
+    const base = family.presets[instance];
 
-    if ((instance === 'toggle' || instance === 'listening') && options.state) {
-      base = { ...base, ...resolveToggleTuning(base, options.state) };
-    }
-
-    const tuning: InstanceTuning = {
+    let tuning: InstanceTuning = {
       volume: options.volume ?? base.volume,
       pitch: options.pitch ?? base.pitch,
       length: options.length ?? base.length,
       tone: options.tone ?? base.tone,
     };
+
+    // Applied after options are merged in — see index.ts's play() for why: a manual pitch
+    // override should become the "on" pitch, with "off" still dropping proportionally
+    // underneath it, rather than silently collapsing both states to the same sound.
+    if ((instance === 'toggle' || instance === 'listening') && options.state) {
+      tuning = resolveToggleTuning(tuning, options.state);
+    }
 
     const activeNotes = base.notes.length > 0 ? base.notes : [FALLBACK_NOTE];
     activeNotes.forEach((note, index) => {
