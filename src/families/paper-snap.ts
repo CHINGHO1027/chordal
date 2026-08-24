@@ -123,33 +123,28 @@ const notificationNotes: Note[] = [
 // whole voice is noise, so toggle just needs one dry hit, no sweep/interval logic to reuse.
 const toggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 }];
 
-// listening: same timing skeleton as snap's exact Cuelume "ready" match (see
-// families/snap.ts) — a tick at Q1.8 at 0-29ms, then the glide's own 12-132ms window,
-// then a landing tone from 130ms with a longer decay, 360ms total. But noise can't glide
-// a continuous pitch (the engine never sweeps a bandpass center — same limitation this
-// family's own submit already works around), so the "rising, locking on" shape becomes a
-// discrete two-step bandpass rise (root -> a real octave, splitting the glide's own
-// 12-132ms window in half) instead of the smooth glide the other 8 families get, then a
-// real sine landing tone (waveformOverride, same technique as this family's own
-// error/notification, since noise can't resolve a clean pitch either) at a register sized
-// for an actual tone rather than this family's noise-bandpass-tuned 3200Hz base. The tick
-// still anchors to this family's own baseFrequency (3200Hz, not their literal 3600) —
-// own identity, their pattern. Tick volume pulled down further than the other 8
-// families' own tick (0.25, not 0.5) — this whole family's voice is noise, which reads
-// far louder than its nominal volume suggests (same lesson as congrats's own opening
-// snap above), so at the shared multiplier it was competing with the two-step rise
-// instead of sitting under it as a quiet trigger marker.
+// listening: same overall timing as snap's exact Cuelume "ready" match (see
+// families/snap.ts) — the glide's own 12-132ms window, then a landing tone from 130ms
+// with a longer decay, 360ms total. Reconsidered from a first pass that had a separate
+// leading noise tick ahead of the rise: this whole family's voice is noise, so tick +
+// two-step rise + (eventually) landing was three separate noise-reading events in a row
+// before any tonal content arrived — reads as "noisy," not "rising." Dropped the tick
+// entirely and, borrowing this family's own submitNotes technique (two heavily
+// overlapping notes with a slow attack, blending into one continuous swell instead of
+// discrete jumps — the same fix already applied to metallic-tact's own breath layer,
+// see families/metallic-tact.ts), softened the two-step bandpass rise (root -> a real
+// octave) the same way: slower attack (20ms -> 30/35ms) and real overlap between the two
+// steps rather than a gap, so the rise reads as one continuous noise-wash climbing into
+// the landing rather than two separate knocks. Noise still can't glide a continuous pitch
+// (the engine never sweeps a bandpass center — same limitation this family's own submit
+// already works around), so this discrete rise still stands in for the smooth glide the
+// other 8 families get; then a real sine landing tone (waveformOverride, same technique
+// as this family's own error/notification, since noise can't resolve a clean pitch
+// either) at a register sized for an actual tone rather than this family's
+// noise-bandpass-tuned 3200Hz base.
 const listeningNotes: Note[] = [
-  {
-    offsetFraction: 0,
-    lengthFraction: 0.08,
-    pitchMultiplier: 1,
-    volumeMultiplier: 0.25,
-    useTexture: { filterType: 'bandpass', filterCutoff: 3200, filterQ: 1.8 },
-    attack: 0.001,
-  },
-  { offsetFraction: 0.0333, lengthFraction: 0.15, pitchMultiplier: 1, volumeMultiplier: 0.6, attack: 0.02 },
-  { offsetFraction: 0.1833, lengthFraction: 0.1833, pitchMultiplier: 2, volumeMultiplier: 0.7, attack: 0.02 },
+  { offsetFraction: 0, lengthFraction: 0.2, pitchMultiplier: 1, volumeMultiplier: 0.5, attack: 0.03 },
+  { offsetFraction: 0.15, lengthFraction: 0.2166, pitchMultiplier: 2, volumeMultiplier: 0.65, attack: 0.035 },
   {
     offsetFraction: 0.3611,
     lengthFraction: 0.6389,

@@ -103,28 +103,32 @@ const toggleNotes: Note[] = [
   { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.94, volumeMultiplier: 0.57, attack: 0.002, useDelay: false },
 ];
 
-// listening: same timing skeleton as snap's exact Cuelume "ready" match (see
-// families/snap.ts) — a tick at Q1.8 (their own tick's Q, tighter than this family's
-// usual texture-layer Q) at 0-29ms, a real octave glide from 12ms lasting 120ms, then a
-// landing tone from 130ms with a longer decay, 360ms total. Register and texture stay
-// this family's own: the tick reuses this family's own textureLayer cutoff (4200Hz, not
-// their literal 3600) and the glide/landing keep this family's own P=1 register rather
-// than their literal 330/660/990Hz — own identity, their pattern. Glide keeps this
-// family's own square waveform (native) but goes unfiltered (useFilter:false) — this
-// family's own bandpass is narrow and resonant (Q12), and its cutoff at this preset's
-// tone (0.5) sits around 2300Hz, well above the glide's actual 784-1568Hz sweep; leaving
-// the filter on choked most of the note's energy out mid-sweep instead of blending with
-// it. Landing gets waveformOverride:'sine' (raw square judged too harsh for a clean
-// resolve, same technique this family's own notification already uses) plus
-// useFilter:false so the "locked on" tone reads clean.
+// listening: same overall timing as snap's exact Cuelume "ready" match (see
+// families/snap.ts) — a real octave glide from 12ms lasting 120ms, then a landing tone
+// from 130ms with a longer decay, 360ms total. Reconsidered the leading tick, though: a
+// short, hard-attacked (1ms) bandpass noise hit ahead of the glide read as a separate,
+// dominant noise event competing with the glide rather than supporting it — especially
+// once the glide itself went unfiltered (raw square) below, so two harsh transients were
+// landing back to back. Replaced with a soft lowpass breath layer instead (this family's
+// own submit already does exactly this: same technique as submitNotes above — a slow
+// 30ms attack, starting at the same instant as the tone it sits under, not before it —
+// so it swells in as texture supporting the glide rather than announcing itself first.
+// The glide itself keeps this family's own square waveform (native) but goes unfiltered
+// (useFilter:false) — this family's own bandpass is narrow and resonant (Q12), and its
+// cutoff at this preset's tone (0.5) sits around 2300Hz, well above the glide's actual
+// 784-1568Hz sweep; leaving the filter on choked most of the note's energy out mid-sweep
+// instead of blending with it. Landing gets waveformOverride:'sine' (raw square judged
+// too harsh for a clean resolve, same technique this family's own notification already
+// uses) plus useFilter:false so the "locked on" tone reads clean.
 const listeningNotes: Note[] = [
   {
-    offsetFraction: 0,
-    lengthFraction: 0.08,
+    offsetFraction: 0.0333,
+    lengthFraction: 0.28,
     pitchMultiplier: 1,
-    volumeMultiplier: 0.5,
-    useTexture: { filterType: 'bandpass', filterCutoff: 4200, filterQ: 1.8 },
-    attack: 0.001,
+    volumeMultiplier: 0.35,
+    useTexture: { filterType: 'lowpass', filterCutoff: 1800, filterQ: 1 },
+    useDelay: false,
+    attack: 0.03,
   },
   {
     offsetFraction: 0.0333,
