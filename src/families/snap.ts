@@ -105,20 +105,42 @@ const congratsNotes: Note[] = [
   { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
 
-// listening (reference family for this instance): snap is chordal's only triangle-wave
-// family, matching the waveform Cuelume's own "ready" cue uses for its melodic layer — and
-// this family's own textureLayer (3600Hz) already sits almost exactly on their tick's own
-// 3600Hz. Three parts: a quick tick (this family's own texture) marking the trigger, a
-// triangle note gliding a real octave up (sweepTo, filtered — this family's own bandpass
-// colors the sweep as it rises through it), then a landing tone a further fifth above that
-// (1:2:3, the same harmonic series their own ready recipe lands on), unfiltered so the
-// "locked on" resolve reads clean rather than getting clipped by this family's own narrow
-// bandpass. Structurally distinct from congrats above (one continuous glide, not discrete
-// stepped notes) so the two are never confusable. First pass — not yet validated by ear.
+// listening (reference family for this instance): an exact reproduction of Cuelume's own
+// "ready" cue's literal values, not just its shape — snap is chordal's only triangle-wave
+// family, the same waveform their glide layer uses, and this family's own textureLayer
+// already sits at their tick's exact 3600Hz. A bandpass noise tick at 3600Hz/Q1.8/1ms
+// attack (inline override — this family's own textureLayer runs a tighter Q3, so the
+// override reproduces their real Q rather than this family's own), a triangle glide from
+// 330Hz to 660Hz (a real octave, exactly their own ratio) starting 12ms in and lasting
+// 120ms, then a sine landing tone (waveformOverride — their landing layer is sine, not
+// triangle) at 990Hz starting at the 130ms mark with a longer decay. Both the glide and
+// the landing sit well below this family's own bandpass passband ([720, 1620]), so both
+// go unfiltered (useFilter:false) — filtering either through that passband at these real,
+// low frequencies would silence most of their energy, the same bug this project's
+// tone-slider audibility fix (isToneAudible) exists to catch. This family's own comb-delay
+// (2ms/28%/40%/3800Hz) still applies by default rather than their actual shimmer
+// (100ms/16%/10%/4200Hz) — there's no per-note delay override in this engine, so family
+// identity wins on that one layer alone. Structurally distinct from congrats above (one
+// continuous glide, not discrete stepped notes) so the two are never confusable.
 const listeningNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1, volumeMultiplier: 0.5, useTexture: true, attack: 0.001 },
-  { offsetFraction: 0.06, lengthFraction: 0.55, pitchMultiplier: 1, sweepTo: 2, volumeMultiplier: 0.75, attack: 0.006 },
-  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 3, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.08,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.5,
+    useTexture: { filterType: 'bandpass', filterCutoff: 3600, filterQ: 1.8 },
+    attack: 0.001,
+  },
+  { offsetFraction: 0.0333, lengthFraction: 0.3333, pitchMultiplier: 0.4583, sweepTo: 2, volumeMultiplier: 0.75, useFilter: false, attack: 0.006 },
+  {
+    offsetFraction: 0.3611,
+    lengthFraction: 0.6389,
+    pitchMultiplier: 1.375,
+    volumeMultiplier: 1,
+    waveformOverride: 'sine',
+    useFilter: false,
+    attack: 0.004,
+  },
 ];
 
 // delete: adapted to this family's own bright texture register rather than the literal
@@ -161,9 +183,10 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   toggle: preset(0.23, 0.014, 0.5, 'toggle', toggleNotes),
   submit: preset(0.21, 0.17, 0.45, 'submit', submitNotes),
   notification: preset(0.15, 0.4, 0.45, 'notification', notificationNotes),
-  // 320ms — tick, octave glide, and a resolving landing tone all need real room; too fast
-  // and the glide reads as a pitch-bent click rather than a genuine sweep.
-  listening: preset(0.22, 0.32, 0.5, 'listening', listeningNotes),
+  // 360ms: exact reference match — Cuelume's own ready recipe spans tick -> glide (12ms
+  // + 120ms) -> landing (starting 130ms in, with a longer decay), landing at ~230ms out.
+  // See listeningNotes above for the rest of the mapping.
+  listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
 };
 

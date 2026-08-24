@@ -102,16 +102,27 @@ const errorNotes: Note[] = [
   { offsetFraction: 0.65, lengthFraction: 0.35, pitchMultiplier: 0.7071, volumeMultiplier: 0.58, useFilter: false, useDelay: false, attack: 0.004 },
 ];
 
-// listening: tick, an octave glide, then a landing tone a further fifth up (1:2:3, same
-// harmonic series as this instance's reference across every family — see
-// families/snap.ts). Register dialed down from the family's own 1046Hz base (P=0.6
-// rather than 1) so the landing tone (3x) doesn't push into an extreme high register.
-// Glide filtered (this family's own highpass still passes it cleanly); landing unfiltered
-// so the "locked on" resolve reads clean. First pass — not yet validated by ear.
+// listening: same timing skeleton as snap's exact Cuelume "ready" match (see
+// families/snap.ts) — a tick at Q1.8 (their own tick's Q, tighter than this family's
+// usual texture-layer Q) at 0-29ms, a real octave glide from 12ms lasting 120ms, then a
+// landing tone from 130ms with a longer decay, 360ms total. Register and texture stay
+// this family's own, though: the tick reuses this family's own textureLayer cutoff
+// (5400Hz, not their literal 3600) and the glide/landing keep this family's own P=0.6
+// register (dialed down from 1046Hz's home so the landing tone doesn't push into an
+// extreme high register) rather than their literal 330/660/990Hz — own identity, their
+// pattern. Glide filtered (this family's own highpass still passes it cleanly); landing
+// unfiltered so the "locked on" resolve reads clean.
 const listeningNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 0.6, volumeMultiplier: 0.5, useTexture: true, attack: 0.001 },
-  { offsetFraction: 0.06, lengthFraction: 0.55, pitchMultiplier: 0.6, sweepTo: 1.2, volumeMultiplier: 0.75, attack: 0.006 },
-  { offsetFraction: 0.55, lengthFraction: 0.45, pitchMultiplier: 1.8, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
+  {
+    offsetFraction: 0,
+    lengthFraction: 0.08,
+    pitchMultiplier: 0.6,
+    volumeMultiplier: 0.5,
+    useTexture: { filterType: 'bandpass', filterCutoff: 5400, filterQ: 1.8 },
+    attack: 0.001,
+  },
+  { offsetFraction: 0.0333, lengthFraction: 0.3333, pitchMultiplier: 0.6, sweepTo: 1.2, volumeMultiplier: 0.75, attack: 0.006 },
+  { offsetFraction: 0.3611, lengthFraction: 0.6389, pitchMultiplier: 1.8, volumeMultiplier: 1, useFilter: false, attack: 0.004 },
 ];
 
 // delete: a soft lowpass flick, then this family's own textureLayer as the brighter
@@ -166,7 +177,7 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   toggle: preset(0.23, 0.022, 0.5, 'toggle', toggleNotes),
   submit: preset(0.22, 0.18, 0.45, 'submit', submitNotes),
   notification: preset(0.2, 0.4, 0.3, 'notification', notificationNotes),
-  listening: preset(0.22, 0.32, 0.5, 'listening', listeningNotes),
+  listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
 };
 

@@ -123,20 +123,32 @@ const notificationNotes: Note[] = [
 // whole voice is noise, so toggle just needs one dry hit, no sweep/interval logic to reuse.
 const toggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 }];
 
-// listening: noise can't glide a continuous pitch (the engine never sweeps a bandpass
-// center — same limitation this family's own submit already works around), so the
-// "rising, locking on" shape becomes a discrete two-step bandpass rise instead of the
-// smooth glide the other 8 families get, then a real sine landing tone (waveformOverride,
-// same technique as this family's own error/notification, since noise can't resolve a
-// clean pitch either) at a register sized for an actual tone rather than this family's
-// noise-bandpass-tuned 3200Hz base. First pass — not yet validated by ear.
+// listening: same timing skeleton as snap's exact Cuelume "ready" match (see
+// families/snap.ts) — a tick at Q1.8 at 0-29ms, then the glide's own 12-132ms window,
+// then a landing tone from 130ms with a longer decay, 360ms total. But noise can't glide
+// a continuous pitch (the engine never sweeps a bandpass center — same limitation this
+// family's own submit already works around), so the "rising, locking on" shape becomes a
+// discrete two-step bandpass rise (root -> a real octave, splitting the glide's own
+// 12-132ms window in half) instead of the smooth glide the other 8 families get, then a
+// real sine landing tone (waveformOverride, same technique as this family's own
+// error/notification, since noise can't resolve a clean pitch either) at a register sized
+// for an actual tone rather than this family's noise-bandpass-tuned 3200Hz base. The tick
+// still anchors to this family's own baseFrequency (3200Hz, not their literal 3600) —
+// own identity, their pattern.
 const listeningNotes: Note[] = [
-  { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1.4, volumeMultiplier: 0.5, attack: 0.001 },
-  { offsetFraction: 0.08, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.6, attack: 0.02 },
-  { offsetFraction: 0.38, lengthFraction: 0.25, pitchMultiplier: 2, volumeMultiplier: 0.7, attack: 0.02 },
   {
-    offsetFraction: 0.6,
-    lengthFraction: 0.4,
+    offsetFraction: 0,
+    lengthFraction: 0.08,
+    pitchMultiplier: 1,
+    volumeMultiplier: 0.5,
+    useTexture: { filterType: 'bandpass', filterCutoff: 3200, filterQ: 1.8 },
+    attack: 0.001,
+  },
+  { offsetFraction: 0.0333, lengthFraction: 0.15, pitchMultiplier: 1, volumeMultiplier: 0.6, attack: 0.02 },
+  { offsetFraction: 0.1833, lengthFraction: 0.1833, pitchMultiplier: 2, volumeMultiplier: 0.7, attack: 0.02 },
+  {
+    offsetFraction: 0.3611,
+    lengthFraction: 0.6389,
     pitchMultiplier: 0.3,
     volumeMultiplier: 1,
     waveformOverride: 'sine',
@@ -190,7 +202,7 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   toggle: preset(0.22, 0.014, 0.5, 'toggle', toggleNotes),
   submit: preset(0.21, 0.16, 0.5, 'submit', submitNotes),
   notification: preset(0.2, 0.4, 0.3, 'notification', notificationNotes),
-  listening: preset(0.22, 0.32, 0.5, 'listening', listeningNotes),
+  listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
 };
 
