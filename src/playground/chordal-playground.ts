@@ -274,6 +274,31 @@ const TARGET_PEAK_FRACTION = 0.75;
 
 const FALLBACK_NOTES: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 }];
 
+// ---- bar-style waveform, every family — a classic mirrored-amplitude-bar visualizer
+// instead of a continuous stroked line. Trialed on soft-bubble alone first, then rolled
+// out once confirmed. Wider bars with real gaps between them (rather than a dense hairline
+// forest) for
+// a softer, more legible read, matching chordal's own quiet visual language elsewhere.
+const BAR_WIDTH_PX = 3;
+const BAR_GAP_PX = 3;
+// Sub-samples taken across each bar's own time slice to find its peak — the carrier
+// oscillates much faster than the bar pitch at any real audio pitch, so a single sample
+// per bar would alias; this catches the same fast ripple the continuous line already
+// renders; taking the max of several samples is what gives the bars their fuzzy,
+// authentic "real waveform" texture instead of a smooth envelope silhouette.
+const BAR_SUBSAMPLES = 6;
+// Headroom so the single loudest bar doesn't touch the canvas edge.
+const BAR_HEIGHT_SCALE = 0.92;
+// Every bar gets at least this much height (mirrored, so 2x this in total) — keeps quiet
+// passages reading as a continuous row of small ticks rather than gaps that could look
+// like missing/broken bars.
+const BAR_MIN_HALF_HEIGHT_PX = 1;
+// Per-bar opacity floor — quiet bars dim rather than vanish, loud bars reach full
+// opacity. Modulating opacity by each bar's own amplitude (rather than a flat color)
+// approximates the reference images' color-intensity depth without introducing extra
+// hues, since this stays on the family's own single accent color throughout.
+const BAR_MIN_OPACITY = 0.3;
+
 // Match the canvas's own `width`/`height` attributes in render() — used both there and to
 // build the precomputed shape below, so they never drift apart.
 const CANVAS_WIDTH = 640;
@@ -281,11 +306,11 @@ const CANVAS_HEIGHT = 144;
 
 // Evenly-spaced points across the whole gesture aren't enough on their own: a fast attack
 // (a couple of ms) can be a small fraction of a longer overall gesture, so only 1-3 of these
-// fall inside it — nowhere near enough to trace the attack's actual curvature, so it renders
-// as a sharp corner no matter how smooth attackEnvelope's own math is. This packs extra
-// samples densely across each voice's own attack window specifically, on top of the base
-// grid, so every attack gets properly resolved regardless of how short it is relative to the
-// gesture as a whole. See buildSampleTimes().
+// fall inside it — nowhere near enough to catch its actual peak. This packs extra samples
+// densely across each voice's own attack window specifically, on top of the base grid, so
+// startVisual's own peakEnvelope/visualGain normalization pass (the one remaining consumer
+// of this — see startVisual) resolves every attack accurately regardless of how short it is
+// relative to the gesture as a whole. See buildSampleTimes().
 const BASE_SAMPLE_COUNT = CANVAS_WIDTH;
 const ATTACK_OVERSAMPLE_COUNT = 12;
 
@@ -310,12 +335,10 @@ function buildSampleTimes(durationSec: number, voices: VisualVoice[]): number[] 
 }
 
 
-// Raised-cosine (smoothstep) attack, not a linear ramp: a linear ramp arrives at the peak
-// with a constant nonzero slope that almost never matches the exponential decay's own slope
-// there, which reads as a sharp corner right at each note's peak. A raised cosine arrives at
-// the peak with zero slope — matching the decay's smooth start — so the whole envelope stays
-// visually rounded with no kink, at any render resolution, without needing curve-smoothing to
-// paper over it.
+// Raised-cosine (smoothstep) attack, not a linear ramp: matches the exponential decay's own
+// zero-slope start, so the envelope itself — the actual amplitude values every bar's height
+// and every gain-normalization pass reads from — rises smoothly into its peak rather than
+// arriving with a sudden constant-slope kink.
 function attackEnvelope(localT: number, attack: number, tau: number): number {
   const attackProgress = Math.min(1, localT / attack);
   const attackFactor = 0.5 - 0.5 * Math.cos(Math.PI * attackProgress);
@@ -446,6 +469,23 @@ export class ChordalPlayground extends HTMLElement {
     this.gestureStartedAt = performance.now();
   }
 
+  // Sums every active voice's envelope×carrier contribution at one gesture-time instant —
+  // the same signal both the continuous-line renderer and the bar renderer draw from, so
+  // switching a family between the two styles (see drawWaveform) never changes what's
+  // being visualized, only how.
+  private sampleSignal(gt: number): number {
+    let sum = 0;
+    for (const v of this.voices) {
+      if (gt < v.onsetSec) continue;
+      const localT = gt - v.onsetSec;
+      const envelope = attackEnvelope(localT, v.attack, v.tau);
+      const noteProgress = Math.min(1, localT / v.durationSec);
+      const visualHz = v.visualHzStart + (v.visualHzEnd - v.visualHzStart) * noteProgress;
+      sum += v.peakAmp * envelope * Math.sin(2 * Math.PI * visualHz * localT + v.phaseOffset);
+    }
+    return sum;
+  }
+
   // Faint vertical ticks only — no per-line text (the corner .status label already carries
   // the duration) and no center baseline: the trace itself already breaks around zero during
   // real silence (see drawWaveform's silence-gap handling), so a separately-drawn horizontal
@@ -507,53 +547,55 @@ export class ChordalPlayground extends HTMLElement {
     ctx2d.globalAlpha = opacity;
     this.drawGrid(ctx2d, w, h, totalMs);
 
-    ctx2d.strokeStyle = FAMILY_ACCENTS[this.family];
-    ctx2d.lineWidth = 1;
-    ctx2d.lineJoin = 'round';
-    ctx2d.lineCap = 'round';
-    // Walks this.sampleTimes (the base grid plus dense per-voice attack oversampling — see
-    // buildSampleTimes) rather than one point per pixel, so fast attacks get properly
-    // resolved regardless of how short they are relative to the gesture as a whole. Quadratic
-    // curve through each point's midpoint with the next, rather than straight lineTo
-    // segments, for a fluid line rather than a faceted polyline. One continuous stroke for
-    // the whole gesture, even where a note's decay has become nearly inaudible before the
-    // next one starts — exponential decay never truly reaches zero, so that's a genuinely
-    // continuous (if very quiet) signal, not a hard silence a break should represent. Stops
-    // early at revealGt — samples past it haven't been "drawn in" yet this frame.
-    let started = false;
-    let prevX = 0;
-    let prevY = h / 2;
-    for (const gt of this.sampleTimes) {
-      if (gt > revealGt) break;
-      let sum = 0;
-      for (const v of this.voices) {
-        if (gt < v.onsetSec) continue;
-        const localT = gt - v.onsetSec;
-        const envelope = attackEnvelope(localT, v.attack, v.tau);
-        const noteProgress = Math.min(1, localT / v.durationSec);
-        const visualHz = v.visualHzStart + (v.visualHzEnd - v.visualHzStart) * noteProgress;
-        sum += v.peakAmp * envelope * Math.sin(2 * Math.PI * visualHz * localT + v.phaseOffset);
-      }
-      const x = (gt / this.gestureDurationSec) * w;
-      const y = h / 2 - sum * this.visualGain * (h / 2);
-      if (!started) {
-        ctx2d.beginPath();
-        ctx2d.moveTo(x, y);
-        started = true;
-      } else {
-        const midX = (prevX + x) / 2;
-        const midY = (prevY + y) / 2;
-        ctx2d.quadraticCurveTo(prevX, prevY, midX, midY);
-      }
-      prevX = x;
-      prevY = y;
-    }
-    if (started) {
-      ctx2d.lineTo(prevX, prevY);
-      ctx2d.stroke();
-    }
+    // Bar-style visualizer for every family — see drawBars below. Replaced the previous
+    // continuous stroked line (one quadraticCurveTo path through this.sampleTimes) after
+    // trialing bars on soft-bubble alone first; this.sampleTimes/buildSampleTimes stay in
+    // use regardless (see startVisual) for the peakEnvelope/visualGain normalization pass,
+    // which is independent of which rendering style consumes it.
+    this.drawBars(ctx2d, w, h, revealGt, opacity);
     ctx2d.globalAlpha = 1;
   };
+
+  // Mirrored-amplitude-bar renderer — see the BAR_* constants above for the geometry
+  // rationale. Each bar's height is the peak of several sub-samples across its own time
+  // slice (not a single sample), which is what gives the bars their fuzzy, authentic
+  // texture: the carrier's own fast oscillation shows up as bar-to-bar height variation
+  // instead of being aliased away. Bar color stays the family's single accent throughout
+  // (no rainbow gradient); each bar's own opacity is modulated by its own amplitude
+  // instead, so louder passages still read as visually "hotter" within that one hue.
+  private drawBars(ctx2d: CanvasRenderingContext2D, w: number, h: number, revealGt: number, opacity: number): void {
+    const barStep = BAR_WIDTH_PX + BAR_GAP_PX;
+    const barCount = Math.max(1, Math.floor(w / barStep));
+    const barDurationSec = this.gestureDurationSec / barCount;
+    const accent = FAMILY_ACCENTS[this.family];
+
+    ctx2d.strokeStyle = accent;
+    ctx2d.lineWidth = BAR_WIDTH_PX;
+    ctx2d.lineCap = 'round';
+
+    for (let i = 0; i < barCount; i++) {
+      const barStartT = i * barDurationSec;
+      const barCenterT = barStartT + barDurationSec / 2;
+      if (barCenterT > revealGt) break;
+
+      let peak = 0;
+      for (let s = 0; s < BAR_SUBSAMPLES; s++) {
+        const t = barStartT + ((s + 0.5) / BAR_SUBSAMPLES) * barDurationSec;
+        const sample = Math.abs(this.sampleSignal(t));
+        if (sample > peak) peak = sample;
+      }
+
+      const amp = Math.min(1, peak * this.visualGain);
+      const halfHeight = Math.max(BAR_MIN_HALF_HEIGHT_PX, amp * (h / 2) * BAR_HEIGHT_SCALE);
+      const x = (i + 0.5) * barStep;
+
+      ctx2d.globalAlpha = opacity * (BAR_MIN_OPACITY + (1 - BAR_MIN_OPACITY) * amp);
+      ctx2d.beginPath();
+      ctx2d.moveTo(x, h / 2 - halfHeight);
+      ctx2d.lineTo(x, h / 2 + halfHeight);
+      ctx2d.stroke();
+    }
+  }
 
   // Reports the loudest voice's own true (unscaled) frequency — exact, since it's read
   // directly from the synthesis parameters rather than estimated from a waveform.
