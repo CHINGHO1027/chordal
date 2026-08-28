@@ -109,6 +109,18 @@ const STYLES = `
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     padding: 1rem;
+    /* min-width:0 overrides this grid item's own default automatic minimum
+       size (based on its content's intrinsic width, not 0) — without it, at
+       narrow widths .family-list's own unbreakable button text (see
+       .family-btn's own min-width:0 below) forces this pane wider than
+       .studio's single 1fr track. .studio's own overflow:hidden then clips
+       the excess rather than showing a page scrollbar, so this bug read as
+       content silently cut off inside the rounded panel edge, not as an
+       obvious horizontal-scroll bug. Confirmed via a real 375px-viewport
+       test (an iframe, which gets its own independent CSS viewport) — the
+       Family pane was rendering 363px wide inside a 314px .studio before
+       this fix. */
+    min-width: 0;
   }
   .pane-head {
     font-family: var(--font-body);
@@ -139,6 +151,16 @@ const STYLES = `
     text-align: left; border: none; background: none; cursor: pointer;
     padding: 0.4rem 0.5rem; border-radius: var(--radius-sm);
     color: var(--text-secondary);
+    /* The actual source of the blowout .pane's own min-width:0 comment
+       describes: a family name like "glass-crystal" is one unbreakable
+       token (no space to wrap at), so as a grid item of .family-list's
+       2-column grid, this button's own default automatic minimum size
+       resists shrinking below that text's full width — which, multiplied
+       across a whole column, can force the grid wider than its container
+       even though the text actually fits fine once a track is properly
+       sized to 1fr (confirmed empirically: no truncation needed once this
+       is in place). */
+    min-width: 0;
   }
   .family-btn .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--dot); flex-shrink: 0; }
   .family-btn[aria-pressed="true"] { background: var(--page-bg); color: var(--text-primary); }
