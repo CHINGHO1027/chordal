@@ -73,6 +73,13 @@ const STYLES = `
     display: grid;
     grid-template-columns: 13rem 1fr 16rem;
     gap: var(--border-width);
+    /* Below 44rem, the two fixed columns (13rem + 16rem = 29rem) alone leave too
+       little room for the flexible middle column to be usable — stack all three
+       panes full-width instead, in the same DOM order (Family, Waveform,
+       Inspector), which already reads fine top to bottom: pick a family, watch
+       it/trigger it, then tune it. A viewport media query, not a container
+       query — this component is only ever embedded full-width in practice (see
+       home-lofi.html's .explorer), so viewport width is a fair proxy here. */
     /* Translucent + blurred rather than the old opaque --surface — this component
        sits directly over the homepage hero's own background image (see
        home-lofi.html's .hero-band), so the panel now reads as frosted glass
@@ -85,6 +92,9 @@ const STYLES = `
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: 0 24px 48px -24px rgba(23, 17, 12, 0.28), 0 2px 8px rgba(23, 17, 12, 0.06);
+  }
+  @media (max-width: 44rem) {
+    .studio { grid-template-columns: 1fr; }
   }
   .pane {
     /* Less --surface, less blur than a first pass (72%/20px) — that read as a
