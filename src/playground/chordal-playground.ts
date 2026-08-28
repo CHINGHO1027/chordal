@@ -4,7 +4,7 @@
  * and a copy-pasteable code snippet. Not part of the core bundle's 5KB budget.
  */
 
-import { play, playContinuous, setFamily, getFamily, mute, unmute, isMuted, SOUND_FAMILIES } from '../index';
+import { play, playContinuous, setFamily, getFamily, SOUND_FAMILIES } from '../index';
 import { PRESETS, FAMILY_RECIPES, isToneAudible, type InstancePreset, type InstanceTuning, type Note } from '../presets';
 import type { SoundFamily, SoundInstance } from '../presets';
 
@@ -203,13 +203,6 @@ const STYLES = `
   .slider-row.is-inert { opacity: 0.45; }
   .slider-row.is-inert input[type="range"] { cursor: not-allowed; }
   .slider-row.is-inert .val { font-family: var(--font-body); font-style: italic; }
-
-  .mute-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; }
-  .mute-row button {
-    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light);
-    border: var(--border-width) solid var(--border); background: var(--surface);
-    border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
-  }
 
   .code-toggle {
     margin-top: 1.25rem;
@@ -735,9 +728,6 @@ export class ChordalPlayground extends HTMLElement {
         <div class="pane">
           <div class="pane-head">Family</div>
           <div class="family-list">${familyListHtml}</div>
-          <div class="mute-row">
-            <button type="button" class="mute-btn">${isMuted() ? 'Unmute' : 'Mute'}</button>
-          </div>
         </div>
         <div class="pane">
           <div class="pane-head">Waveform</div>
@@ -778,12 +768,12 @@ export class ChordalPlayground extends HTMLElement {
               </div>
             </div>
           </div>
-          <button type="button" class="code-toggle" aria-expanded="false">View code</button>
-          <div class="code-export" hidden></div>
         </div>
         <div class="pane">
           <div class="pane-head">Inspector</div>
           <div class="sliders">${slidersHtml}</div>
+          <button type="button" class="code-toggle" aria-expanded="false">View code</button>
+          <div class="code-export" hidden></div>
         </div>
       </div>
     `;
@@ -868,17 +858,6 @@ export class ChordalPlayground extends HTMLElement {
       this.startVisual({ ...PRESETS[this.family].hover, length: 0.03 });
       const status = this.shadow.querySelector<HTMLElement>('.status');
       if (status) status.textContent = `${this.family} · slider · ${ratio.toFixed(2)}`;
-    });
-
-    const muteBtn = this.shadow.querySelector<HTMLElement>('.mute-btn');
-    muteBtn?.addEventListener('click', () => {
-      if (isMuted()) {
-        unmute();
-        muteBtn.textContent = 'Mute';
-      } else {
-        mute();
-        muteBtn.textContent = 'Unmute';
-      }
     });
   }
 }
