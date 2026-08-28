@@ -118,6 +118,21 @@ const STYLES = `
     margin-bottom: 0.75rem;
   }
   .family-list { display: flex; flex-direction: column; gap: 0.3rem; }
+  /* Placed after the base rule above (not inside the earlier .studio media
+     block) — same selector/specificity, so the later rule in source order
+     wins; putting a same-specificity override before its own base rule is
+     exactly the bug that silently reverted .site-nav's position earlier in
+     this project (see home-lofi.html's own .hero-band comment) and it bit
+     this rule the same way: display:grid never actually took effect, only
+     grid-template-columns did (a property the base rule never touches), so
+     the list looked identical to the unstyled flex-column default despite
+     the media query genuinely matching. The Family pane goes from a narrow
+     13rem column to the full panel width once .studio stacks — a single
+     vertical list of 9 buttons no longer makes good use of that width, so
+     it becomes a 2-column grid instead. */
+  @media (max-width: 44rem) {
+    .family-list { display: grid; grid-template-columns: repeat(2, 1fr); }
+  }
   .family-btn {
     display: flex; align-items: center; gap: 0.55rem;
     font-family: var(--font-body); font-size: var(--text-body); font-weight: var(--weight-light);
