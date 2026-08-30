@@ -56,4 +56,31 @@ describe('createPlayer (per-family import path)', () => {
     expect(() => a.play('hover')).not.toThrow();
     expect(() => b.play('hover')).not.toThrow();
   });
+
+  it('playContinuous() does not throw across the ratio range', () => {
+    const { playContinuous } = createPlayer(chime);
+    expect(() => playContinuous('slider', 0)).not.toThrow();
+    expect(() => playContinuous('slider', 0.5)).not.toThrow();
+    expect(() => playContinuous('slider', 1)).not.toThrow();
+  });
+
+  it("two independently created players' playContinuous debounce state does not interfere with each other", () => {
+    // Regression test for the reason continuous.ts's SliderState is passed in rather than
+    // held at module scope: if two createPlayer() calls accidentally shared one debounce
+    // clock, player b's call landing right after player a's (well within the 20ms debounce
+    // window) would be silently swallowed — a's tick would suppress b's.
+    const spy = vi.spyOn(engine, 'playVoice');
+    const a = createPlayer(chime);
+    const b = createPlayer(metallicTact);
+
+    a.playContinuous('slider', 0.2);
+    const aCalls = spy.mock.calls.length;
+    expect(aCalls).toBeGreaterThan(0);
+
+    spy.mockClear();
+    b.playContinuous('slider', 0.6);
+    expect(spy.mock.calls.length).toBeGreaterThan(0);
+
+    spy.mockRestore();
+  });
 });

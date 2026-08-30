@@ -5,7 +5,7 @@
  *   import chime from 'chordal/chime';
  *   import { createPlayer } from 'chordal/lite';
  *
- *   const { play, bind } = createPlayer(chime);
+ *   const { play, bind, playContinuous } = createPlayer(chime);
  *   play('hover');
  *
  * `play(instance, {family})` on the main `chordal` entry accepts a family *name* as a
@@ -22,6 +22,7 @@
 import * as engine from './engine';
 import { resolveNoteParams, resolveToggleTuning } from './resolve';
 import { createBinder } from './bind';
+import { computeSliderVoices, createSliderState } from './continuous';
 import type { InstanceTuning, Note, SoundFamilyModule, SoundInstance } from './types';
 
 const FALLBACK_NOTE: Note = { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1 };
@@ -34,6 +35,9 @@ export interface LitePlayOptions extends Partial<InstanceTuning> {
 export interface LitePlayer {
   play(instance: SoundInstance, options?: LitePlayOptions): void;
   bind(root?: ParentNode): void;
+  /** Continuous, pitch-quantized feedback for a range slider's own `input` event. Same
+   *  tick sound as the full `chordal` entry's own playContinuous — see continuous.ts. */
+  playContinuous(action: 'slider', valueRatio: number): void;
 }
 
 export function createPlayer(family: SoundFamilyModule): LitePlayer {
@@ -65,5 +69,18 @@ export function createPlayer(family: SoundFamilyModule): LitePlayer {
 
   const bind = createBinder(play, { supportsFamilyOverride: false });
 
-  return { play, bind };
+  // This player's own SliderState — not shared at module scope, so a second
+  // createPlayer() call for a different family never shares or fights over this one's
+  // debounce/speed feel (see continuous.ts's own comment).
+  const sliderState = createSliderState();
+
+  function playContinuous(action: 'slider', valueRatio: number): void {
+    if (action !== 'slider') return;
+    const voices = computeSliderVoices(family.recipe, family.presets.hover, valueRatio, sliderState);
+    if (!voices) return;
+    engine.playVoice(`${family.name}:slider-body`, voices.body, 0, { maxVoices: 2 });
+    engine.playVoice(`${family.name}:slider-click`, voices.click, 0, { maxVoices: 2 });
+  }
+
+  return { play, bind, playContinuous };
 }

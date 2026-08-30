@@ -26,16 +26,16 @@ bind();
 
 ## Only using one family?
 
-Importing `chordal` pulls in all nine families (~5.8KB gzipped, everything included). If your
+Importing `chordal` pulls in all nine families (~6.2KB gzipped, everything included). If your
 app only ever uses one, import that family directly and pull in `createPlayer` from
-`chordal/lite` instead, for a real, measured, ~3.4KB gzipped, about 42% smaller since the other
+`chordal/lite` instead, for a real, measured, ~3.8KB gzipped, about 38% smaller since the other
 eight families' data is never bundled at all, not just hidden behind a runtime check.
 
 ```ts
 import chime from 'chordal/chime';
 import { createPlayer } from 'chordal/lite';
 
-const { play, bind } = createPlayer(chime);
+const { play, bind, playContinuous } = createPlayer(chime);
 
 play('hover');
 bind(); // same data-sound-* attribute scanning as the main API
