@@ -248,11 +248,34 @@ const STYLES = `
     border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
   }
   .code-export {
+    position: relative;
     margin-top: 0.6rem; background: var(--page-bg); border: var(--border-width) solid var(--border);
     border-radius: var(--radius-md); padding: 0.85rem;
+  }
+  .code-export-text {
+    margin: 0; padding-right: 1.9rem;
     font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light); color: var(--text-primary);
     white-space: pre; overflow-x: auto;
   }
+  /* Icon-only, matching Phosphor's own regular-weight glyphs (same source/viewBox
+     convention as every other icon on the site) — a text "Copy" label doesn't fit this
+     panel's own tight corner the way it does the page-level .copy-btn elsewhere. The
+     copy icon swaps for a check on success rather than swapping text, since there's no
+     text here to swap. */
+  .code-copy-btn {
+    position: absolute; top: 0.5rem; right: 0.5rem;
+    display: flex; align-items: center; justify-content: center;
+    width: 1.6rem; height: 1.6rem; padding: 0;
+    border: var(--border-width) solid var(--border); background: var(--surface);
+    border-radius: var(--radius-sm); cursor: pointer; color: var(--text-secondary);
+  }
+  .code-copy-btn:hover { border-color: var(--text-secondary); }
+  .code-copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .code-copy-btn.is-copied { color: var(--accent); border-color: var(--accent); }
+  .code-copy-btn svg { display: block; }
+  .code-copy-btn .icon-check { display: none; }
+  .code-copy-btn.is-copied .icon-copy { display: none; }
+  .code-copy-btn.is-copied .icon-check { display: block; }
 `;
 
 // The waveform is synthesized directly from each note's own parameters (frequency, volume,
@@ -684,7 +707,11 @@ export class ChordalPlayground extends HTMLElement {
   }
 
   private refreshCodeExport(): void {
-    const el = this.shadow.querySelector('.code-export');
+    // Targets .code-export-text specifically, not the outer .code-export — that div
+    // also now holds the copy button as a real sibling element; setting .textContent on
+    // the outer wrapper would wipe the button out along with the old snippet text on
+    // every refresh.
+    const el = this.shadow.querySelector('.code-export-text');
     if (el) el.textContent = this.buildSnippet();
   }
 
@@ -810,7 +837,13 @@ export class ChordalPlayground extends HTMLElement {
           <div class="pane-head">Inspector</div>
           <div class="sliders">${slidersHtml}</div>
           <button type="button" class="code-toggle" aria-expanded="false">View code</button>
-          <div class="code-export" hidden></div>
+          <div class="code-export" hidden>
+            <button type="button" class="code-copy-btn" aria-label="Copy code">
+              <span class="icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg></span>
+              <span class="icon-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg></span>
+            </button>
+            <pre class="code-export-text"></pre>
+          </div>
         </div>
       </div>
     `;
@@ -832,6 +865,18 @@ export class ChordalPlayground extends HTMLElement {
       codeExport?.toggleAttribute('hidden', !nowVisible);
       codeToggle.setAttribute('aria-expanded', String(nowVisible));
       codeToggle.textContent = nowVisible ? 'Hide code' : 'View code';
+    });
+
+    const codeCopyBtn = this.shadow.querySelector<HTMLButtonElement>('.code-copy-btn');
+    codeCopyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(this.buildSnippet());
+        codeCopyBtn.classList.add('is-copied');
+        window.setTimeout(() => codeCopyBtn.classList.remove('is-copied'), 1200);
+      } catch {
+        // Clipboard write can fail on denied permissions — no fallback text swap here
+        // (unlike the page-level .copy-btn's "Press ⌘C") since this button is icon-only.
+      }
     });
 
     SLIDER_SPECS.forEach((spec) => {
