@@ -321,6 +321,7 @@ bind();</pre></div>
 
     <div class="card">
       <h3>Toggle: reading state at click time</h3>
+      <p>Unlike the three no-attribute cases above (<code>listening</code>, <code>delete</code>, <code>slider</code> — pure API calls, nothing declarative to walk through), <code>toggle</code> does have a real attribute — but that attribute comes with a genuine gotcha, which is why it's the one instance that gets its own walkthrough here rather than just a table row.</p>
       <p><code>data-sound-toggle</code> reads on/off state from the element's own <code>aria-pressed</code> attribute (or a checkbox's <code>checked</code> property) at the moment it's clicked. Wire up your own toggle logic first, then call <code>bind()</code> after it, so it always reads the post-click value:</p>
       <div class="code-block">
         <div class="code-block-head"><span class="filename">index.html</span><button class="copy-btn" aria-label="Copy toggle button HTML" data-copy="&lt;button id=&quot;dark-mode-toggle&quot; aria-pressed=&quot;false&quot; data-sound-toggle&gt;Dark mode&lt;/button&gt;">Copy</button></div>
@@ -342,14 +343,19 @@ bind(); <span class="tok-com">// after your own toggle logic — reads aria-pres
 
   <div class="panel" data-panel="api">
     <div class="card">
+      <h3>bind(root?)</h3>
+      <div class="api-sig">bind(root?: ParentNode): void</div>
+      <p>Scans <code>root</code> (defaults to <code>document</code>) for attributes and wires listeners. Safe to call again: already-bound elements are skipped.</p>
+    </div>
+
+    <div class="card">
       <h3>play(instance, options?)</h3>
       <div class="api-sig">play(instance: SoundInstance, options?: PlayOptions): void</div>
       <p>The direct, imperative trigger, for moments that are not a DOM interaction: an async action that just resolved, or a state your own code already knows about.</p>
       <p><code>toggle</code> and <code>listening</code> are stateful — pass which state just became active:</p>
       <div class="code-block">
-        <div class="code-block-head"><button class="copy-btn" aria-label="Copy play() examples" data-copy="play('success', { family: 'glass-crystal' });&#10;play('toggle', { state: 'on' });      // already know the state? skip data-sound-toggle entirely&#10;play('listening', { state: 'on' });   // mic session started&#10;play('listening', { state: 'off' });  // mic session stopped">Copy</button></div>
-        <div class="code-block-body"><pre>play(<span class="tok-str">'success'</span>, { family: <span class="tok-str">'glass-crystal'</span> });
-play(<span class="tok-str">'toggle'</span>, { state: <span class="tok-str">'on'</span> });      <span class="tok-com">// already know the state? skip data-sound-toggle entirely</span>
+        <div class="code-block-head"><button class="copy-btn" aria-label="Copy play() examples" data-copy="play('toggle', { state: 'on' });      // already know the state? skip data-sound-toggle entirely&#10;play('listening', { state: 'on' });   // mic session started&#10;play('listening', { state: 'off' });  // mic session stopped">Copy</button></div>
+        <div class="code-block-body"><pre>play(<span class="tok-str">'toggle'</span>, { state: <span class="tok-str">'on'</span> });      <span class="tok-com">// already know the state? skip data-sound-toggle entirely</span>
 play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'on'</span> });   <span class="tok-com">// mic session started</span>
 play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'off'</span> });  <span class="tok-com">// mic session stopped</span></pre></div>
       </div>
@@ -361,12 +367,6 @@ play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'o
 play(<span class="tok-str">'delete'</span>);
 item.remove();</pre></div>
       </div>
-    </div>
-
-    <div class="card">
-      <h3>bind(root?)</h3>
-      <div class="api-sig">bind(root?: ParentNode): void</div>
-      <p>Scans <code>root</code> (defaults to <code>document</code>) for attributes and wires listeners. Safe to call again: already-bound elements are skipped.</p>
     </div>
 
     <div class="card">
