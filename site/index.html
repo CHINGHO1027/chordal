@@ -1008,12 +1008,13 @@ bind();</pre></div>
         const count = Math.round((width * height) / 9000);
         stars = Array.from({ length: count }, () => {
           const twinkle = !prefersReducedMotion && Math.random() < TWINKLE_FRACTION;
-          // Roughly 40% of twinkling stars (not the whole field) render as a small
-          // 4-point sparkle cross instead of a plain dot — a rare, deliberate accent
-          // rather than a busy pattern. Restricted to twinklers specifically: a
-          // sparkle that never animates would just look like a frozen glyph, not a
-          // sparkle. Non-twinkling stars always stay plain dots.
-          const shape = twinkle && Math.random() < 0.4 ? 'sparkle' : 'dot';
+          // Every star draws as the same 4-point cross now (see drawCross below) — this
+          // no longer picks a shape, just a size tier. Roughly 40% of twinkling stars
+          // (not the whole field) get the larger, brighter "big" tier — a rare,
+          // deliberate accent rather than every star being the same size. Restricted to
+          // twinklers specifically: a big cross that never animates would just look like
+          // an oversized dot sitting still, not an accent.
+          const big = twinkle && Math.random() < 0.4;
           return {
             x: Math.random() * width,
             y: Math.random() * height,
@@ -1022,22 +1023,24 @@ bind();</pre></div>
             // is too dim for a brightness swing to actually read at normal viewing
             // distance, which is why the first version of this went unnoticed. These
             // don't need to be starker than the field at rest, only at their peak.
-            // Sparkles get their own, larger size range — a cross this small would be
-            // indistinguishable from a dot at a 1-2px radius.
-            r: shape === 'sparkle' ? Math.random() * 1.6 + 2.6 : twinkle ? Math.random() * 0.6 + 1.0 : Math.random() * 1.1 + 0.3,
+            // "big" tier gets its own, larger size range — a cross this small would be
+            // indistinguishable from a regular one at a 1-2px radius.
+            r: big ? Math.random() * 1.6 + 2.6 : twinkle ? Math.random() * 0.6 + 1.0 : Math.random() * 1.1 + 0.3,
             a: twinkle ? Math.random() * 0.25 + 0.55 : Math.random() * 0.5 + 0.15,
             twinkle,
-            shape,
             period: 1800 + Math.random() * 2200,
             phase: Math.random() * Math.PI * 2,
           };
         });
       }
 
-      // 8 vertices alternating outer/inner radius at 45° steps — outer points land on
-      // the four cardinal directions, giving the classic 4-point sparkle (✦) silhouette
-      // rather than a generic 8-pointed burst. inner ~28% of outer keeps the arms thin.
-      function drawSparkle(x, y, outer, color) {
+      // Every star's shape now, not just the "big" tier's — was a plain dot for most of
+      // the field with this cross reserved for a rare accent; now the whole field reads
+      // as crosses, "big" ones just larger/brighter (see the r: ternary above). 8
+      // vertices alternating outer/inner radius at 45° steps — outer points land on the
+      // four cardinal directions, giving a 4-point cross (✦) silhouette rather than a
+      // generic 8-pointed burst. inner ~28% of outer keeps the arms thin.
+      function drawCross(x, y, outer, color) {
         const inner = outer * 0.28;
         ctx.beginPath();
         for (let i = 0; i < 8; i++) {
@@ -1065,14 +1068,7 @@ bind();</pre></div>
             a = s.a * (0.15 + 0.85 * ((wave + 1) / 2));
           }
           const color = `rgba(247, 242, 233, ${a})`;
-          if (s.shape === 'sparkle') {
-            drawSparkle(s.x, s.y, s.r, color);
-          } else {
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.fill();
-          }
+          drawCross(s.x, s.y, s.r, color);
         });
       }
 
