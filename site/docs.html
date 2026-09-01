@@ -120,8 +120,8 @@
      own translucent blur — that one's tuned to sit over the hero's dark photo, where
      the blur's point is letting rich background show through; over this page's own
      flat --page-bg a blurred translucent pill would read as a barely-there smudge,
-     so this uses the same "elevated surface against flat page" language .card/
-     .tab-btn already use everywhere else here. */
+     so this uses the same "elevated surface against flat page" language .card
+     already uses everywhere else here. */
   .docs-nav {
     position: fixed; top: 1rem; left: 0; right: 0; z-index: 5;
     width: fit-content; max-width: calc(100vw - 2rem); margin: 0 auto;
@@ -129,8 +129,8 @@
     display: flex; align-items: center; gap: 0.25rem;
     padding: 0.4rem; border-radius: 999px; overflow-x: auto;
   }
-  /* Same base-class + .is-active modifier pattern as .tab-btn/.tab-btn.active below
-     (and as index.html's own .site-nav-item) — one shared item style, only the
+  /* Same base-class + .is-active modifier pattern as .sidebar-link/.sidebar-link.is-active
+     below (and as index.html's own .site-nav-item) — one shared item style, only the
      active one gets a visible fill. "Docs" carries .is-active here since this is the
      docs page; index.html gives that same class to "chordal" instead. */
   .docs-nav-item {
@@ -199,44 +199,75 @@
   .foot-links { display: flex; gap: 1.25rem; }
   /* padding-top reserves room for the now-fixed nav above, same reasoning as
      index.html's own .hero-band padding-top for its own fixed .site-nav. */
-  .page-head { padding: 5rem 2rem 1.5rem; max-width: 40rem; margin: 0 auto; }
+  .page-head { padding: 5rem 2rem 1.5rem; max-width: 56rem; margin: 0 auto; }
   .page-head h1 { font-family: var(--font-body); }
   .page-head .lede { font-family: var(--font-body); color: var(--text-secondary); font-size: var(--text-body); font-weight: var(--weight-light); margin-top: 0.5rem; }
-  .tabs {
-    display: flex; justify-content: flex-start; gap: 0.6rem;
-    max-width: 40rem; margin: 0 auto; padding: 0 2rem 2rem; flex-wrap: wrap;
-  }
-  /* This whole page is already a single centered column with no grids to
-     collapse — the only real gap on a narrow phone is the 2rem side padding
-     eating a disproportionate share of the available width. The nav's own four
-     items (chordal, Docs, GitHub, agents.md) need their own tightening too, same
-     reasoning as index.html's own matching breakpoint — .docs-nav itself
-     already has a small fit-content-driven padding, so it's each item's padding
-     that needs to shrink, not the outer bar's. */
+  /* This whole page used to be a single centered column with no grids to collapse;
+     now it's a real two-column layout (sidebar + content), so the narrow-phone fix
+     is different too — collapse to one column entirely (see the 48rem query below)
+     rather than just tightening padding on a column that no longer exists in this
+     shape. The nav's own four items (chordal, Docs, GitHub, agents.md) still need
+     their own tightening on genuinely narrow phones, same reasoning as index.html's
+     own matching breakpoint. */
   @media (max-width: 26rem) {
-    .page-head, .tabs, .panel { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .page-head, .docs-layout { padding-left: 1.1rem; padding-right: 1.1rem; }
     .docs-nav-item { padding: 0.4rem 0.6rem; }
     .agents-pill { padding: 0.35rem 0.55rem; }
   }
-  /* 999px pill + var(--border) fill, not the small-radius dark-brown block this used
-     to be — that was its own third "this one's selected" language, different from
-     both .docs-nav's own pill above and .agents-pill's shape, for no real reason
-     other than being built separately. Matching .docs-nav-item.is-active exactly
-     (same shape, same fill, same dark text) makes this read as the same kind of
-     control as the nav above it — a set of destinations with one currently
-     selected — rather than a visually unrelated button group. */
-  .tab-btn {
-    font-family: var(--font-body); font-weight: var(--weight-regular); font-size: var(--text-small);
-    border: var(--border-width) solid var(--border); background: var(--surface);
-    color: var(--text-primary); border-radius: 999px;
-    padding: 0.55rem 1.1rem; cursor: pointer;
+  /* Sidebar + one continuous content column, replacing the old three-tab show/hide
+     panels. This shape is required, not just preferred — scroll spy (below, in the
+     script) needs every section to genuinely exist in the DOM at once so it can
+     measure scroll position against real elements; a hidden/shown-panel model has
+     no scroll position to measure while a panel is display:none. */
+  .docs-layout {
+    display: grid; grid-template-columns: 14rem 1fr; gap: 2.5rem;
+    max-width: 56rem; margin: 0 auto; padding: 0 2rem 4rem; align-items: start;
   }
-  .tab-btn.active { background: var(--border); border-color: var(--border); color: var(--text-primary); }
-  .tab-btn:hover { border-color: var(--text-secondary); }
-  .tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .panel { display: none; max-width: 40rem; margin: 0 auto; padding: 0 2rem 4rem; }
-  .panel.active { display: block; }
+  .docs-sidebar {
+    position: sticky; top: 5.5rem;
+    display: flex; flex-direction: column; gap: 1.25rem;
+    max-height: calc(100vh - 7rem); overflow-y: auto;
+  }
+  .sidebar-group { display: flex; flex-direction: column; }
+  .sidebar-group-label {
+    font-size: var(--text-small); color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.4rem;
+  }
+  .sidebar-link {
+    font-family: var(--font-body); font-size: var(--text-small); color: var(--text-secondary);
+    text-decoration: none; padding: 0.35rem 0.6rem; border-radius: var(--radius-sm);
+    line-height: 1.4;
+  }
+  .sidebar-link:hover { color: var(--text-primary); }
+  /* Same light-fill/dark-text "you are here" language every other selected state on
+     the site already converged on (nav pill, docs tabs before this, family list) —
+     var(--border) fill, no new color introduced just for this one new element. */
+  .sidebar-link.is-active { background: var(--border); color: var(--text-primary); }
+  .sidebar-toggle { display: none; }
+  .docs-content { min-width: 0; }
+  @media (max-width: 48rem) {
+    .docs-layout { grid-template-columns: 1fr; }
+    .sidebar-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; font-family: var(--font-body); font-size: var(--text-body);
+      color: var(--text-primary); background: var(--surface);
+      border: var(--border-width) solid var(--border); border-radius: var(--radius-md);
+      padding: 0.75rem 1rem; margin-bottom: 1rem; cursor: pointer;
+    }
+    .sidebar-toggle-icon { transition: transform 0.15s ease; flex-shrink: 0; }
+    .sidebar-toggle[aria-expanded="true"] .sidebar-toggle-icon { transform: rotate(180deg); }
+    .docs-sidebar {
+      position: static; max-height: none; display: none;
+      background: var(--surface); border: var(--border-width) solid var(--border);
+      border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;
+    }
+    .docs-sidebar.is-open { display: flex; }
+  }
   .card {
+    /* Offsets the fixed .docs-nav when a sidebar link (or a bookmarked #hash URL)
+       scrolls a card into view — without this, the card's own heading lands
+       directly under the nav bar instead of below it. */
+    scroll-margin-top: 6rem;
     background: var(--surface); border: var(--border-width) solid var(--border);
     border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.25rem;
   }
@@ -272,14 +303,39 @@
     <h1>Chordal docs</h1>
     <p class="lede">Mark up your HTML with <code>data-sound-*</code> attributes and call <code>bind()</code> once, or call <code>play()</code> directly whenever you need exact control.</p>
   </div>
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="start">Getting started</button>
-    <button class="tab-btn" data-tab="api">API</button>
-    <button class="tab-btn" data-tab="reference">Reference</button>
-  </div>
+  <div class="docs-layout">
+    <button class="sidebar-toggle" type="button" aria-expanded="false" aria-controls="docs-sidebar">
+      <span>On this page</span>
+      <svg class="sidebar-toggle-icon" width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path></svg>
+    </button>
+    <nav class="docs-sidebar" id="docs-sidebar" aria-label="Docs sections">
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">Getting started</div>
+        <a class="sidebar-link" href="#install">Install</a>
+        <a class="sidebar-link" href="#quick-start">Quick start</a>
+        <a class="sidebar-link" href="#attributes">Attributes</a>
+        <a class="sidebar-link" href="#toggle">Toggle</a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">API</div>
+        <a class="sidebar-link" href="#bind">bind()</a>
+        <a class="sidebar-link" href="#play">play()</a>
+        <a class="sidebar-link" href="#playcontinuous">playContinuous()</a>
+        <a class="sidebar-link" href="#setfamily">setFamily() / getFamily()</a>
+        <a class="sidebar-link" href="#mute">mute() / unmute() / isMuted()</a>
+        <a class="sidebar-link" href="#sound-families">SOUND_FAMILIES / SOUND_INSTANCES</a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">Reference</div>
+        <a class="sidebar-link" href="#families">Families</a>
+        <a class="sidebar-link" href="#instances">Instances</a>
+        <a class="sidebar-link" href="#playground">Playground</a>
+        <a class="sidebar-link" href="#agents-md">AGENTS.md</a>
+      </div>
+    </nav>
 
-  <div class="panel active" data-panel="start">
-    <div class="card">
+    <div class="docs-content">
+    <div class="card" id="install">
       <h3>Install</h3>
       <div class="code-block">
         <div class="code-block-head"><button class="copy-btn" aria-label="Copy install command" data-copy="npm install chordal">Copy</button></div>
@@ -288,7 +344,7 @@
       <p>ESM-only, zero runtime dependencies, safe to import during SSR.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="quick-start">
       <h3>Quick start</h3>
       <div class="code-block">
         <div class="code-block-head"><span class="filename">index.html</span><button class="copy-btn" aria-label="Copy quick start HTML" data-copy="&lt;button data-sound-hover data-sound-click&gt;Save&lt;/button&gt;">Copy</button></div>
@@ -303,7 +359,7 @@ bind();</pre></div>
       <p><code>bind()</code> scans your markup once and wires up every <code>data-sound-*</code> element it finds.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="attributes">
       <h3>Attributes</h3>
       <table class="ref">
         <tr><th>Attribute</th><th>Fires on</th><th>Instance</th></tr>
@@ -316,13 +372,12 @@ bind();</pre></div>
         <tr><td class="mono attr-name">data-sound-notification</td><td class="mono">click</td><td class="mono">notification</td></tr>
       </table>
       <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span>Leave a value empty to use the active family, or set one (<code>data-sound-click="chime"</code>) to override just that element.</span></div>
-      <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span>Three instances have no <code>data-sound-*</code> attribute at all — <code>listening</code> and <code>delete</code> take a call each to start and stop or confirm, and <code>slider</code> is driven by <code>playContinuous()</code>, not a discrete DOM event. Call these directly; see the <a href="#" data-tab-link="api">API tab</a>.</span></div>
+      <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span>Three instances have no <code>data-sound-*</code> attribute at all — <code>listening</code> and <code>delete</code> take a call each to start and stop or confirm (see <a href="#play">play()</a>), and <code>slider</code> is driven by <a href="#playcontinuous"><code>playContinuous()</code></a>, not a discrete DOM event. Call these directly.</span></div>
     </div>
 
-    <div class="card">
+    <div class="card" id="toggle">
       <h3>Toggle: reading state at click time</h3>
-      <p>Unlike the three no-attribute cases above (<code>listening</code>, <code>delete</code>, <code>slider</code> — pure API calls, nothing declarative to walk through), <code>toggle</code> does have a real attribute — but that attribute comes with a genuine gotcha, which is why it's the one instance that gets its own walkthrough here rather than just a table row.</p>
-      <p><code>data-sound-toggle</code> reads on/off state from the element's own <code>aria-pressed</code> attribute (or a checkbox's <code>checked</code> property) at the moment it's clicked. Wire up your own toggle logic first, then call <code>bind()</code> after it, so it always reads the post-click value:</p>
+      <p><code>data-sound-toggle</code> is the only attribute requiring custom setup. It reads <code>aria-pressed</code> (or <code>checked</code>) at click time—wire your toggle logic first so it reads the updated state:</p>
       <div class="code-block">
         <div class="code-block-head"><span class="filename">index.html</span><button class="copy-btn" aria-label="Copy toggle button HTML" data-copy="&lt;button id=&quot;dark-mode-toggle&quot; aria-pressed=&quot;false&quot; data-sound-toggle&gt;Dark mode&lt;/button&gt;">Copy</button></div>
         <div class="code-block-body"><pre>&lt;button id=<span class="tok-str">"dark-mode-toggle"</span> <span class="tok-kw">aria-pressed</span>=<span class="tok-str">"false"</span> <span class="tok-kw">data-sound-toggle</span>&gt;Dark mode&lt;/button&gt;</pre></div>
@@ -337,18 +392,16 @@ toggleBtn.addEventListener(<span class="tok-str">'click'</span>, () =&gt; {
 
 bind(); <span class="tok-com">// after your own toggle logic — reads aria-pressed at click time</span></pre></div>
       </div>
-      <p>Already have the state in your own code instead of reading it off the DOM? Call <code>play('toggle', { state })</code> directly — see the <a href="#" data-tab-link="api">API tab</a>.</p>
+      <p>Already have the state in your own code instead of reading it off the DOM? Call <code>play('toggle', { state })</code> directly — see <a href="#play">play()</a>.</p>
     </div>
-  </div>
 
-  <div class="panel" data-panel="api">
-    <div class="card">
+    <div class="card" id="bind">
       <h3>bind(root?)</h3>
       <div class="api-sig">bind(root?: ParentNode): void</div>
       <p>Scans <code>root</code> (defaults to <code>document</code>) for attributes and wires listeners. Safe to call again: already-bound elements are skipped.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="play">
       <h3>play(instance, options?)</h3>
       <div class="api-sig">play(instance: SoundInstance, options?: PlayOptions): void</div>
       <p>The direct, imperative trigger, for moments that are not a DOM interaction: an async action that just resolved, or a state your own code already knows about.</p>
@@ -359,7 +412,7 @@ bind(); <span class="tok-com">// after your own toggle logic — reads aria-pres
 play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'on'</span> });   <span class="tok-com">// mic session started</span>
 play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'off'</span> });  <span class="tok-com">// mic session stopped</span></pre></div>
       </div>
-      <p>For the declarative <code>data-sound-toggle</code> attribute instead — reading state off the DOM at click time — see <a href="#" data-tab-link="start">Getting started</a>.</p>
+      <p>For the declarative <code>data-sound-toggle</code> attribute instead — reading state off the DOM at click time — see <a href="#toggle">Toggle</a>.</p>
       <p><code>delete</code> has no <code>data-sound-delete</code> attribute — call it yourself, after your own confirmation step, not on a raw click:</p>
       <div class="code-block">
         <div class="code-block-head"><button class="copy-btn" aria-label="Copy delete confirmation example" data-copy="await confirmDelete(item);&#10;play('delete');&#10;item.remove();">Copy</button></div>
@@ -369,7 +422,7 @@ item.remove();</pre></div>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="playcontinuous">
       <h3>playContinuous(action, valueRatio, options?)</h3>
       <div class="api-sig">playContinuous(action: 'slider', valueRatio: number, options?: { family?: SoundFamily }): void</div>
       <p>For a range slider's <code>input</code> event, pass the current 0–1 ratio. Debounced and pitch-quantized internally, so fast dragging reads as musical steps, not a siren sweep:</p>
@@ -388,19 +441,19 @@ slider.addEventListener(<span class="tok-str">'input'</span>, () =&gt; {
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="setfamily">
       <h3>setFamily(family) / getFamily()</h3>
       <div class="api-sig">setFamily(family: SoundFamily): void<br>getFamily(): SoundFamily</div>
       <p>The family used when a call doesn't override its own.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="mute">
       <h3>mute() / unmute() / isMuted()</h3>
       <div class="api-sig">mute(): void<br>unmute(): void<br>isMuted(): boolean</div>
       <p>Global on/off switch for the master output.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="sound-families">
       <h3 class="const-heading">SOUND_FAMILIES / SOUND_INSTANCES</h3>
       <p>Exported readonly arrays for building your own picker UI.</p>
       <p><code>SoundFamily</code> and <code>SoundInstance</code> are also exported as types — the same values, at compile time — for keeping your own lookup maps honest:</p>
@@ -416,25 +469,24 @@ slider.addEventListener(<span class="tok-str">'input'</span>, () =&gt; {
 setFamily(familyForTheme[theme]);</pre></div>
       </div>
     </div>
-  </div>
 
-  <div class="panel" data-panel="reference">
-    <div class="card">
+    <div class="card" id="families">
       <h3>Families</h3>
       <table class="ref" id="families-table"></table>
     </div>
-    <div class="card">
+    <div class="card" id="instances">
       <h3>Instances</h3>
       <table class="ref" id="instances-table"></table>
     </div>
-    <div class="card">
+    <div class="card" id="playground">
       <h3>Playground</h3>
       <p>Embed <code>&lt;chordal-playground&gt;</code> for an interactive family/instance browser. It's a dev-time tool, not for production pages.</p>
     </div>
-    <div class="card">
+    <div class="card" id="agents-md">
       <h3>AGENTS.md</h3>
       <p>A condensed reference built for AI coding agents: install steps, the family/instance model, and the behavioral details a generated integration would otherwise get wrong.</p>
       <a href="AGENTS.md" target="_blank" rel="noopener">View AGENTS.md &#8599;</a>
+    </div>
     </div>
   </div>
 
@@ -548,22 +600,72 @@ setFamily(familyForTheme[theme]);</pre></div>
     fillFamilyTable('families-table');
     fillInstanceTable('instances-table');
 
-    document.querySelectorAll('.tab-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
-        document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === btn.dataset.tab));
-      });
-    });
+    // Docs sidebar: mobile collapse toggle + scroll spy. Replaces the old three-tab
+    // show/hide mechanism — every section now lives in one continuous scroll flow
+    // instead of separate hidden/shown panels, specifically so there's a real scroll
+    // position to measure against (a display:none panel has none). IntersectionObserver
+    // watches each card; whichever one crosses the trigger band nearest the top of the
+    // viewport becomes the active sidebar link, and the URL hash updates to match via
+    // replaceState — no new history entries, but a real bookmarkable/shareable URL for
+    // whatever section you're currently reading, same as scrolling a Docs deep-link.
+    (function initDocsSidebar() {
+      const sidebar = document.querySelector('.docs-sidebar');
+      const toggle = document.querySelector('.sidebar-toggle');
+      const links = Array.from(document.querySelectorAll('.sidebar-link'));
+      if (!sidebar || !links.length) return;
 
-    // Cross-reference links between tabs (e.g. Getting Started's toggle example
-    // pointing at its imperative counterpart on the API tab) — reuses the real
-    // tab-btn's own click rather than duplicating the panel-switching logic.
-    document.querySelectorAll('[data-tab-link]').forEach((link) => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.querySelector(`.tab-btn[data-tab="${link.dataset.tabLink}"]`)?.click();
-      });
-    });
+      if (toggle) {
+        toggle.addEventListener('click', () => {
+          const isOpen = sidebar.classList.toggle('is-open');
+          toggle.setAttribute('aria-expanded', String(isOpen));
+        });
+        links.forEach((link) => {
+          link.addEventListener('click', () => {
+            sidebar.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
+          });
+        });
+      }
+
+      const linkFor = (id) => links.find((l) => l.getAttribute('href') === `#${id}`);
+      let activeLink = null;
+      const setActive = (id) => {
+        const link = linkFor(id);
+        if (!link || link === activeLink) return;
+        if (activeLink) activeLink.classList.remove('is-active');
+        link.classList.add('is-active');
+        activeLink = link;
+        if (history.replaceState) history.replaceState(null, '', `#${id}`);
+      };
+
+      const sections = links
+        .map((l) => document.getElementById(l.getAttribute('href').slice(1)))
+        .filter(Boolean);
+
+      // rootMargin shrinks the observed viewport to a thin band starting 15% down
+      // from the top (roughly clearing the fixed .docs-nav) and ending 70% down —
+      // a card only counts as "current" once its heading crosses into that band,
+      // not the instant any pixel of it is visible, which is what keeps this from
+      // flickering between two adjacent sections while they're both half-visible.
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) setActive(entry.target.id);
+          });
+        },
+        { rootMargin: '-15% 0px -70% 0px', threshold: 0 }
+      );
+      sections.forEach((section) => observer.observe(section));
+
+      // A bookmarked/shared docs.html#play link should land on and highlight that
+      // section immediately, not wait for the first scroll event to catch up.
+      if (location.hash && document.getElementById(location.hash.slice(1))) {
+        setActive(location.hash.slice(1));
+      } else if (links[0]) {
+        links[0].classList.add('is-active');
+        activeLink = links[0];
+      }
+    })();
 
     document.querySelectorAll('.copy-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
