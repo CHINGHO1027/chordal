@@ -196,6 +196,28 @@
      focused, and animated between them. Text color still flags the active item even
      if JS never runs, but the visible fill itself now comes entirely from the pill. */
   .docs-nav-item.is-active { color: var(--text-primary); }
+  /* The chordal mark (21 · "C-chord monogram" from the logo exploration) — stroke
+     currentColor, not a fixed color, so it always matches whatever this item's own
+     label color already is: var(--text-secondary) at rest, var(--text-primary) on
+     hover/focus, same as the text right next to it, in every state. */
+  .nav-mark { display: inline-flex; align-items: center; }
+  .nav-mark-icon {
+    width: 0.85rem; height: 0.85rem; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 5; stroke-linejoin: round; stroke-linecap: round;
+  }
+  /* Collapses to icon-only once .docs-nav crosses its own is-collapsed scroll
+     threshold (JS near the end of body) — this page has no hero band to key a
+     transition off of the way index.html's matching version does, so it's just a
+     small fixed scroll distance instead. margin-left carries the icon/label gap
+     instead of a flex `gap`, so it can collapse to 0 alongside the label's own
+     width — a `gap` would otherwise leave a dangling space once the label's box
+     shrinks to nothing. */
+  .nav-mark-label {
+    display: inline-block; overflow: hidden; white-space: nowrap;
+    max-width: 5rem; margin-left: 0.4rem; opacity: 1;
+    transition: max-width 0.25s ease, opacity 0.2s ease, margin-left 0.25s ease;
+  }
+  .docs-nav.is-collapsed .nav-mark-label { max-width: 0; margin-left: 0; opacity: 0; }
   /* var(--tint), not var(--waveform-bg) — the outer bar itself is already solid
      var(--surface) (pure white) on this page, unlike index.html's own translucent
      dark-tinted bar where var(--surface) reads as a clear, contrasting fill. Measured:
@@ -396,7 +418,10 @@
 <body>
   <nav class="docs-nav" aria-label="Chordal">
     <span class="docs-nav-pill is-instant" aria-hidden="true"></span>
-    <a class="docs-nav-item sound-click" href="index.html">chordal</a>
+    <a class="docs-nav-item sound-click nav-mark" href="index.html">
+      <svg class="nav-mark-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M 46.15 48.86 A 22 22 0 1 1 46.15 15.14 Z"/></svg>
+      <span class="nav-mark-label">chordal</span>
+    </a>
     <a class="docs-nav-item is-active" href="docs.html">Docs</a>
     <a class="docs-nav-item sound-click" href="https://github.com/CHINGHO1027/chordal" target="_blank" rel="noopener">GitHub</a>
     <button type="button" class="agents-pill"
@@ -673,6 +698,30 @@ setFamily(familyForTheme[theme]);</pre></div>
         pill.classList.add('is-instant');
         moveTo(items.includes(document.activeElement) ? document.activeElement : activeItem);
         requestAnimationFrame(() => pill.classList.remove('is-instant'));
+      });
+
+      // The chordal mark collapses to icon-only past a small fixed scroll distance —
+      // this page has no hero band to key a threshold off of the way index.html's
+      // own .is-scrolled does, so it's just a plain pixel value instead.
+      const COLLAPSE_AT = 32;
+      const updateNavCollapse = () => {
+        nav.classList.toggle('is-collapsed', window.scrollY > COLLAPSE_AT);
+      };
+      window.addEventListener('scroll', updateNavCollapse, { passive: true });
+      updateNavCollapse();
+
+      // moveTo() only re-measures on hover/focus/resize, so without this the pill
+      // would keep chordal's pre-collapse width the whole time it happens to be the
+      // one currently under the pill (hovered/focused right as the threshold is
+      // crossed) — sitting visibly wider than the now icon-only mark underneath it.
+      // Re-measures once the label's own transition actually finishes, not the
+      // instant scroll crosses the threshold, and only moves the pill if chordal is
+      // actually the item that currently deserves it, same check the resize handler
+      // above already uses.
+      const markLabel = nav.querySelector('.nav-mark-label');
+      markLabel?.addEventListener('transitionend', (e) => {
+        if (e.propertyName !== 'max-width') return;
+        moveTo(items.includes(document.activeElement) ? document.activeElement : activeItem);
       });
     })();
 
