@@ -256,12 +256,14 @@
     .docs-layout { grid-template-columns: 1fr; }
     /* Sticky, not static — keeps the "On this page" control reachable while
        scrolling a long section list, instead of forcing a scroll back to the
-       very top just to jump elsewhere. Same top offset as the desktop
-       sidebar's own sticky positioning above, so it clears the fixed .docs-nav
-       the same way. Toggle and panel are wrapped together so they stick as one
-       unit — the panel opens directly under wherever the toggle is currently
-       pinned, not under its original unscrolled position in the layout. */
-    .sidebar-mobile-nav { position: sticky; top: 5.5rem; z-index: 4; }
+       very top just to jump elsewhere. top is tighter than the desktop
+       sidebar's own 5.5rem above (.docs-nav is the same fixed pill either way,
+       but mobile can't spare the extra breathing room desktop has — every rem
+       here is rem the toggle steals from real content below the fold).
+       Toggle and panel are wrapped together so they stick as one unit — the
+       panel opens directly under wherever the toggle is currently pinned, not
+       under its original unscrolled position in the layout. */
+    .sidebar-mobile-nav { position: sticky; top: 4.25rem; z-index: 4; }
     .sidebar-toggle {
       display: flex; align-items: center; justify-content: space-between;
       width: 100%; font-family: var(--font-body); font-size: var(--text-body);
