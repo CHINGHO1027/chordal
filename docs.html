@@ -514,16 +514,16 @@ item.remove();</pre></div>
       });
     });
 
-    // agents.md pill — same icon-swap copy behavior as index.html's own version,
-    // minus the sound calls: this page doesn't import chordal's audio API at all yet,
-    // and adding that just for this one control is a separate, bigger decision than
-    // "bring the nav over."
+    // agents.md pill — same icon-swap copy behavior and success/error sounds as
+    // index.html's own version, now that this page imports play() too (see the
+    // nav's own sound-click wiring above).
     document.querySelectorAll('.agents-pill').forEach((btn) => {
       btn.addEventListener('click', async () => {
         try {
           await navigator.clipboard.writeText(btn.dataset.copy);
           btn.classList.add('is-copied');
           setTimeout(() => btn.classList.remove('is-copied'), 1200);
+          play('success', { family: 'glass-crystal' });
         } catch (e) {
           const textNode = [...btn.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
           if (textNode) {
@@ -531,6 +531,7 @@ item.remove();</pre></div>
             textNode.textContent = ' Press ⌘C ';
             setTimeout(() => { textNode.textContent = original; }, 1200);
           }
+          play('error', { family: 'glass-crystal' });
         }
       });
     });
