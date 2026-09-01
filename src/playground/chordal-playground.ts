@@ -159,7 +159,15 @@ const STYLES = `
        is in place). */
     min-width: 0;
   }
-  .family-btn .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--dot); flex-shrink: 0; }
+  /* A tiny mirrored-amplitude-bar glyph, not a plain swatch — echoes the same
+     visual language as drawBars' real waveform (mirrored bars, rounded caps,
+     one accent color) at icon scale, so the family list reads as "a sound"
+     rather than just a color key. One shared bar pattern across all eight
+     families (only the color changes) — matches how the dot it replaces
+     worked, and keeps this a decorative glyph rather than eight hand-tuned
+     shapes for a 9px icon. */
+  .family-btn .tick { width: 0.88rem; height: 0.55rem; flex-shrink: 0; }
+  .family-btn .tick path { stroke: var(--dot); stroke-width: 2; stroke-linecap: round; fill: none; }
   /* A weaker version of the selected row's own var(--page-bg) fill, not a different
      color — reusing the selected row's own color (just weaker) makes hover read as
      "part-way to selected" rather than an unrelated third color. (var(--tint) was
@@ -827,7 +835,7 @@ export class ChordalPlayground extends HTMLElement {
   private render(): void {
     const familyListHtml = SOUND_FAMILIES.map(
       (f) =>
-        `<button type="button" class="family-btn" data-family="${f}" aria-pressed="${f === this.family}" style="--dot:${FAMILY_ACCENTS[f]}"><span class="dot"></span>${f}</button>`
+        `<button type="button" class="family-btn" data-family="${f}" aria-pressed="${f === this.family}" style="--dot:${FAMILY_ACCENTS[f]}"><svg class="tick" viewBox="0 0 16 10" aria-hidden="true"><path d="M2 7V3M6 8.5V1.5M10 6.5V3.5M14 8V2"/></svg>${f}</button>`
     ).join('');
 
     const slidersHtml = SLIDER_SPECS.map(

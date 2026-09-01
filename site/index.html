@@ -173,7 +173,11 @@
     .why-type-line.is-typing, .why-type-cursor.is-typing { animation: none; }
   }
   .family-card { display: flex; flex-direction: column; gap: 0.5rem; }
-  .family-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
+  /* Same mirrored-amplitude-bar glyph as the embedded playground's own
+     family list (chordal-playground.ts's .tick) — one shared shape, only
+     the color changes per family, kept identical between the two so the
+     "family = a color + a little waveform" language reads as one system. */
+  .family-tick { width: 1.28rem; height: 0.8rem; flex-shrink: 0; stroke-width: 2; stroke-linecap: round; fill: none; }
   .family-card .fam-head { display: flex; align-items: center; gap: 0.5rem; }
   .family-card .fam-head h3 { margin: 0; }
 
@@ -1168,7 +1172,7 @@ bind();</pre></div>
       root.innerHTML = FAMILIES.map(([name, color, desc]) => `
         <div class="family-card">
           <div class="fam-head">
-            <span class="family-dot" style="background:${color}"></span>
+            <svg class="family-tick" viewBox="0 0 16 10" aria-hidden="true"><path d="M2 7V3M6 8.5V1.5M10 6.5V3.5M14 8V2" stroke="${color}"/></svg>
             <h3>${name}</h3>
           </div>
           <p>${desc}</p>
