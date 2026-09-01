@@ -87,15 +87,12 @@ const STYLES = `
        it/trigger it, then tune it. A viewport media query, not a container
        query — this component is only ever embedded full-width in practice (see
        index.html's .explorer), so viewport width is a fair proxy here. */
-    /* Translucent + blurred rather than the old opaque --surface — this component
-       sits directly over the homepage hero's own background image (see
-       index.html's .hero-band), so the panel now reads as frosted glass
-       floating above it, the same recipe .site-nav already uses there.
-       .waveform-wrap/.instance-group/.slider-row below keep their own solid
-       --waveform-bg fills, though — those hold content (the oscilloscope trace,
-       button labels, slider values) that needs a stable, legible backdrop, not
-       a shifting blurred image. Only the frame around them goes glass. */
-    background: color-mix(in oklab, var(--tint) 40%, transparent);
+    /* Solid, not the translucent/blurred glass this used to be — reads as one
+       consistent opaque surface, same as every .card elsewhere on the site,
+       rather than a frame that shifts with whatever's behind it. var(--tint)
+       shows only as the thin gap line between panes (see gap above); .pane's
+       own background below is what actually reads as the panel's surface. */
+    background: var(--tint);
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: 0 24px 48px -24px rgba(23, 17, 12, 0.28), 0 2px 8px rgba(23, 17, 12, 0.06);
@@ -104,17 +101,10 @@ const STYLES = `
     .studio { grid-template-columns: 1fr; }
   }
   .pane {
-    /* Less --surface, less blur than a first pass (72%/20px) — that read as a
-       soft, barely-there tint rather than a genuine see-through pane. Pulled
-       both down together: less blur keeps actual image detail (stars, the
-       amber glow) recognizable through the glass instead of smoothing it into
-       a flat wash, and less surface lets more of it through. --text-primary
-       still holds up against this — the darkest point the panel ever sits over
-       is the image's own near-black upper region, where a ~58%-white glass
-       layer is still light enough for dark text on top of it. */
-    background: color-mix(in oklab, var(--surface) 58%, transparent);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    /* Solid var(--surface), not a translucent/blurred glass pane over the hero
+       image — reads as one stable opaque surface regardless of what's behind
+       it, same as .studio's own background above. */
+    background: var(--surface);
     padding: 1rem;
     /* min-width:0 overrides this grid item's own default automatic minimum
        size (based on its content's intrinsic width, not 0) — without it, at
@@ -171,12 +161,11 @@ const STYLES = `
   }
   .family-btn .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--dot); flex-shrink: 0; }
   /* A weaker version of the selected row's own var(--page-bg) fill, not a different
-     color (var(--tint) was tried first) — this panel's own backdrop (.studio above)
-     is already a translucent var(--tint) tan, so a partial-strength var(--tint)
-     wash barely showed up against it: same hue, low added contrast. var(--page-bg) is
-     much closer to opaque white, so even a partial version of it reads clearly against
-     the tan backdrop, and reusing the selected row's own color (just weaker) makes
-     hover read as "part-way to selected" rather than an unrelated third color. */
+     color — reusing the selected row's own color (just weaker) makes hover read as
+     "part-way to selected" rather than an unrelated third color. (var(--tint) was
+     tried first, back when this pane's own backdrop was a translucent tan glass —
+     see .pane above, now solid var(--surface) — and read as too low-contrast against
+     it. Worth a fresh look now that the backdrop is plain white instead of tan.) */
   .family-btn:hover { background: color-mix(in oklab, var(--page-bg) 55%, transparent); color: var(--text-primary); }
   .family-btn[aria-pressed="true"] { background: var(--page-bg); color: var(--text-primary); }
   /* Hovering the already-selected row keeps its own fill rather than dimming to the
