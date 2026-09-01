@@ -1407,8 +1407,34 @@ bind();</pre></div>
 
       const activeItem = items.find((el) => el.classList.contains('is-active')) || items[0];
 
+      // The chordal mark's own label collapses/expands on scroll (see .nav-mark-label
+      // in the CSS above), independently of hover/focus/resize. expandedWidth minus
+      // the label's own current width+margin gives exactly what the item's width
+      // will be once the label finishes collapsing to 0/0, since nothing else about
+      // the item's box changes — precomputed once up front so it's available however
+      // moveTo() ends up getting called for this item, not just from one code path.
+      const markItem = activeItem;
+      const markLabel = markItem.querySelector('.nav-mark-label');
+      const markWidths = markLabel
+        ? {
+            expanded: markItem.offsetWidth,
+            collapsed: markItem.offsetWidth - (markLabel.offsetWidth + parseFloat(getComputedStyle(markLabel).marginLeft)),
+          }
+        : null;
+
+      // markWidths, not item.offsetWidth, whenever item is the mark — offsetWidth
+      // reflects whatever the mark's actual rendered width happens to be at the exact
+      // instant this runs, which is wrong if it's called mid-collapse (a resize event
+      // firing off a scrollbar appearing/disappearing during the same scroll that
+      // triggers the collapse, for instance — confirmed live, not hypothetical: that
+      // race let a stale mid-transition width get baked in as an instant, untransitioned
+      // jump, permanently wrong until the next unrelated hover). Every caller below
+      // goes through this one function, so all of them get it right automatically.
       function moveTo(item) {
-        pill.style.width = `${item.offsetWidth}px`;
+        const width = item === markItem && markWidths
+          ? (nav.classList.contains('is-scrolled') ? markWidths.collapsed : markWidths.expanded)
+          : item.offsetWidth;
+        pill.style.width = `${width}px`;
         pill.style.height = `${item.offsetHeight}px`;
         pill.style.transform = `translate(${item.offsetLeft}px, ${item.offsetTop}px)`;
       }
@@ -1439,17 +1465,18 @@ bind();</pre></div>
         requestAnimationFrame(() => pill.classList.remove('is-instant'));
       });
 
-      // The chordal mark's own label collapses/expands on scroll (see .nav-mark-label
-      // in the CSS above) — moveTo() only re-measures on hover/focus/resize, so without
-      // this the pill would keep the item's pre-collapse width the whole time, sitting
-      // visibly wider than the now icon-only mark underneath it. Re-measures once the
-      // label's own transition actually finishes, not the instant scroll crosses the
-      // threshold — reading offsetWidth mid-transition would just catch whatever
-      // partial width the collapse happened to be at that exact frame.
-      const markLabel = activeItem.querySelector('.nav-mark-label');
-      markLabel?.addEventListener('transitionend', (e) => {
-        if (e.propertyName === 'max-width') moveTo(activeItem);
-      });
+      // Fires only on a genuine is-scrolled transition (classList.toggle is a no-op,
+      // and so is this observer, whenever the value doesn't actually change) — lets
+      // the pill start animating to markWidths' correct target the instant the
+      // collapse triggers, in step with the label's own 0.25s transition instead of
+      // catching up after the fact. Same "only if the mark currently has the pill"
+      // guard the other handlers effectively get for free from moveTo() itself.
+      if (markWidths) {
+        new MutationObserver(() => {
+          const current = items.includes(document.activeElement) ? document.activeElement : activeItem;
+          if (current === markItem) moveTo(markItem);
+        }).observe(nav, { attributes: true, attributeFilter: ['class'] });
+      }
     })();
 
     // Site sound, hardcoded to glass-crystal rather than getFamily() — deliberately
