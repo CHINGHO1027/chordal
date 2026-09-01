@@ -88,7 +88,7 @@ const STYLES = `
        --waveform-bg fills, though — those hold content (the oscilloscope trace,
        button labels, slider values) that needs a stable, legible backdrop, not
        a shifting blurred image. Only the frame around them goes glass. */
-    background: color-mix(in oklab, var(--border) 40%, transparent);
+    background: color-mix(in oklab, var(--tint) 40%, transparent);
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: 0 24px 48px -24px rgba(23, 17, 12, 0.28), 0 2px 8px rgba(23, 17, 12, 0.06);
@@ -164,8 +164,8 @@ const STYLES = `
   }
   .family-btn .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--dot); flex-shrink: 0; }
   /* A weaker version of the selected row's own var(--page-bg) fill, not a different
-     color (var(--border) was tried first) — this panel's own backdrop is already a
-     translucent var(--border) tan (see :host below), so a partial-strength var(--border)
+     color (var(--tint) was tried first) — this panel's own backdrop (.studio above)
+     is already a translucent var(--tint) tan, so a partial-strength var(--tint)
      wash barely showed up against it: same hue, low added contrast. var(--page-bg) is
      much closer to opaque white, so even a partial version of it reads clearly against
      the tan backdrop, and reusing the selected row's own color (just weaker) makes
@@ -195,7 +195,7 @@ const STYLES = `
 
   .switch { position: relative; display: inline-flex; width: 2.1rem; height: 1.15rem; flex-shrink: 0; cursor: pointer; }
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
-  .switch-track { position: absolute; inset: 0; border-radius: 999px; background: var(--border); transition: background 0.15s; }
+  .switch-track { position: absolute; inset: 0; border-radius: 999px; background: var(--tint); transition: background 0.15s; }
   .switch-knob {
     position: absolute; top: 0.1rem; left: 0.1rem; width: 0.95rem; height: 0.95rem; border-radius: 50%;
     background: var(--surface); box-shadow: 0 1px 3px rgba(23,17,12,0.28); transition: transform 0.15s;
@@ -223,13 +223,13 @@ const STYLES = `
   }
   input[type="range"].slider-demo::-webkit-slider-runnable-track {
     height: 2px; border-radius: 999px;
-    background: linear-gradient(to right, var(--accent) 0 var(--fill, 50%), var(--border) var(--fill, 50%) 100%);
+    background: linear-gradient(to right, var(--accent) 0 var(--fill, 50%), var(--tint) var(--fill, 50%) 100%);
   }
   input[type="range"].slider-demo::-webkit-slider-thumb {
     -webkit-appearance: none; width: 0.625rem; height: 0.625rem; border-radius: 50%;
     background: var(--accent); margin-top: -0.25rem; cursor: pointer;
   }
-  input[type="range"].slider-demo::-moz-range-track { height: 2px; border-radius: 999px; background: var(--border); }
+  input[type="range"].slider-demo::-moz-range-track { height: 2px; border-radius: 999px; background: var(--tint); }
   input[type="range"].slider-demo::-moz-range-progress { height: 2px; border-radius: 999px; background: var(--accent); }
   input[type="range"].slider-demo::-moz-range-thumb { width: 0.625rem; height: 0.625rem; border: none; border-radius: 50%; background: var(--accent); cursor: pointer; }
 
@@ -238,7 +238,7 @@ const STYLES = `
     position: relative; height: 1.75rem; border-radius: var(--radius-sm);
     background: var(--waveform-bg); overflow: hidden;
   }
-  .slider-row .fill { position: absolute; inset: 0; width: var(--fill, 0%); background: var(--border); pointer-events: none; }
+  .slider-row .fill { position: absolute; inset: 0; width: var(--fill, 0%); background: var(--tint); pointer-events: none; }
   .slider-row .thumb {
     position: absolute; top: 0.3rem; bottom: 0.3rem; left: var(--fill, 0%); width: 2px;
     background: var(--accent); transform: translateX(-1px); pointer-events: none;

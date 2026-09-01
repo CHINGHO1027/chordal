@@ -24,6 +24,17 @@
   --text-primary: #17110C;
   --text-secondary: #6B5D4E;
   --border: #E8E0D5;
+  /* Same value as --border, aliased under its own name — same move as
+     --text-emphasis below being var(--text-body) under a different name.
+     --border is for strokes (border: ... solid var(--border)); --tint is for
+     area fills that want that same light neutral tan (a nav pill, a selected
+     row, a switch track, a slider's unfilled portion) — using --border
+     directly for those reads as a mistake at the call site ("border as a
+     background?") and this project has already hit that exact confusion once
+     (see chordal-playground.ts's .family-btn hover comment). Kept as an
+     alias, not two independent literals, so there's still one color to
+     change if this tan ever moves — same reasoning as --text-emphasis. */
+  --tint: var(--border);
 
   --radius-sm: 8px;
   --radius-md: 14px;

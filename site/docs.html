@@ -17,6 +17,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400&family=Roboto+Mono:wght@300;400&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="tokens.css" />
 <style>
+  /* ---------- page-scoped layout tokens ---------- */
+  /* Adds to tokens.css's own :root rather than replacing it — these four are specific
+     to this page's own two-column layout (sidebar + content) and its fixed-nav
+     clearance math, not sitewide design tokens, so they live here instead of there.
+     Every place below that used to hand-compute a number from these values now
+     calc()s off the variable instead — one change here, not a grep-and-recompute
+     across four separate rules. */
+  :root {
+    --sidebar-col-width: 14rem;
+    --content-gap: 2.5rem;
+    --layout-pad: 2rem;
+    /* The fixed .docs-nav's own rendered footprint (its top offset + height) —
+       measured live (getBoundingClientRect), not hand-summed from its padding/
+       font-size/line-height, since real text metrics don't multiply out as cleanly
+       as the CSS values alone suggest. Every element that needs to clear the nav
+       adds its own purpose-specific buffer on top via calc(): more for a scroll-jump
+       target that wants breathing room, less for a mobile control that can't spare
+       any. Re-measure and update this if .docs-nav's own padding or font-size ever
+       changes — everything downstream follows from this one number after that. */
+    --nav-clearance: 3.85rem;
+  }
   /* ---------- shared content primitives ---------- */
   /* Header bar (filename + Copy, separated by a rule) over a body (the actual code) —
      not filename floating loose above the code with an absolutely-positioned Copy
@@ -123,6 +144,11 @@
      so this uses the same "elevated surface against flat page" language .card
      already uses everywhere else here. */
   .docs-nav {
+    /* z-index scale on this page: this bar is topmost at 5; the mobile sticky
+       "On this page" toggle (.sidebar-mobile-nav, in the 48rem query below)
+       sits right under it at 4, so it never floats above the nav it's meant
+       to clear. Only two layers so far — worth real named tokens if a third
+       ever needs slotting in between. */
     position: fixed; top: 1rem; left: 0; right: 0; z-index: 5;
     width: fit-content; max-width: calc(100vw - 2rem); margin: 0 auto;
     background: var(--surface); border: var(--border-width) solid var(--border);
@@ -152,17 +178,17 @@
      focused, and animated between them. Text color still flags the active item even
      if JS never runs, but the visible fill itself now comes entirely from the pill. */
   .docs-nav-item.is-active { color: var(--text-primary); }
-  /* var(--border), not var(--waveform-bg) — the outer bar itself is already solid
+  /* var(--tint), not var(--waveform-bg) — the outer bar itself is already solid
      var(--surface) (pure white) on this page, unlike index.html's own translucent
      dark-tinted bar where var(--surface) reads as a clear, contrasting fill. Measured:
      --waveform-bg (#FAF7F3) is only a few RGB values off pure white and would barely
-     register as "filled" sitting on top of an already-white bar. --border (#E8E0D5) is
+     register as "filled" sitting on top of an already-white bar. --tint (#E8E0D5) is
      a real, visible tan with enough contrast to actually read as the active state.
      Same shared-pill pattern as index.html's own .site-nav-pill — see the JS near
      the end of body for how it's positioned. */
   .docs-nav-pill {
     position: absolute; top: 0; left: 0; z-index: 0;
-    border-radius: 999px; background: var(--border); pointer-events: none;
+    border-radius: 999px; background: var(--tint); pointer-events: none;
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .docs-nav-pill.is-instant { transition: none; }
@@ -199,14 +225,17 @@
   .foot-links { display: flex; gap: 1.25rem; }
   /* padding-top reserves room for the now-fixed nav above, same reasoning as
      index.html's own .hero-band padding-top for its own fixed .site-nav.
-     padding-left is 18.5rem, not the same 2rem as the right side — matches
-     .docs-content's own actual left edge below (2rem .docs-layout padding +
-     14rem sidebar + 2.5rem grid gap), so the title sits directly above the
-     cards it introduces instead of spanning over the sidebar too, which reads
+     padding-left calc()s off .docs-layout's own column tokens below (--layout-pad
+     + --sidebar-col-width + --content-gap), not a separate hand-summed literal —
+     matches .docs-content's own actual left edge, so the title sits directly above
+     the cards it introduces instead of spanning over the sidebar too, which reads
      like the title belongs to a persistent nav rail it has nothing to do with.
      Reset back to a plain 2rem on the mobile breakpoint below, where the
      sidebar collapses out of the layout and .docs-content starts at 2rem too. */
-  .page-head { padding: 5rem 2rem 1.5rem 18.5rem; max-width: 56rem; margin: 0 auto; }
+  .page-head {
+    padding: 5rem 2rem 1.5rem calc(var(--layout-pad) + var(--sidebar-col-width) + var(--content-gap));
+    max-width: 56rem; margin: 0 auto;
+  }
   .page-head h1 { font-family: var(--font-body); }
   .page-head .lede { font-family: var(--font-body); color: var(--text-secondary); font-size: var(--text-body); font-weight: var(--weight-light); margin-top: 0.5rem; }
   /* This whole page used to be a single centered column with no grids to collapse;
@@ -226,11 +255,13 @@
      measure scroll position against real elements; a hidden/shown-panel model has
      no scroll position to measure while a panel is display:none. */
   .docs-layout {
-    display: grid; grid-template-columns: 14rem 1fr; gap: 2.5rem;
-    max-width: 56rem; margin: 0 auto; padding: 0 2rem 4rem; align-items: start;
+    display: grid; grid-template-columns: var(--sidebar-col-width) 1fr; gap: var(--content-gap);
+    max-width: 56rem; margin: 0 auto; padding: 0 var(--layout-pad) 4rem; align-items: start;
   }
   .docs-sidebar {
-    position: sticky; top: 5.5rem;
+    /* --nav-clearance + breathing room desktop can spare (tighter on mobile below,
+       where the same nav-clearance base gets a much smaller buffer added instead). */
+    position: sticky; top: calc(var(--nav-clearance) + 1.65rem);
     display: flex; flex-direction: column; gap: 1.25rem;
     max-height: calc(100vh - 7rem); overflow-y: auto;
   }
@@ -250,18 +281,18 @@
      text-decoration:none overrides the site-wide a:hover underline (tokens.css) —
      a nav link shouldn't underline on hover, that's a body-copy-link affordance. */
   .sidebar-link:hover {
-    background: color-mix(in oklab, var(--border) 55%, transparent);
+    background: color-mix(in oklab, var(--tint) 55%, transparent);
     color: var(--text-primary);
     text-decoration: none;
   }
   /* Same light-fill/dark-text "you are here" language every other selected state on
      the site already converged on (nav pill, docs tabs before this, family list) —
-     var(--border) fill, no new color introduced just for this one new element. */
-  .sidebar-link.is-active { background: var(--border); color: var(--text-primary); }
+     var(--tint) fill, no new color introduced just for this one new element. */
+  .sidebar-link.is-active { background: var(--tint); color: var(--text-primary); }
   /* Hover shouldn't visually downgrade an already-selected link — same reasoning as
      .family-btn[aria-pressed="true"]:hover in chordal-playground.ts, which keeps its
      full active fill instead of falling back to the weaker hover wash above. */
-  .sidebar-link.is-active:hover { background: var(--border); }
+  .sidebar-link.is-active:hover { background: var(--tint); }
   .sidebar-toggle { display: none; }
   .docs-content { min-width: 0; }
   /* display:contents on desktop — the wrapper's own box disappears, so
@@ -277,18 +308,19 @@
      into a real sticky box on purpose, for the toggle+panel grouping. */
   .sidebar-mobile-nav { display: contents; }
   @media (max-width: 48rem) {
-    .page-head { padding-left: 2rem; }
+    .page-head { padding-left: var(--layout-pad); }
     .docs-layout { grid-template-columns: 1fr; }
     /* Sticky, not static — keeps the "On this page" control reachable while
        scrolling a long section list, instead of forcing a scroll back to the
-       very top just to jump elsewhere. top is tighter than the desktop
-       sidebar's own 5.5rem above (.docs-nav is the same fixed pill either way,
-       but mobile can't spare the extra breathing room desktop has — every rem
-       here is rem the toggle steals from real content below the fold).
-       Toggle and panel are wrapped together so they stick as one unit — the
-       panel opens directly under wherever the toggle is currently pinned, not
-       under its original unscrolled position in the layout. */
-    .sidebar-mobile-nav { display: block; position: sticky; top: 4.25rem; z-index: 4; }
+       very top just to jump elsewhere. Same --nav-clearance base as the desktop
+       sidebar above, just a much smaller buffer on top (.docs-nav is the same
+       fixed pill either way, but mobile can't spare the extra breathing room
+       desktop has — every rem here is rem the toggle steals from real content
+       below the fold). Toggle and panel are wrapped together so they stick as
+       one unit — the panel opens directly under wherever the toggle is
+       currently pinned, not under its original unscrolled position in the
+       layout. */
+    .sidebar-mobile-nav { display: block; position: sticky; top: calc(var(--nav-clearance) + 0.4rem); z-index: 4; }
     .sidebar-toggle {
       display: flex; align-items: center; justify-content: space-between;
       width: 100%; font-family: var(--font-body); font-size: var(--text-body);
@@ -319,8 +351,11 @@
   .card {
     /* Offsets the fixed .docs-nav when a sidebar link (or a bookmarked #hash URL)
        scrolls a card into view — without this, the card's own heading lands
-       directly under the nav bar instead of below it. */
-    scroll-margin-top: 6rem;
+       directly under the nav bar instead of below it. --nav-clearance base plus
+       a generous buffer — a landed-on heading wants real breathing room, not
+       just enough to clear the nav (contrast the sidebar's own tighter buffer
+       above, which only needs to clear it, not rest comfortably below it). */
+    scroll-margin-top: calc(var(--nav-clearance) + 2.15rem);
     background: var(--surface); border: var(--border-width) solid var(--border);
     border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.25rem;
   }
