@@ -61,6 +61,20 @@
   }
   .code-block-head .filename { flex: 1; font-size: var(--text-small); color: var(--text-secondary); margin: 0; }
   .code-block-head .copy-btn { margin-left: auto; flex-shrink: 0; }
+  /* Sits where a .filename would otherwise go (the Install card's code-block-head has
+     none) — same row, same left slot, so it doesn't need a row of its own. flex:1 like
+     .filename above, so Copy stays pinned right via its own margin-left:auto either way. */
+  .pm-toggle { display: flex; gap: 0.2rem; flex: 1; }
+  .pm-btn {
+    font-family: var(--font-body); font-size: var(--text-small); color: var(--text-secondary);
+    background: none; border: none; border-radius: var(--radius-sm);
+    padding: 0.2rem 0.5rem; cursor: pointer;
+  }
+  .pm-btn:hover { color: var(--text-primary); }
+  /* Same light-fill/dark-text "you are here" language as .sidebar-link.is-active and
+     .docs-nav-item — var(--tint) fill, no new color for this one more selected state. */
+  .pm-btn.is-active { background: var(--tint); color: var(--text-primary); }
+  .pm-btn.is-active:hover { background: var(--tint); }
   .code-block-body { padding: 0.9rem 1rem; overflow-x: auto; }
   .code-block-body pre { margin: 0; font-family: var(--font-mono); font-size: var(--text-small); line-height: 1.6; }
 
@@ -347,6 +361,7 @@
     .page-head, .docs-layout { padding-left: 1.1rem; padding-right: 1.1rem; }
     .docs-nav-item { padding: 0.4rem 0.6rem; }
     .agents-pill { padding: 0.35rem 0.55rem; }
+    .pm-btn { padding: 0.2rem 0.35rem; }
   }
   .card {
     /* Offsets the fixed .docs-nav when a sidebar link (or a bookmarked #hash URL)
@@ -428,8 +443,16 @@
     <div class="card" id="install">
       <h3>Install</h3>
       <div class="code-block">
-        <div class="code-block-head"><button class="copy-btn" aria-label="Copy install command" data-copy="npm install chordal">Copy</button></div>
-        <div class="code-block-body"><pre>$ <span class="tok-fn">npm install</span> <span class="tok-str">chordal</span></pre></div>
+        <div class="code-block-head">
+          <div class="pm-toggle" role="tablist" aria-label="Package manager">
+            <button type="button" class="pm-btn is-active" data-pm="npm" aria-selected="true">npm</button>
+            <button type="button" class="pm-btn" data-pm="pnpm" aria-selected="false">pnpm</button>
+            <button type="button" class="pm-btn" data-pm="yarn" aria-selected="false">yarn</button>
+            <button type="button" class="pm-btn" data-pm="bun" aria-selected="false">bun</button>
+          </div>
+          <button class="copy-btn" aria-label="Copy install command" data-copy="npm install chordal">Copy</button>
+        </div>
+        <div class="code-block-body"><pre>$ <span class="tok-fn pm-verb">npm install</span> <span class="tok-str">chordal</span></pre></div>
       </div>
       <p>ESM-only, zero runtime dependencies, safe to import during SSR.</p>
     </div>
@@ -767,6 +790,25 @@ setFamily(familyForTheme[theme]);</pre></div>
         } catch (e) {
           btn.textContent = 'Press ⌘C';
         }
+      });
+    });
+
+    // Install card's package-manager toggle — resets to npm on every load (no
+    // localStorage), so Copy always matches whichever pill is currently shown, not a
+    // stale choice from a previous visit.
+    const PM_VERBS = { npm: 'npm install', pnpm: 'pnpm add', yarn: 'yarn add', bun: 'bun add' };
+    document.querySelectorAll('.pm-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const group = btn.closest('.pm-toggle');
+        group.querySelectorAll('.pm-btn').forEach((b) => {
+          const active = b === btn;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-selected', String(active));
+        });
+        const codeBlock = group.closest('.code-block');
+        const verb = PM_VERBS[btn.dataset.pm];
+        codeBlock.querySelector('.pm-verb').textContent = verb;
+        codeBlock.querySelector('.copy-btn').dataset.copy = `${verb} chordal`;
       });
     });
 
