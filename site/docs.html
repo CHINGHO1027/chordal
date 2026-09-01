@@ -229,7 +229,20 @@
   .docs-nav-pill {
     position: absolute; top: 0; left: 0; z-index: 0;
     border-radius: 999px; background: var(--tint); pointer-events: none;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    /* ease, not the old cubic-bezier(0.4, 0, 0.2, 1) — matches .nav-mark-label's own
+       transition exactly. That match matters specifically while chordal is
+       collapsing/expanding: this pill often isn't tracking the mark itself, it's
+       tracking whatever item comes after it (Docs), whose position is a passive
+       consequence of the label's own max-width/margin-left transition, not an
+       independent animation of its own. Two different curves reaching the same
+       start/end values still diverge at every point in between — the pill would
+       visibly lag or overshoot relative to the item's actual live position for the
+       whole 0.25s even though both land correctly at the end, reading as an
+       unwanted wobble rather than one clean, direct slide. Only matters for this
+       specific case; the hover-to-hover glide between items still looks the same
+       either way, since neither side of that motion depends on a second, separate
+       transition to begin with. */
+    transition: transform 0.25s ease, width 0.25s ease;
   }
   .docs-nav-pill.is-instant { transition: none; }
   /* Border-only, transparent fill — not the solid var(--surface) fill this used to
