@@ -195,6 +195,27 @@
   .code-block pre { margin: 0; width: calc(100% - 3.5rem); overflow-x: auto; font-family: var(--font-mono); font-size: var(--text-small); line-height: 1.6; }
   .code-block .filename { font-size: var(--text-small); color: var(--text-secondary); margin-bottom: 0.5rem; display: block; }
   .code-block .copy-btn { position: absolute; top: 0.6rem; right: 0.6rem; }
+  /* A second, opt-in .code-block sub-structure — head bar (filename + Copy, separated
+     by a rule) over a body (the actual code) — used only by Get Started's blocks below,
+     copied from docs.html's own .code-block-head/.code-block-body exactly so a visitor
+     bouncing between the two pages sees the same code-panel design both times, not two
+     different-looking treatments of the same idea. Every other .code-block on this page
+     (why-cards, etc.) keeps the plain structure above unchanged — this only applies
+     where the new head/body markup is actually used. */
+  .code-block-head {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.5rem 0.6rem 0.5rem 1rem;
+    border-bottom: var(--border-width) solid var(--border);
+  }
+  .code-block-head .filename { flex: 1; font-size: var(--text-small); color: var(--text-secondary); margin: 0; }
+  .code-block-head .copy-btn { margin-left: auto; flex-shrink: 0; position: static; }
+  .code-block-body { padding: 0.9rem 1rem; overflow-x: auto; }
+  .code-block-body pre { margin: 0; width: auto; font-family: var(--font-mono); font-size: var(--text-small); line-height: 1.6; }
+  /* Cursor + hint text signal this one command block is interactive (cycles through
+     npm/pnpm/yarn/bun on click), unlike every other .code-block on the page, which is
+     read-only. */
+  .code-block-body[data-pkg-switcher] { cursor: pointer; }
+  .pkg-switch-hint { font-size: var(--text-small); color: var(--text-secondary); margin: 0.5rem 0 0; }
   .tok-kw { color: #8A5A2E; } .tok-str { color: #4E7A5B; } .tok-fn { color: #2E6B8F; }
 
   chordal-playground { display: block; }
@@ -551,6 +572,13 @@
      exact grid was overflowing the page by ~158px before this fix. */
   .get-started-grid > div { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
   .get-started-grid h3 { font-size: var(--text-emphasis); margin: 0; }
+  /* Overrides the base .code-block's own padding/overflow-x — that rule is tuned for
+     the flat structure other .code-blocks on this page use (content padded directly
+     inside the box). These blocks use the new head/body sub-structure instead (see
+     .code-block-head/.code-block-body above), which brings its own padding, so the
+     outer box needs to go back to a plain zero-padding shell — exactly what
+     docs.html's own .code-block already is — or the two padding rules stack. */
+  .get-started-grid .code-block { padding: 0; overflow: hidden; }
 
   /* ---------- 02 · Instances demo cards ---------- */
   .instance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; }
@@ -874,18 +902,22 @@
       <div>
         <h3>1. Install</h3>
         <div class="code-block">
-          <button class="copy-btn" data-copy="npm install chordal">Copy</button>
-          <pre>$ <span class="tok-fn">npm install</span> <span class="tok-str">chordal</span></pre>
+          <div class="code-block-head"><button class="copy-btn" aria-label="Copy install command" data-copy="npm install chordal">Copy</button></div>
+          <div class="code-block-body sound-click" data-pkg-switcher><pre>$ <span class="tok-fn">npm install</span> <span class="tok-str">chordal</span></pre></div>
         </div>
+        <p class="pkg-switch-hint">Click the command to switch package manager.</p>
       </div>
       <div>
         <h3>2. Mark up and bind</h3>
         <div class="code-block">
-          <button class="copy-btn" data-copy="&lt;button data-sound-hover data-sound-click&gt;Save&lt;/button&gt;&#10;&#10;import { bind } from 'chordal';&#10;bind();">Copy</button>
-          <pre>&lt;button <span class="tok-kw">data-sound-hover</span> <span class="tok-kw">data-sound-click</span>&gt;Save&lt;/button&gt;
+          <div class="code-block-head"><span class="filename">index.html</span><button class="copy-btn" aria-label="Copy markup example" data-copy="&lt;button data-sound-hover data-sound-click&gt;Save&lt;/button&gt;">Copy</button></div>
+          <div class="code-block-body"><pre>&lt;button <span class="tok-kw">data-sound-hover</span> <span class="tok-kw">data-sound-click</span>&gt;Save&lt;/button&gt;</pre></div>
+        </div>
+        <div class="code-block">
+          <div class="code-block-head"><span class="filename">app.ts</span><button class="copy-btn" aria-label="Copy bind script" data-copy="import { bind } from 'chordal';&#10;&#10;bind();">Copy</button></div>
+          <div class="code-block-body"><pre><span class="tok-kw">import</span> { bind } <span class="tok-kw">from</span> <span class="tok-str">'chordal'</span>;
 
-<span class="tok-kw">import</span> { bind } <span class="tok-kw">from</span> <span class="tok-str">'chordal'</span>;
-bind();</pre>
+bind();</pre></div>
         </div>
       </div>
     </div>
@@ -1207,6 +1239,33 @@ bind();</pre>
         } catch (e) {
           btn.textContent = 'Press ⌘C';
         }
+      });
+    });
+
+    // Get Started's install command — click cycles through a few common package
+    // managers (npm/pnpm/yarn/bun), matching the exact command each one actually
+    // uses (npm install vs. the add verb the other three share) rather than just
+    // swapping the tool name into the same npm-shaped sentence. Updates the
+    // adjacent Copy button's own data-copy in lockstep, so copying always grabs
+    // whichever command is currently on screen, never a stale npm one.
+    const PKG_MANAGERS = [
+      { tool: 'npm', verb: 'install' },
+      { tool: 'pnpm', verb: 'add' },
+      { tool: 'yarn', verb: 'add' },
+      { tool: 'bun', verb: 'add' },
+    ];
+    document.querySelectorAll('[data-pkg-switcher]').forEach((body) => {
+      const pre = body.querySelector('pre');
+      const copyBtn = body.closest('.code-block').querySelector('.copy-btn');
+      let index = 0;
+      const render = () => {
+        const { tool, verb } = PKG_MANAGERS[index];
+        pre.innerHTML = `$ <span class="tok-fn">${tool} ${verb}</span> <span class="tok-str">chordal</span>`;
+        copyBtn.dataset.copy = `${tool} ${verb} chordal`;
+      };
+      body.addEventListener('click', () => {
+        index = (index + 1) % PKG_MANAGERS.length;
+        render();
       });
     });
 

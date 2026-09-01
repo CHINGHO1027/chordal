@@ -317,7 +317,11 @@ bind();</pre></div>
       </table>
       <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span>Leave a value empty to use the active family, or set one (<code>data-sound-click="chime"</code>) to override just that element.</span></div>
       <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span>Three instances have no <code>data-sound-*</code> attribute at all — <code>listening</code> and <code>delete</code> take a call each to start and stop or confirm, and <code>slider</code> is driven by <code>playContinuous()</code>, not a discrete DOM event. Call these directly; see the API tab.</span></div>
-      <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span><code>data-sound-toggle</code> reads on/off state from the element's own <code>aria-pressed</code> attribute (or a checkbox's <code>checked</code> property) at the moment it's clicked. Wire up your own toggle logic first, then call <code>bind()</code> after it, so it always reads the post-click value:</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Toggle: reading state at click time</h3>
+      <p><code>data-sound-toggle</code> reads on/off state from the element's own <code>aria-pressed</code> attribute (or a checkbox's <code>checked</code> property) at the moment it's clicked. Wire up your own toggle logic first, then call <code>bind()</code> after it, so it always reads the post-click value:</p>
       <div class="code-block">
         <div class="code-block-head"><span class="filename">index.html</span><button class="copy-btn" aria-label="Copy toggle button HTML" data-copy="&lt;button id=&quot;dark-mode-toggle&quot; aria-pressed=&quot;false&quot; data-sound-toggle&gt;Dark mode&lt;/button&gt;">Copy</button></div>
         <div class="code-block-body"><pre>&lt;button id=<span class="tok-str">"dark-mode-toggle"</span> <span class="tok-kw">aria-pressed</span>=<span class="tok-str">"false"</span> <span class="tok-kw">data-sound-toggle</span>&gt;Dark mode&lt;/button&gt;</pre></div>
@@ -332,6 +336,7 @@ toggleBtn.addEventListener(<span class="tok-str">'click'</span>, () =&gt; {
 
 bind(); <span class="tok-com">// after your own toggle logic — reads aria-pressed at click time</span></pre></div>
       </div>
+      <p>Already have the state in your own code instead of reading it off the DOM? Call <code>play('toggle', { state })</code> directly — see the <a href="#" data-tab-link="api">API tab</a>.</p>
     </div>
   </div>
 
@@ -342,11 +347,13 @@ bind(); <span class="tok-com">// after your own toggle logic — reads aria-pres
       <p>The direct, imperative trigger, for moments that are not a DOM interaction: an async action that just resolved, or a state your own code already knows about.</p>
       <p><code>toggle</code> and <code>listening</code> are stateful — pass which state just became active:</p>
       <div class="code-block">
-        <div class="code-block-head"><button class="copy-btn" aria-label="Copy play() examples" data-copy="play('success', { family: 'glass-crystal' });&#10;play('listening', { state: 'on' });   // mic session started&#10;play('listening', { state: 'off' });  // mic session stopped">Copy</button></div>
+        <div class="code-block-head"><button class="copy-btn" aria-label="Copy play() examples" data-copy="play('success', { family: 'glass-crystal' });&#10;play('toggle', { state: 'on' });      // already know the state? skip data-sound-toggle entirely&#10;play('listening', { state: 'on' });   // mic session started&#10;play('listening', { state: 'off' });  // mic session stopped">Copy</button></div>
         <div class="code-block-body"><pre>play(<span class="tok-str">'success'</span>, { family: <span class="tok-str">'glass-crystal'</span> });
+play(<span class="tok-str">'toggle'</span>, { state: <span class="tok-str">'on'</span> });      <span class="tok-com">// already know the state? skip data-sound-toggle entirely</span>
 play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'on'</span> });   <span class="tok-com">// mic session started</span>
 play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'off'</span> });  <span class="tok-com">// mic session stopped</span></pre></div>
       </div>
+      <p>For the declarative <code>data-sound-toggle</code> attribute instead — reading state off the DOM at click time — see <a href="#" data-tab-link="start">Getting started</a>.</p>
       <p><code>delete</code> has no <code>data-sound-delete</code> attribute — call it yourself, after your own confirmation step, not on a raw click:</p>
       <div class="code-block">
         <div class="code-block-head"><button class="copy-btn" aria-label="Copy delete confirmation example" data-copy="await confirmDelete(item);&#10;play('delete');&#10;item.remove();">Copy</button></div>
@@ -365,7 +372,20 @@ item.remove();</pre></div>
     <div class="card">
       <h3>playContinuous(action, valueRatio, options?)</h3>
       <div class="api-sig">playContinuous(action: 'slider', valueRatio: number, options?: { family?: SoundFamily }): void</div>
-      <p>For a range slider's <code>input</code> event, pass the current 0–1 ratio. Debounced and pitch-quantized internally.</p>
+      <p>For a range slider's <code>input</code> event, pass the current 0–1 ratio. Debounced and pitch-quantized internally, so fast dragging reads as musical steps, not a siren sweep:</p>
+      <div class="code-block">
+        <div class="code-block-head"><span class="filename">index.html</span><button class="copy-btn" aria-label="Copy slider HTML" data-copy="&lt;input type=&quot;range&quot; id=&quot;volume&quot; min=&quot;0&quot; max=&quot;100&quot; value=&quot;50&quot; /&gt;">Copy</button></div>
+        <div class="code-block-body"><pre>&lt;input <span class="tok-kw">type</span>=<span class="tok-str">"range"</span> id=<span class="tok-str">"volume"</span> <span class="tok-kw">min</span>=<span class="tok-str">"0"</span> <span class="tok-kw">max</span>=<span class="tok-str">"100"</span> <span class="tok-kw">value</span>=<span class="tok-str">"50"</span> /&gt;</pre></div>
+      </div>
+      <div class="code-block">
+        <div class="code-block-head"><span class="filename">app.ts</span><button class="copy-btn" aria-label="Copy slider script" data-copy="import { playContinuous } from 'chordal';&#10;&#10;const slider = document.querySelector('#volume');&#10;slider.addEventListener('input', () => {&#10;  playContinuous('slider', Number(slider.value) / 100);&#10;});">Copy</button></div>
+        <div class="code-block-body"><pre><span class="tok-kw">import</span> { playContinuous } <span class="tok-kw">from</span> <span class="tok-str">'chordal'</span>;
+
+<span class="tok-kw">const</span> slider = document.querySelector(<span class="tok-str">'#volume'</span>);
+slider.addEventListener(<span class="tok-str">'input'</span>, () =&gt; {
+  playContinuous(<span class="tok-str">'slider'</span>, Number(slider.value) / 100);
+});</pre></div>
+      </div>
     </div>
 
     <div class="card">
@@ -518,6 +538,16 @@ item.remove();</pre></div>
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
         document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === btn.dataset.tab));
+      });
+    });
+
+    // Cross-reference links between tabs (e.g. Getting Started's toggle example
+    // pointing at its imperative counterpart on the API tab) — reuses the real
+    // tab-btn's own click rather than duplicating the panel-switching logic.
+    document.querySelectorAll('[data-tab-link]').forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelector(`.tab-btn[data-tab="${link.dataset.tabLink}"]`)?.click();
       });
     });
 
