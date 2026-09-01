@@ -1,0 +1,20 @@
+# Wrangler's static-assets upload scans the whole assets.directory (repo root)
+# regardless of .gitignore, so it was sweeping up node_modules/ — including a
+# 146MB workerd binary that blows past the 25MB per-asset limit — plus .git/
+# internals and source files that have no reason to be publicly servable.
+# This file uses .gitignore syntax and is scoped to just the assets directory.
+node_modules/
+.git/
+.github/
+.wrangler/
+src/
+demo/
+wrangler.jsonc
+package.json
+package-lock.json
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+.gitignore
+.assetsignore
+.nvmrc

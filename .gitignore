@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .DS_Store
+.wrangler/
 
 # Private planning doc — not part of the deployed site.
 design.md
