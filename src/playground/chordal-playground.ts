@@ -712,9 +712,16 @@ export class ChordalPlayground extends HTMLElement {
     if (this.idleTimer !== null) window.clearTimeout(this.idleTimer);
     const durationLabel = `${(preset.length).toFixed(3).replace(/0+$/, '').replace(/\.$/, '.0')} s`;
     status.textContent = `${this.family} · ${instance} · ${this.describeFrequency()}${durationLabel}`;
+    // Floored, not just preset.length * 1000 + 200 — several instances are genuinely
+    // this brief (hover is 11ms, toggle 24ms), so that alone left the status readable
+    // for barely 200ms, gone before anyone could actually read it. The 200ms buffer on
+    // top of real playback still matters for the longer instances (notification,
+    // listening) — this only raises the floor for the short ones, it doesn't touch
+    // anything already past it.
+    const MIN_STATUS_VISIBLE_MS = 1200;
     this.idleTimer = window.setTimeout(() => {
       status.textContent = 'idle';
-    }, preset.length * 1000 + 200);
+    }, Math.max(preset.length * 1000 + 200, MIN_STATUS_VISIBLE_MS));
   }
 
   private triggerTest(instance: SoundInstance, options: { state?: 'on' | 'off' } = {}): void {
