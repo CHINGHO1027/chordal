@@ -1466,17 +1466,20 @@ bind();</pre></div>
       });
 
       // Fires only on a genuine is-scrolled transition (classList.toggle is a no-op,
-      // and so is this observer, whenever the value doesn't actually change) — lets
-      // the pill start animating to markWidths' correct target the instant the
-      // collapse triggers, in step with the label's own 0.25s transition instead of
-      // catching up after the fact. Same "only if the mark currently has the pill"
-      // guard the other handlers effectively get for free from moveTo() itself.
-      if (markWidths) {
-        new MutationObserver(() => {
-          const current = items.includes(document.activeElement) ? document.activeElement : activeItem;
-          if (current === markItem) moveTo(markItem);
-        }).observe(nav, { attributes: true, attributeFilter: ['class'] });
-      }
+      // and so is this observer, whenever the value doesn't actually change).
+      // Re-measures whichever item currently has the pill, not just the mark —
+      // chordal is the first item, so every item after it (Docs, GitHub, agents.md)
+      // reflows left as it collapses, same as the mark's own width shrinking. If a
+      // visitor is hovering/focusing one of those right as the threshold is crossed
+      // (pill temporarily resting there instead of on chordal) and only the mark's
+      // own width gets re-synced, the pill is left stranded at that item's stale
+      // pre-collapse position. moveTo() already computes the right width for
+      // whichever item it's given (markWidths for the mark, live offsetWidth for
+      // everything else, which doesn't change), so it's correct for either case.
+      new MutationObserver(() => {
+        const current = items.includes(document.activeElement) ? document.activeElement : activeItem;
+        moveTo(current);
+      }).observe(nav, { attributes: true, attributeFilter: ['class'] });
     })();
 
     // Site sound, hardcoded to glass-crystal rather than getFamily() — deliberately

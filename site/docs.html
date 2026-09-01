@@ -736,17 +736,21 @@ setFamily(familyForTheme[theme]);</pre></div>
       updateNavCollapse();
 
       // Fires only on a genuine is-collapsed transition (classList.toggle is a no-op,
-      // and so is this observer, whenever the value doesn't actually change) — lets
-      // the pill start animating to markWidths' correct target the instant the
-      // collapse triggers, in step with the label's own 0.25s transition instead of
-      // catching up after the fact. Same "only if the mark currently has the pill"
-      // guard the other handlers effectively get for free from moveTo() itself.
-      if (markWidths) {
-        new MutationObserver(() => {
-          const current = items.includes(document.activeElement) ? document.activeElement : activeItem;
-          if (current === markItem) moveTo(markItem);
-        }).observe(nav, { attributes: true, attributeFilter: ['class'] });
-      }
+      // and so is this observer, whenever the value doesn't actually change).
+      // Re-measures whichever item currently has the pill, not just the mark —
+      // chordal is the first item, so every item after it (Docs, GitHub, agents.md)
+      // reflows left as it collapses, same as the mark's own width shrinking. If the
+      // pill happens to be resting on one of those (its actual rest state here,
+      // since Docs is the active page, not chordal) and only the mark's own width
+      // gets re-synced, the pill is left stranded at Docs' stale pre-collapse
+      // position — which now visually overlaps GitHub, since GitHub slid left into
+      // where Docs used to be. moveTo() already computes the right width for
+      // whichever item it's given (markWidths for the mark, live offsetWidth for
+      // everything else, which doesn't change), so it's correct for either case.
+      new MutationObserver(() => {
+        const current = items.includes(document.activeElement) ? document.activeElement : activeItem;
+        moveTo(current);
+      }).observe(nav, { attributes: true, attributeFilter: ['class'] });
     })();
 
     const FAMILIES = [
