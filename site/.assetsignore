@@ -1,0 +1,5 @@
+# assets.directory is now scoped to this folder specifically (see
+# wrangler.jsonc at the repo root), so this no longer needs to exclude
+# node_modules/.git/src/etc. — none of that lives inside site/ at all.
+# This just keeps the ignore-file itself from being served.
+.assetsignore

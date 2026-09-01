@@ -79,6 +79,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:site": "npm run build && rm -rf site/dist site/AGENTS.md && cp -r dist site/dist && cp AGENTS.md site/AGENTS.md",
     "size": "npm run build && gzip -c dist/index.js | wc -c",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

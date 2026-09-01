@@ -5,3 +5,7 @@ dist/
 
 # Private planning doc — not part of the deployed site.
 design.md
+
+# Generated copy for the site's own deploy (see `npm run build:site`) — the
+# real one lives at the repo root.
+site/AGENTS.md
