@@ -933,7 +933,11 @@ export class ChordalPlayground extends HTMLElement {
       // Deliberately NOT routed through setActiveInstance/triggerTest either — unlike
       // the real "Toggle switch" test control above, this one only opens/closes a panel
       // and shouldn't silently change which instance's code View Code is showing.
-      play('toggle', { family: 'glass-crystal' });
+      // state reads the checkbox's own post-click value (checked === panel now open) —
+      // toggle/listening are the two instances play() varies by on/off state (see
+      // src/index.ts); without it every click played the same one sound regardless of
+      // direction, opening and closing sounding identical.
+      play('toggle', { family: 'glass-crystal', state: codeToggle.checked ? 'on' : 'off' });
     });
 
     const codeCopyBtn = this.shadow.querySelector<HTMLButtonElement>('.code-copy-btn');
