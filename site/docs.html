@@ -254,19 +254,33 @@
   @media (max-width: 48rem) {
     .page-head { padding-left: 2rem; }
     .docs-layout { grid-template-columns: 1fr; }
+    /* Sticky, not static — keeps the "On this page" control reachable while
+       scrolling a long section list, instead of forcing a scroll back to the
+       very top just to jump elsewhere. Same top offset as the desktop
+       sidebar's own sticky positioning above, so it clears the fixed .docs-nav
+       the same way. Toggle and panel are wrapped together so they stick as one
+       unit — the panel opens directly under wherever the toggle is currently
+       pinned, not under its original unscrolled position in the layout. */
+    .sidebar-mobile-nav { position: sticky; top: 5.5rem; z-index: 4; }
     .sidebar-toggle {
       display: flex; align-items: center; justify-content: space-between;
       width: 100%; font-family: var(--font-body); font-size: var(--text-body);
       color: var(--text-primary); background: var(--surface);
       border: var(--border-width) solid var(--border); border-radius: var(--radius-md);
-      padding: 0.75rem 1rem; margin-bottom: 1rem; cursor: pointer;
+      padding: 0.75rem 1rem; cursor: pointer;
     }
+    /* No gap between the toggle and the panel below it — they read as one
+       connected control, so the toggle's bottom corners and the panel's top
+       corners square off against each other rather than each keeping a full
+       independent radius. */
+    .sidebar-toggle[aria-expanded="true"] { border-radius: var(--radius-md) var(--radius-md) 0 0; }
     .sidebar-toggle-icon { transition: transform 0.15s ease; flex-shrink: 0; }
     .sidebar-toggle[aria-expanded="true"] .sidebar-toggle-icon { transform: rotate(180deg); }
     .docs-sidebar {
       position: static; max-height: none; display: none;
       background: var(--surface); border: var(--border-width) solid var(--border);
-      border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;
+      border-top: none; border-radius: 0 0 var(--radius-md) var(--radius-md);
+      padding: 1rem; margin: 0 0 1.5rem;
     }
     .docs-sidebar.is-open { display: flex; }
   }
@@ -316,35 +330,37 @@
     <p class="lede">Mark up your HTML with <code>data-sound-*</code> attributes and call <code>bind()</code> once, or call <code>play()</code> directly whenever you need exact control.</p>
   </div>
   <div class="docs-layout">
-    <button class="sidebar-toggle" type="button" aria-expanded="false" aria-controls="docs-sidebar">
-      <span>On this page</span>
-      <svg class="sidebar-toggle-icon" width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path></svg>
-    </button>
-    <nav class="docs-sidebar" id="docs-sidebar" aria-label="Docs sections">
-      <div class="sidebar-group">
-        <div class="sidebar-group-label">Getting started</div>
-        <a class="sidebar-link" href="#install">Install</a>
-        <a class="sidebar-link" href="#quick-start">Quick start</a>
-        <a class="sidebar-link" href="#attributes">Attributes</a>
-        <a class="sidebar-link" href="#toggle">Toggle</a>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-group-label">API</div>
-        <a class="sidebar-link" href="#bind">bind()</a>
-        <a class="sidebar-link" href="#play">play()</a>
-        <a class="sidebar-link" href="#playcontinuous">playContinuous()</a>
-        <a class="sidebar-link" href="#setfamily">setFamily() / getFamily()</a>
-        <a class="sidebar-link" href="#mute">mute() / unmute() / isMuted()</a>
-        <a class="sidebar-link" href="#sound-families">SOUND_FAMILIES / SOUND_INSTANCES</a>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-group-label">Reference</div>
-        <a class="sidebar-link" href="#families">Families</a>
-        <a class="sidebar-link" href="#instances">Instances</a>
-        <a class="sidebar-link" href="#playground">Playground</a>
-        <a class="sidebar-link" href="#agents-md">AGENTS.md</a>
-      </div>
-    </nav>
+    <div class="sidebar-mobile-nav">
+      <button class="sidebar-toggle" type="button" aria-expanded="false" aria-controls="docs-sidebar">
+        <span>On this page</span>
+        <svg class="sidebar-toggle-icon" width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path></svg>
+      </button>
+      <nav class="docs-sidebar" id="docs-sidebar" aria-label="Docs sections">
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">Getting started</div>
+          <a class="sidebar-link" href="#install">Install</a>
+          <a class="sidebar-link" href="#quick-start">Quick start</a>
+          <a class="sidebar-link" href="#attributes">Attributes</a>
+          <a class="sidebar-link" href="#toggle">Toggle</a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">API</div>
+          <a class="sidebar-link" href="#bind">bind()</a>
+          <a class="sidebar-link" href="#play">play()</a>
+          <a class="sidebar-link" href="#playcontinuous">playContinuous()</a>
+          <a class="sidebar-link" href="#setfamily">setFamily() / getFamily()</a>
+          <a class="sidebar-link" href="#mute">mute() / unmute() / isMuted()</a>
+          <a class="sidebar-link" href="#sound-families">SOUND_FAMILIES / SOUND_INSTANCES</a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">Reference</div>
+          <a class="sidebar-link" href="#families">Families</a>
+          <a class="sidebar-link" href="#instances">Instances</a>
+          <a class="sidebar-link" href="#playground">Playground</a>
+          <a class="sidebar-link" href="#agents-md">AGENTS.md</a>
+        </div>
+      </nav>
+    </div>
 
     <div class="docs-content">
     <div class="card" id="install">
