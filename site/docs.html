@@ -63,8 +63,12 @@
   .code-block-head .copy-btn { margin-left: auto; flex-shrink: 0; }
   /* Sits where a .filename would otherwise go (the Install card's code-block-head has
      none) — same row, same left slot, so it doesn't need a row of its own. flex:1 like
-     .filename above, so Copy stays pinned right via its own margin-left:auto either way. */
-  .pm-toggle { display: flex; gap: 0.2rem; flex: 1; }
+     .filename above, so Copy stays pinned right via its own margin-left:auto either way.
+     margin-left:-0.5rem cancels out .pm-btn's own horizontal padding below, so "npm"'s
+     visible text starts flush at the same left edge .filename's own text does elsewhere
+     (e.g. "index.html", "app.ts") — without it, the button's padding alone visibly
+     shifted the label right of where every other label in this row starts. */
+  .pm-toggle { display: flex; gap: 0.2rem; flex: 1; margin-left: -0.5rem; }
   .pm-btn {
     font-family: var(--font-body); font-size: var(--text-small); color: var(--text-secondary);
     background: none; border: none; border-radius: var(--radius-sm);
@@ -230,6 +234,7 @@
      "chordal" (home) in place of "Docs" among the links, since linking to the
      page you're already on is the one thing that needs to differ here. */
   footer.site-foot {
+    max-width: 56rem; margin: 0 auto;
     border-top: var(--border-width) solid var(--border);
     padding: 1.75rem 1.5rem; font-size: var(--text-small); color: var(--text-secondary);
     display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;

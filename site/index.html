@@ -211,11 +211,20 @@
   .code-block-head .copy-btn { margin-left: auto; flex-shrink: 0; position: static; }
   .code-block-body { padding: 0.9rem 1rem; overflow-x: auto; }
   .code-block-body pre { margin: 0; width: auto; font-family: var(--font-mono); font-size: var(--text-small); line-height: 1.6; }
-  /* Cursor + hint text signal this one command block is interactive (cycles through
-     npm/pnpm/yarn/bun on click), unlike every other .code-block on the page, which is
-     read-only. */
-  .code-block-body[data-pkg-switcher] { cursor: pointer; }
-  .pkg-switch-hint { font-size: var(--text-small); color: var(--text-secondary); margin: 0.5rem 0 0; }
+  /* Copied from docs.html's own .pm-toggle/.pm-btn exactly, including the -0.5rem
+     margin fix — same reasoning as the .code-block-head/.code-block-body copy-comment
+     above: a visitor bouncing between the two pages should see the identical control,
+     not a different-looking one for the same idea. Same var(--tint) "you are here"
+     language as .pm-btn.is-active there too. */
+  .pm-toggle { display: flex; gap: 0.2rem; flex: 1; margin-left: -0.5rem; }
+  .pm-btn {
+    font-family: var(--font-body); font-size: var(--text-small); color: var(--text-secondary);
+    background: none; border: none; border-radius: var(--radius-sm);
+    padding: 0.2rem 0.5rem; cursor: pointer;
+  }
+  .pm-btn:hover { color: var(--text-primary); }
+  .pm-btn.is-active { background: var(--tint); color: var(--text-primary); }
+  .pm-btn.is-active:hover { background: var(--tint); }
   .tok-kw { color: #8A5A2E; } .tok-str { color: #4E7A5B; } .tok-fn { color: #2E6B8F; }
 
   chordal-playground { display: block; }
@@ -366,7 +375,11 @@
   .agents-pill.is-copied .icon-copy { display: none; }
   .agents-pill.is-copied .icon-check { display: block; }
 
+  /* max-width/margin match .explorer and section.page-section above — same constrained
+     content column the rest of the page uses, not a full-bleed row spanning the whole
+     viewport the way it read before. */
   footer.site-foot {
+    max-width: 56rem; margin: 0 auto;
     border-top: var(--border-width) solid var(--border);
     padding: 1.75rem 1.5rem; font-size: var(--text-small); color: var(--text-secondary);
     display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
@@ -902,10 +915,17 @@
       <div>
         <h3>1. Install</h3>
         <div class="code-block">
-          <div class="code-block-head"><button class="copy-btn" aria-label="Copy install command" data-copy="npm install chordal">Copy</button></div>
-          <div class="code-block-body sound-click" data-pkg-switcher><pre>$ <span class="tok-fn">npm install</span> <span class="tok-str">chordal</span></pre></div>
+          <div class="code-block-head">
+            <div class="pm-toggle" role="tablist" aria-label="Package manager">
+              <button type="button" class="pm-btn is-active" data-pm="npm" aria-selected="true">npm</button>
+              <button type="button" class="pm-btn" data-pm="pnpm" aria-selected="false">pnpm</button>
+              <button type="button" class="pm-btn" data-pm="yarn" aria-selected="false">yarn</button>
+              <button type="button" class="pm-btn" data-pm="bun" aria-selected="false">bun</button>
+            </div>
+            <button class="copy-btn" aria-label="Copy install command" data-copy="npm install chordal">Copy</button>
+          </div>
+          <div class="code-block-body"><pre>$ <span class="tok-fn pm-verb">npm install</span> <span class="tok-str">chordal</span></pre></div>
         </div>
-        <p class="pkg-switch-hint">Click the command to switch package manager.</p>
       </div>
       <div>
         <h3>2. Mark up and bind</h3>
@@ -1242,30 +1262,25 @@ bind();</pre></div>
       });
     });
 
-    // Get Started's install command — click cycles through a few common package
-    // managers (npm/pnpm/yarn/bun), matching the exact command each one actually
-    // uses (npm install vs. the add verb the other three share) rather than just
-    // swapping the tool name into the same npm-shaped sentence. Updates the
-    // adjacent Copy button's own data-copy in lockstep, so copying always grabs
-    // whichever command is currently on screen, never a stale npm one.
-    const PKG_MANAGERS = [
-      { tool: 'npm', verb: 'install' },
-      { tool: 'pnpm', verb: 'add' },
-      { tool: 'yarn', verb: 'add' },
-      { tool: 'bun', verb: 'add' },
-    ];
-    document.querySelectorAll('[data-pkg-switcher]').forEach((body) => {
-      const pre = body.querySelector('pre');
-      const copyBtn = body.closest('.code-block').querySelector('.copy-btn');
-      let index = 0;
-      const render = () => {
-        const { tool, verb } = PKG_MANAGERS[index];
-        pre.innerHTML = `$ <span class="tok-fn">${tool} ${verb}</span> <span class="tok-str">chordal</span>`;
-        copyBtn.dataset.copy = `${tool} ${verb} chordal`;
-      };
-      body.addEventListener('click', () => {
-        index = (index + 1) % PKG_MANAGERS.length;
-        render();
+    // Get Started's install command — same explicit pill toggle as docs.html's own
+    // Install card (not the old click-to-cycle-blind version this replaced), matching
+    // the exact command each manager actually uses (npm install vs. the add verb the
+    // other three share). Resets to npm on every load, no localStorage — same as
+    // docs.html. Updates the adjacent Copy button's data-copy in lockstep, so copying
+    // always grabs whichever command is currently on screen, never a stale npm one.
+    const PM_VERBS = { npm: 'npm install', pnpm: 'pnpm add', yarn: 'yarn add', bun: 'bun add' };
+    document.querySelectorAll('.pm-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const group = btn.closest('.pm-toggle');
+        group.querySelectorAll('.pm-btn').forEach((b) => {
+          const active = b === btn;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-selected', String(active));
+        });
+        const codeBlock = group.closest('.code-block');
+        const verb = PM_VERBS[btn.dataset.pm];
+        codeBlock.querySelector('.pm-verb').textContent = verb;
+        codeBlock.querySelector('.copy-btn').dataset.copy = `${verb} chordal`;
       });
     });
 
