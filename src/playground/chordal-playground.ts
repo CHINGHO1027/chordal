@@ -40,6 +40,13 @@ const STYLES = `
     --text-primary: #17110C;
     --text-secondary: #6B5D4E;
     --border: #E8E0D5;
+    /* Same alias as tokens.css's own --tint: var(--border) — declared locally here too,
+       not left to inherit across the shadow boundary from the page's tokens.css, since
+       every other token in this block is already a local, self-contained copy for exactly
+       that reason (this component works even embedded somewhere without tokens.css). It
+       happened to keep working via inheritance when this was first added since the site's
+       own --tint resolves to the same value anyway, but that was luck, not the pattern. */
+    --tint: var(--border);
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 22px;
