@@ -82,6 +82,7 @@
     "size": "npm run build && gzip -c dist/index.js | wc -c",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
   "devDependencies": {
