@@ -49,7 +49,7 @@ export interface PlayOptions extends Partial<InstanceTuning> {
 /**
  * Schedules one instance's gesture (one or more notes). Each note gets its own
  * engine instanceKey — `family:instance:noteIndex` — so a multi-note gesture's own
- * notes (e.g. congrats's ascending run) never duck each other via the engine's
+ * notes (e.g. success's ascending run) never duck each other via the engine's
  * anti-spam throttle. Repeating the *same* gesture too quickly still ducks correctly,
  * because each note-index slot is throttled against its own previous occurrence.
  *

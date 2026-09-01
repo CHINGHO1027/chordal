@@ -9,7 +9,7 @@ import { hoverNote, preset } from './shared';
 // the pitch; a quiet useTexture:true companion at each note (this family's own 4200Hz
 // bandpass sheen, same layer the click release uses for its metallic ping) rides
 // underneath so the run still reads as metallic-tact, not a generic clean sine.
-const congratsNotes: Note[] = [
+const successNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false },
   { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 1, volumeMultiplier: 0.22, useTexture: true },
   { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 1.33, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false },
@@ -35,10 +35,10 @@ const clickNotes: Note[] = [
   { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.28, volumeMultiplier: 0.78, attack: 0.002, useDelay: false },
 ];
 
-// submit: same loading-recipe structure, at metallic-tact's own register — the square
+// sent: same loading-recipe structure, at metallic-tact's own register — the square
 // wave's odd-harmonic content still carries through its narrow bandpass same as every
 // other instance in this family.
-const submitNotes: Note[] = [
+const sentNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
   {
     offsetFraction: 0,
@@ -108,9 +108,9 @@ const toggleNotes: Note[] = [
 // waveform and the continuous rise, not the level), so softening it further wasn't going
 // to fix the "playful" impression; it needed a different technique, not a quieter one.
 // Replaced the sweep with a two-note stepped ratchet instead (root, then a real octave
-// up), matching this family's own congrats identity above — "a mechanical ratchet with a
+// up), matching this family's own success identity above — "a mechanical ratchet with a
 // real interval, not three near-identical taps" — rather than continuing to reach for
-// notification's clean-sine-override trick or submit's swell. Both steps are sine
+// notification's clean-sine-override trick or sent's swell. Both steps are sine
 // (waveformOverride) and unfiltered (useFilter:false), same reasoning as the landing note
 // below: this family's own resonant Q12 bandpass sits well above this register and would
 // choke them, and raw square would reintroduce the same playful game-sweep character this
@@ -119,8 +119,8 @@ const toggleNotes: Note[] = [
 // used to, then a landing tone from 130ms with a longer decay, 360ms total. The leading
 // tick was also reconsidered: a short, hard-attacked (1ms) bandpass noise hit ahead of
 // the gesture read as a separate, dominant noise event rather than supporting it.
-// Replaced with a soft lowpass breath layer instead (this family's own submit already
-// does exactly this — same technique as submitNotes above: a slow 30ms attack, starting
+// Replaced with a soft lowpass breath layer instead (this family's own sent already
+// does exactly this — same technique as sentNotes above: a slow 30ms attack, starting
 // at the same instant as the steps it sits under, not before them, so it swells in as
 // texture rather than announcing itself first. Root step pinned to pitchMultiplier 0.8
 // (627Hz, down from this family's own 784Hz base) as the "on" state's default starting
@@ -197,11 +197,11 @@ export const recipe: FamilyRecipe = {
 export const presets: Record<SoundInstance, InstancePreset> = {
   hover: preset(0.18, 0.012, 0.45, 'hover', hoverNote),
   click: preset(0.24, 0.05, 0.45, 'click', clickNotes),
-  // 220ms, up from 140ms — matches the broader congrats pack.
-  congrats: preset(0.3, 0.22, 0.5, 'congrats', congratsNotes),
+  // 220ms, up from 140ms — matches the broader success pack.
+  success: preset(0.3, 0.22, 0.5, 'success', successNotes),
   error: preset(0.22, 0.17, 0.3, 'error', errorNotes),
   toggle: preset(0.24, 0.018, 0.45, 'toggle', toggleNotes),
-  submit: preset(0.22, 0.18, 0.45, 'submit', submitNotes),
+  sent: preset(0.22, 0.18, 0.45, 'sent', sentNotes),
   notification: preset(0.15, 0.4, 0.3, 'notification', notificationNotes),
   listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),

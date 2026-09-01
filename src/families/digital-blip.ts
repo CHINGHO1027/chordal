@@ -10,7 +10,7 @@ import { hoverNote, preset } from './shared';
 // it's a clean sine rather than a filtered square. A quiet useTexture:true companion rides
 // under each tone — the same "grit" layer hover/click already use — so the run keeps this
 // family's digital edge instead of sounding like a generic clean sine climb.
-const congratsNotes: Note[] = [
+const successNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 2.2, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false },
   { offsetFraction: 0, lengthFraction: 0.3, pitchMultiplier: 2.2, volumeMultiplier: 0.28, useTexture: true },
   { offsetFraction: 0.28, lengthFraction: 0.32, pitchMultiplier: 2.772, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false },
@@ -67,10 +67,10 @@ const toggleNotes: Note[] = [
   { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 2.82, volumeMultiplier: 0.29, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
-// submit: same loading-recipe structure, at digital-blip's own low 360Hz register — the
+// sent: same loading-recipe structure, at digital-blip's own low 360Hz register — the
 // breath's cutoff is pulled down to match rather than reusing a register tuned for a
 // family sitting an octave-plus higher.
-const submitNotes: Note[] = [
+const sentNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
   {
     offsetFraction: 0,
@@ -175,12 +175,12 @@ export const recipe: FamilyRecipe = {
 export const presets: Record<SoundInstance, InstancePreset> = {
   hover: preset(0.17, 0.009, 0.4, 'hover', hoverNotes),
   click: preset(0.23, 0.044, 0.4, 'click', clickNotes),
-  // 220ms, up from 120ms — matches the broader congrats pack now that this is a real
+  // 220ms, up from 120ms — matches the broader success pack now that this is a real
   // 3-note ascending run instead of a 2-note jump.
-  congrats: preset(0.3, 0.22, 0.45, 'congrats', congratsNotes),
+  success: preset(0.3, 0.22, 0.45, 'success', successNotes),
   error: preset(0.22, 0.16, 0.25, 'error', errorNotes),
   toggle: preset(0.22, 0.026, 0.4, 'toggle', toggleNotes),
-  submit: preset(0.2, 0.16, 0.4, 'submit', submitNotes),
+  sent: preset(0.2, 0.16, 0.4, 'sent', sentNotes),
   notification: preset(0.15, 0.4, 0.4, 'notification', notificationNotes),
   listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),

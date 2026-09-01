@@ -16,7 +16,7 @@ export type SoundFamily =
   | 'tiny-sparkle'
   | 'snap';
 
-export type SoundInstance = 'hover' | 'click' | 'congrats' | 'error' | 'toggle' | 'submit' | 'notification' | 'listening' | 'delete';
+export type SoundInstance = 'hover' | 'click' | 'success' | 'error' | 'toggle' | 'sent' | 'notification' | 'listening' | 'delete';
 
 export const SOUND_FAMILIES: SoundFamily[] = [
   'soft-bubble',
@@ -33,10 +33,10 @@ export const SOUND_FAMILIES: SoundFamily[] = [
 export const SOUND_INSTANCES: SoundInstance[] = [
   'hover',
   'click',
-  'congrats',
+  'success',
   'error',
   'toggle',
-  'submit',
+  'sent',
   'notification',
   'listening',
   'delete',
@@ -92,7 +92,7 @@ export interface Note {
   useDelay?: boolean;
   /**
    * Optional attack-time override in seconds — see engine.SynthParams['attack']. Only
-   * needed for genuine "swell" gestures (e.g. submit's lift-off); every other note relies
+   * needed for genuine "swell" gestures (e.g. sent's lift-off); every other note relies
    * on the engine's default fast attack.
    */
   attack?: number;

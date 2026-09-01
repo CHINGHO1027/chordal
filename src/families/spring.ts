@@ -20,10 +20,10 @@ const clickNotes: Note[] = [
   { offsetFraction: 0.71, lengthFraction: 0.29, pitchMultiplier: 1.15, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
-// submit: the loading-recipe structure (slow-attack tone + soft breath), but with a small
+// sent: the loading-recipe structure (slow-attack tone + soft breath), but with a small
 // overshoot past the fifth before it would settle — spring's own physical signature kept
 // on top of the shared structure rather than a plain, unadorned glide.
-const submitNotes: Note[] = [
+const sentNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.58, attack: 0.025 },
   {
     offsetFraction: 0,
@@ -50,14 +50,14 @@ const notificationNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1.0154, volumeMultiplier: 0.83, detuneCents: 12, attack: 0.06 },
 ];
 
-// congrats: a bouncy ascending run (root, fourth, fifth) where the final note overshoots
+// success: a bouncy ascending run (root, fourth, fifth) where the final note overshoots
 // upward before relaxing — the spring settling past its target, not a clean landing.
 // useFilter:false on all three: the family's lowpass cutoff is computed once from `tone`
 // and held fixed across the whole gesture, so as these notes climb toward and past it
 // (691Hz/780Hz against a ~722Hz cutoff at this preset's tone) it was quietly muffling
 // exactly the notes that needed to sound brighter, undercutting the ascent instead of
 // letting it read.
-const congratsNotes: Note[] = [
+const successNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.32, pitchMultiplier: 1, volumeMultiplier: 0.8, useFilter: false },
   { offsetFraction: 0.26, lengthFraction: 0.34, pitchMultiplier: 1.33, volumeMultiplier: 0.85, useFilter: false },
   { offsetFraction: 0.52, lengthFraction: 0.48, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.08, useFilter: false },
@@ -150,10 +150,10 @@ export const recipe: FamilyRecipe = {
 export const presets: Record<SoundInstance, InstancePreset> = {
   hover: preset(0.18, 0.011, 0.45, 'hover', hoverNote),
   click: preset(0.24, 0.049, 0.42, 'click', clickNotes),
-  congrats: preset(0.3, 0.22, 0.48, 'congrats', congratsNotes),
+  success: preset(0.3, 0.22, 0.48, 'success', successNotes),
   error: preset(0.22, 0.14, 0.28, 'error', errorNotes),
   toggle: preset(0.23, 0.023, 0.42, 'toggle', toggleNotes),
-  submit: preset(0.22, 0.2, 0.45, 'submit', submitNotes),
+  sent: preset(0.22, 0.2, 0.45, 'sent', sentNotes),
   // exact reference match to Cuelume's bloom — see notificationNotes.
   notification: preset(0.12, 0.4, 0.45, 'notification', notificationNotes),
   listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),

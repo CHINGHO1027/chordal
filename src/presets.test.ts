@@ -78,8 +78,8 @@ describe('isToneAudible', () => {
     expect(isToneAudible(FAMILY_RECIPES['paper-snap'], tuning.notes, tuning)).toBe(true);
   });
 
-  it('is true for soft-bubble/congrats via its tone-scaled sweep, independent of the filter', () => {
-    const tuning = PRESETS['soft-bubble'].congrats;
+  it('is true for soft-bubble/success via its tone-scaled sweep, independent of the filter', () => {
+    const tuning = PRESETS['soft-bubble'].success;
     expect(isToneAudible(FAMILY_RECIPES['soft-bubble'], tuning.notes, tuning)).toBe(true);
   });
 

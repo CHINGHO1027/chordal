@@ -32,8 +32,8 @@ const clickNotes: Note[] = [
 // volumeMultiplier is needed on top.
 const toggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1.15, useFilter: false }];
 
-// submit: same loading-recipe structure, at snap's own triangle-wave register.
-const submitNotes: Note[] = [
+// sent: same loading-recipe structure, at snap's own triangle-wave register.
+const sentNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
   {
     offsetFraction: 0,
@@ -100,7 +100,7 @@ const errorNotes: Note[] = [
 ];
 
 // snap: a real fourth-ish jump on the second hit — still snappy, but with somewhere to land.
-const congratsNotes: Note[] = [
+const successNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.42, pitchMultiplier: 1, volumeMultiplier: 0.8 },
   { offsetFraction: 0.36, lengthFraction: 0.5, pitchMultiplier: 1.33, volumeMultiplier: 1 },
 ];
@@ -120,7 +120,7 @@ const congratsNotes: Note[] = [
 // tone-slider audibility fix (isToneAudible) exists to catch. This family's own comb-delay
 // (2ms/28%/40%/3800Hz) still applies by default rather than their actual shimmer
 // (100ms/16%/10%/4200Hz) — there's no per-note delay override in this engine, so family
-// identity wins on that one layer alone. Structurally distinct from congrats above (one
+// identity wins on that one layer alone. Structurally distinct from success above (one
 // continuous glide, not discrete stepped notes) so the two are never confusable.
 const listeningNotes: Note[] = [
   {
@@ -174,14 +174,14 @@ export const recipe: FamilyRecipe = {
 export const presets: Record<SoundInstance, InstancePreset> = {
   hover: preset(0.18, 0.009, 0.5, 'hover', hoverNotes),
   click: preset(0.24, 0.048, 0.5, 'click', clickNotes),
-  // 160ms, up from 100ms — was genuinely the shortest congrats of any family (next
+  // 160ms, up from 100ms — was genuinely the shortest success of any family (next
   // shortest was paper-snap at 110ms), not giving the fourth-interval jump room to land.
-  congrats: preset(0.3, 0.16, 0.55, 'congrats', congratsNotes),
+  success: preset(0.3, 0.16, 0.55, 'success', successNotes),
   // 244ms and 0.2184 volume: exact reference match — see errorNotes. tone is unused
   // (neither tone note reads the interpolated filter now), kept at a neutral value.
   error: preset(0.2184, 0.244, 0.3, 'error', errorNotes),
   toggle: preset(0.23, 0.014, 0.5, 'toggle', toggleNotes),
-  submit: preset(0.21, 0.17, 0.45, 'submit', submitNotes),
+  sent: preset(0.21, 0.17, 0.45, 'sent', sentNotes),
   notification: preset(0.15, 0.4, 0.45, 'notification', notificationNotes),
   // 360ms: exact reference match — Cuelume's own ready recipe spans tick -> glide (12ms
   // + 120ms) -> landing (starting 130ms in, with a longer decay), landing at ~230ms out.

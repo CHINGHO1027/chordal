@@ -20,10 +20,10 @@ const clickNotes: Note[] = [
   { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.19, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
-// congrats: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
+// success: baseline matched to Cuelume's own chime recipe — root C6 (1046.5Hz) then a
 // fifth up to G6 (1568Hz), second note entering 90ms after the first, each with its own
 // attack/decay rather than sharing one envelope. Pitch multipliers are solved against
-// chime's 940Hz base register (baseFrequency * congrats' 1.05 instance pitch = 987Hz) so
+// chime's 940Hz base register (baseFrequency * success' 1.05 instance pitch = 987Hz) so
 // the family's shared register doesn't move, only these two notes land on Cuelume's exact
 // frequencies.
 //
@@ -31,7 +31,7 @@ const clickNotes: Note[] = [
 // ~35% volume) — real chorus/beating from two real oscillators, rather than asking the
 // delay-based shimmer to be the only source of width. Opposite detune direction on the two
 // strikes (+7 then -6) so they don't beat identically.
-const congratsNotes: Note[] = [
+const successNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.6348, pitchMultiplier: 1.0603, volumeMultiplier: 1 },
   { offsetFraction: 0, lengthFraction: 0.6348, pitchMultiplier: 1.0603, volumeMultiplier: 0.35, detuneCents: 7 },
   { offsetFraction: 0.2528, lengthFraction: 0.7472, pitchMultiplier: 1.5887, volumeMultiplier: 0.8889 },
@@ -52,9 +52,9 @@ const toggleNotes: Note[] = [
   { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 1.07, volumeMultiplier: 0.75, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
-// submit: same loading-recipe structure, at chime's own transparent-filter register
+// sent: same loading-recipe structure, at chime's own transparent-filter register
 // (940Hz, no highpass-safety concern the way glass-crystal/tiny-sparkle have).
-const submitNotes: Note[] = [
+const sentNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 1, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
   {
     offsetFraction: 0,
@@ -160,11 +160,11 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   // 0.18 volume + 356ms length: solved to land at the exact same final amplitude
   // (~0.18/0.16 post-limiter-headroom) and total decay time as Cuelume's own two chime
   // layers (226ms + 266ms decay, second note entering at the 90ms mark) — see
-  // congratsNotes above for the rest of the mapping.
-  congrats: preset(0.18, 0.356, 0.55, 'congrats', congratsNotes),
+  // successNotes above for the rest of the mapping.
+  success: preset(0.18, 0.356, 0.55, 'success', successNotes),
   error: preset(0.21, 0.16, 0.28, 'error', errorNotes),
   toggle: preset(0.23, 0.024, 0.5, 'toggle', toggleNotes),
-  submit: preset(0.2, 0.2, 0.45, 'submit', submitNotes),
+  sent: preset(0.2, 0.2, 0.45, 'sent', sentNotes),
   notification: preset(0.2, 0.4, 0.5, 'notification', notificationNotes),
   listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),

@@ -24,7 +24,7 @@ export interface SynthParams {
   /**
    * Optional attack-time override, seconds. Every voice defaults to a fast fixed attack
    * (min(5ms, 20% of length)) tuned for percussive UI ticks; a handful of "swell" gestures
-   * (e.g. submit's lift-off) need a genuinely slow attack instead, closer to Cuelume's own
+   * (e.g. sent's lift-off) need a genuinely slow attack instead, closer to Cuelume's own
    * loading/arrival recipes (25-50ms). Clamped to at most 40% of `length` so it can never
    * outrun the note's own decay.
    */

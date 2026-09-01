@@ -12,7 +12,7 @@ import { hoverNote, preset } from './shared';
 // the papery texture the dominant impression instead of an accent. Pulled back to a
 // single opening snap only (register ~0.26 picked for a bright register rather than this
 // family's noise-bandpass-tuned 3200Hz base).
-const congratsNotes: Note[] = [
+const successNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.12, pitchMultiplier: 1.4, volumeMultiplier: 0.4, attack: 0.001 },
   { offsetFraction: 0.06, lengthFraction: 0.34, pitchMultiplier: 0.26, volumeMultiplier: 0.8, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
   { offsetFraction: 0.34, lengthFraction: 0.34, pitchMultiplier: 0.3276, volumeMultiplier: 0.9, waveformOverride: 'sine', useFilter: false, attack: 0.008 },
@@ -63,12 +63,12 @@ const clickNotes: Note[] = [
   },
 ];
 
-// paper-snap submit: sweepTo is ignored for noise (the engine never sweeps a bandpass
+// paper-snap sent: sweepTo is ignored for noise (the engine never sweeps a bandpass
 // center), so "lifting" here is a discrete two-step bandpass rise (root -> a real fifth)
-// instead of a continuous glide — the same substitution already used for its congrats/click.
+// instead of a continuous glide — the same substitution already used for its success/click.
 // Doesn't need a separate breath layer (this family's whole voice already is noise); the
 // slow attack on both steps is what borrows the loading-recipe "swell" quality instead.
-const submitNotes: Note[] = [
+const sentNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.55, pitchMultiplier: 1, volumeMultiplier: 0.85, attack: 0.03 },
   { offsetFraction: 0.4, lengthFraction: 0.6, pitchMultiplier: 1.5, volumeMultiplier: 1, attack: 0.035 },
 ];
@@ -129,14 +129,14 @@ const toggleNotes: Note[] = [{ offsetFraction: 0, lengthFraction: 1, pitchMultip
 // leading noise tick ahead of the rise: this whole family's voice is noise, so tick +
 // two-step rise + (eventually) landing was three separate noise-reading events in a row
 // before any tonal content arrived — reads as "noisy," not "rising." Dropped the tick
-// entirely and, borrowing this family's own submitNotes technique (two heavily
+// entirely and, borrowing this family's own sentNotes technique (two heavily
 // overlapping notes with a slow attack, blending into one continuous swell instead of
 // discrete jumps — the same fix already applied to metallic-tact's own breath layer,
 // see families/metallic-tact.ts), softened the two-step bandpass rise (root -> a real
 // octave) the same way: slower attack (20ms -> 30/35ms) and real overlap between the two
 // steps rather than a gap, so the rise reads as one continuous noise-wash climbing into
 // the landing rather than two separate knocks. Noise still can't glide a continuous pitch
-// (the engine never sweeps a bandpass center — same limitation this family's own submit
+// (the engine never sweeps a bandpass center — same limitation this family's own sent
 // already works around), so this discrete rise still stands in for the smooth glide the
 // other 8 families get; then a real sine landing tone (waveformOverride, same technique
 // as this family's own error/notification, since noise can't resolve a clean pitch
@@ -194,12 +194,12 @@ export const recipe: FamilyRecipe = {
 export const presets: Record<SoundInstance, InstancePreset> = {
   hover: preset(0.17, 0.008, 0.5, 'hover', hoverNote),
   click: preset(0.26, 0.09, 0.5, 'click', clickNotes),
-  // 220ms, up from 110ms — matches the broader congrats pack now that this is a real
+  // 220ms, up from 110ms — matches the broader success pack now that this is a real
   // 3-note ascending run instead of a 2-note bandpass jump.
-  congrats: preset(0.3, 0.22, 0.55, 'congrats', congratsNotes),
+  success: preset(0.3, 0.22, 0.55, 'success', successNotes),
   error: preset(0.22, 0.195, 0.3, 'error', errorNotes),
   toggle: preset(0.22, 0.014, 0.5, 'toggle', toggleNotes),
-  submit: preset(0.21, 0.16, 0.5, 'submit', submitNotes),
+  sent: preset(0.21, 0.16, 0.5, 'sent', sentNotes),
   notification: preset(0.2, 0.4, 0.3, 'notification', notificationNotes),
   listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),

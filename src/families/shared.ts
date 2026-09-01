@@ -10,27 +10,27 @@ import type { InstancePreset, Note, SoundInstance } from '../types';
 // established split (hover sits above the family's home register, light/weightless; click
 // sits into it, grounded) — that contrast wasn't the issue.
 //
-// congrats is deliberately kept as the family's bright peak (its own note-level intervals
+// success is deliberately kept as the family's bright peak (its own note-level intervals
 // already climb up to an octave above this baseline). What was wrong: click and especially
-// error sat far enough below congrats's baseline, and their own note-level intervals
+// error sat far enough below success's baseline, and their own note-level intervals
 // compound further downward from there, that the family's overall register spread (error's
-// lowest note to congrats's highest) could reach 1.5-1.7 octaves — wide enough to stop
+// lowest note to success's highest) could reach 1.5-1.7 octaves — wide enough to stop
 // reading as one voice. Raised click and error toward the family's center so they still stay
-// clearly the "grounded"/"muted" instances relative to hover and congrats, just without
+// clearly the "grounded"/"muted" instances relative to hover and success, just without
 // dragging the whole family's floor down so far.
 const INSTANCE_PITCH: Record<SoundInstance, number> = {
   hover: 1.08,
   click: 0.96,
-  congrats: 1.05,
+  success: 1.05,
   error: 0.91,
   toggle: 1.0,
-  // Neutral start — the fifth-glide each family's own submit notes carry it upward regardless.
-  submit: 1.0,
+  // Neutral start — the fifth-glide each family's own sent notes carry it upward regardless.
+  sent: 1.0,
   // Neutral — bloom has no directional pitch movement at all, just a static detuned pair.
   notification: 1.0,
   // Neutral — the tick-glide-landing shape's own note-level pitchMultipliers (1x/2x/3x, a
   // harmonic series) carry the "rising, locking on" character regardless of this baseline,
-  // same reasoning as submit above.
+  // same reasoning as sent above.
   listening: 1.0,
   // Neutral — a noise-based flick+crackle texture; pitch multiplier barely matters to its
   // character, same reasoning as error/toggle's own knock layers.

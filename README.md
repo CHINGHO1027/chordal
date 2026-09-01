@@ -2,7 +2,7 @@
 
 A tunable, zero-audio-file sonic design system for the web, powered by the Web Audio API.
 
-Nine sound families, seven interaction shapes each, synthesized live. No audio files, no downloads, nothing to configure. ESM-only, zero runtime dependencies, safe to import during SSR: nothing plays until a real user gesture triggers it in a browser.
+Nine sound families, ten interaction shapes each: nine discrete sounds plus continuous drag input, synthesized live. No audio files, no downloads, nothing to configure. ESM-only, zero runtime dependencies, safe to import during SSR: nothing plays until a real user gesture triggers it in a browser.
 
 ## Install
 
@@ -26,9 +26,9 @@ bind();
 
 ## Only using one family?
 
-Importing `chordal` pulls in all nine families (~6.2KB gzipped, everything included). If your
+Importing `chordal` pulls in all nine families (~6.9KB gzipped, everything included). If your
 app only ever uses one, import that family directly and pull in `createPlayer` from
-`chordal/lite` instead, for a real, measured, ~3.8KB gzipped, about 38% smaller since the other
+`chordal/lite` instead, for a real, measured, ~4.2KB gzipped, about 39% smaller since the other
 eight families' data is never bundled at all, not just hidden behind a runtime check.
 
 ```ts
@@ -55,10 +55,10 @@ switch to. Reach for the main `chordal` import if you need that.
 |---|---|---|
 | `data-sound-hover` | `pointerenter` | `hover` |
 | `data-sound-click` | `pointerdown` | `click` |
-| `data-sound-congrats` | `click` | `congrats` |
+| `data-sound-success` | `click` | `success` |
 | `data-sound-error` | `invalid` | `error` |
 | `data-sound-toggle` | `click` | `toggle` |
-| `data-sound-submit` | `click` | `submit` |
+| `data-sound-sent` | `click` | `sent` |
 | `data-sound-notification` | `click` | `notification` |
 
 Leave the attribute value empty to use the active family, or set it to any family name (`data-sound-click="chime"`) to override just that element.
@@ -76,7 +76,7 @@ The direct, imperative trigger. Call it from your own event handlers or async ca
 ```ts
 import { play } from 'chordal';
 
-play('congrats', { family: 'glass-crystal' });
+play('success', { family: 'glass-crystal' });
 ```
 
 ### `bind(root?)`
@@ -133,10 +133,10 @@ Exported readonly arrays for building your own family/instance picker UI without
 |---|---|
 | `hover` | A light, quick probe for pointer-enter feedback, weightless, with no reverb tail. |
 | `click` | The core tactile confirmation for a press. |
-| `congrats` | A short celebratory phrase for a completed action. |
+| `success` | A short celebratory phrase for a completed action. |
 | `toggle` | A two-part mechanical snap for switching between on/off states. |
 | `error` | A descending, dissonant phrase signaling something went wrong, bound to the native `invalid` event. |
-| `submit` | For the moment an async action actually starts. |
+| `sent` | For the moment an async action actually starts. |
 | `notification` | For when something appears without user action, like a toast. |
 | `listening` | A stateful on/off cue for a mic or voice-input session starting and stopping — pass `{ state: 'on' \| 'off' }`, same as `toggle`. |
 | `delete` | An item being removed or discarded. Programmatic only — trigger it yourself via `play('delete', ...)`; there's no `data-sound-delete` binding, since deletions should never fire from a raw DOM event without your own confirmation logic. |

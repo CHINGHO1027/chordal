@@ -79,10 +79,10 @@ const STYLES = `
        Inspector), which already reads fine top to bottom: pick a family, watch
        it/trigger it, then tune it. A viewport media query, not a container
        query — this component is only ever embedded full-width in practice (see
-       home-lofi.html's .explorer), so viewport width is a fair proxy here. */
+       index.html's .explorer), so viewport width is a fair proxy here. */
     /* Translucent + blurred rather than the old opaque --surface — this component
        sits directly over the homepage hero's own background image (see
-       home-lofi.html's .hero-band), so the panel now reads as frosted glass
+       index.html's .hero-band), so the panel now reads as frosted glass
        floating above it, the same recipe .site-nav already uses there.
        .waveform-wrap/.instance-group/.slider-row below keep their own solid
        --waveform-bg fills, though — those hold content (the oscilloscope trace,
@@ -134,7 +134,7 @@ const STYLES = `
      block) — same selector/specificity, so the later rule in source order
      wins; putting a same-specificity override before its own base rule is
      exactly the bug that silently reverted .site-nav's position earlier in
-     this project (see home-lofi.html's own .hero-band comment) and it bit
+     this project (see index.html's own .hero-band comment) and it bit
      this rule the same way: display:grid never actually took effect, only
      grid-template-columns did (a property the base rule never touches), so
      the list looked identical to the unstyled flex-column default despite
@@ -163,7 +163,18 @@ const STYLES = `
     min-width: 0;
   }
   .family-btn .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--dot); flex-shrink: 0; }
+  /* A weaker version of the selected row's own var(--page-bg) fill, not a different
+     color (var(--border) was tried first) — this panel's own backdrop is already a
+     translucent var(--border) tan (see :host below), so a partial-strength var(--border)
+     wash barely showed up against it: same hue, low added contrast. var(--page-bg) is
+     much closer to opaque white, so even a partial version of it reads clearly against
+     the tan backdrop, and reusing the selected row's own color (just weaker) makes
+     hover read as "part-way to selected" rather than an unrelated third color. */
+  .family-btn:hover { background: color-mix(in oklab, var(--page-bg) 55%, transparent); color: var(--text-primary); }
   .family-btn[aria-pressed="true"] { background: var(--page-bg); color: var(--text-primary); }
+  /* Hovering the already-selected row keeps its own fill rather than dimming to the
+     generic hover wash above — hover shouldn't visually downgrade a selection. */
+  .family-btn[aria-pressed="true"]:hover { background: var(--page-bg); }
   .family-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   .waveform-wrap { background: var(--waveform-bg); border-radius: var(--radius-md); padding: 0.5rem; position: relative; }
@@ -199,8 +210,14 @@ const STYLES = `
     color: var(--text-primary); border-radius: 999px;
     padding: 0.5rem 0.85rem; cursor: pointer;
   }
+  /* Neutral border darken on hover, not accent — same move .tab-btn:hover and
+     .agents-pill:hover already make elsewhere on this page. var(--accent) stays
+     reserved exclusively for .active (the instance actually being tested), so
+     hovering some other button never reads as "this one's now active too." */
+  .test-btn:hover { border-color: var(--text-secondary); }
   .test-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .test-btn.active { border-color: var(--accent); color: var(--accent); }
+  .test-btn.active:hover { border-color: var(--accent); }
   input[type="range"].slider-demo {
     appearance: none; -webkit-appearance: none; width: 12rem; background: transparent; cursor: pointer;
   }
@@ -247,6 +264,10 @@ const STYLES = `
     border: var(--border-width) solid var(--border); background: var(--surface);
     border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
   }
+  /* Was missing entirely — hovering this button did nothing. Same treatment
+     .code-copy-btn:hover and .tab-btn:hover already use, since this is the same
+     "small bordered secondary button" family as both of them. */
+  .code-toggle:hover { border-color: var(--text-secondary); }
   .code-export {
     position: relative;
     margin-top: 0.6rem; background: var(--page-bg); border: var(--border-width) solid var(--border);
@@ -805,8 +826,8 @@ export class ChordalPlayground extends HTMLElement {
               <div class="instance-pills">
                 <button type="button" class="test-btn" data-test="hover" data-instance-trigger="hover">Hover</button>
                 <button type="button" class="test-btn" data-test="click" data-instance-trigger="click">Click</button>
-                <button type="button" class="test-btn" data-test="congrats" data-instance-trigger="congrats">Success</button>
-                <button type="button" class="test-btn" data-test="submit" data-instance-trigger="submit">Sent</button>
+                <button type="button" class="test-btn" data-test="success" data-instance-trigger="success">Success</button>
+                <button type="button" class="test-btn" data-test="sent" data-instance-trigger="sent">Sent</button>
                 <button type="button" class="test-btn" data-test="error" data-instance-trigger="error">Error</button>
                 <button type="button" class="test-btn" data-test="notification" data-instance-trigger="notification">Notification</button>
                 <button type="button" class="test-btn" data-test="delete" data-instance-trigger="delete">Delete</button>
@@ -902,8 +923,8 @@ export class ChordalPlayground extends HTMLElement {
     const clickBtn = this.shadow.querySelector<HTMLElement>('[data-test="click"]');
     clickBtn?.addEventListener('pointerdown', () => this.triggerTest('click'));
 
-    const congratsBtn = this.shadow.querySelector<HTMLElement>('[data-test="congrats"]');
-    congratsBtn?.addEventListener('click', () => this.triggerTest('congrats'));
+    const successBtn = this.shadow.querySelector<HTMLElement>('[data-test="success"]');
+    successBtn?.addEventListener('click', () => this.triggerTest('success'));
 
     const toggleInput = this.shadow.querySelector<HTMLInputElement>('[data-test="toggle"]');
     toggleInput?.addEventListener('change', () => {
@@ -914,8 +935,8 @@ export class ChordalPlayground extends HTMLElement {
     const errorBtn = this.shadow.querySelector<HTMLElement>('[data-test="error"]');
     errorBtn?.addEventListener('click', () => this.triggerTest('error'));
 
-    const submitBtn = this.shadow.querySelector<HTMLElement>('[data-test="submit"]');
-    submitBtn?.addEventListener('click', () => this.triggerTest('submit'));
+    const sentBtn = this.shadow.querySelector<HTMLElement>('[data-test="sent"]');
+    sentBtn?.addEventListener('click', () => this.triggerTest('sent'));
 
     const notificationBtn = this.shadow.querySelector<HTMLElement>('[data-test="notification"]');
     notificationBtn?.addEventListener('click', () => this.triggerTest('notification'));

@@ -20,9 +20,9 @@ const clickNotes: Note[] = [
   { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.19, volumeMultiplier: 0.55, attack: 0.002, useDelay: false },
 ];
 
-// congrats: three bubbles blooping upward — root, major third, fifth — each with its own
+// success: three bubbles blooping upward — root, major third, fifth — each with its own
 // gentle upward sweep, spaced with real room to ring rather than a flat 3-note run.
-const congratsNotes: Note[] = [
+const successNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.36, pitchMultiplier: 1, volumeMultiplier: 0.8, sweepTo: 1.05 },
   { offsetFraction: 0.3, lengthFraction: 0.38, pitchMultiplier: 1.26, volumeMultiplier: 0.9, sweepTo: 1.05 },
   { offsetFraction: 0.6, lengthFraction: 0.4, pitchMultiplier: 1.5, volumeMultiplier: 1, sweepTo: 1.05 },
@@ -80,7 +80,7 @@ const toggleNotes: Note[] = [
   { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 2.0, volumeMultiplier: 0.6, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
-// submit (exact reference match): Cuelume's own "loading" recipe, layer for layer — a soft
+// sent (exact reference match): Cuelume's own "loading" recipe, layer for layer — a soft
 // lowpass-noise breath (1400Hz, Q0.6, 35ms attack, 140ms decay) underneath a sine gliding a
 // real fifth, 420 -> 630Hz (1 -> 1.5x), 25ms attack, 180ms decay. Uses the per-note attack
 // override and inline noise-filter override specifically so this one instance can carry a
@@ -89,8 +89,8 @@ const toggleNotes: Note[] = [
 // for a breath. tone is set to 1.0 so soft-bubble's tone-scaled sweep gimmick doesn't
 // attenuate the fifth — this is the one instance that wants the full, unscaled glide, not a
 // softened one. Volumes solved to match Cuelume's own post-gain-stage amplitudes (~0.084
-// tone / ~0.059 noise), the same approach used for chime's exact-match congrats baseline.
-const submitNotes: Note[] = [
+// tone / ~0.059 noise), the same approach used for chime's exact-match success baseline.
+const sentNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.7155, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
   {
     offsetFraction: 0,
@@ -183,14 +183,14 @@ export const presets: Record<SoundInstance, InstancePreset> = {
   click: preset(0.24, 0.052, 0.42, 'click', clickNotes),
   // 220ms, up from 160ms — 3 real-interval notes need more room than the old flat
   // arpeggio timing gave them.
-  congrats: preset(0.3, 0.22, 0.5, 'congrats', congratsNotes),
+  success: preset(0.3, 0.22, 0.5, 'success', successNotes),
   // 140ms, up from 55ms — a 3-element compound (knock + 2 tones) needs real room; the
   // old single swept note fit in 55ms because it was just one continuous motion.
   error: preset(0.22, 0.2, 0.25, 'error', errorNotes),
   toggle: preset(0.22, 0.024, 0.42, 'toggle', toggleNotes),
   // high tone so the tone-scaled sweep gimmick still delivers a real fifth-ish lift
   // rather than a token wobble (softBubble's sweep magnitude scales with tone).
-  submit: preset(0.084, 0.205, 1.0, 'submit', submitNotes),
+  sent: preset(0.084, 0.205, 1.0, 'sent', sentNotes),
   notification: preset(0.2, 0.4, 0.5, 'notification', notificationNotes),
   listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),

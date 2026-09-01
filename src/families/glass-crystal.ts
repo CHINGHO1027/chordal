@@ -20,9 +20,9 @@ const clickNotes: Note[] = [
   { offsetFraction: 0.72, lengthFraction: 0.28, pitchMultiplier: 1.33, volumeMultiplier: 0.5, attack: 0.002, useDelay: false },
 ];
 
-// congrats: an ascending "ting-ting-TING" — root, fifth, octave — the biggest interval
-// jumps of any family's congrats, matching how far a glass resonance actually carries.
-const congratsNotes: Note[] = [
+// success: an ascending "ting-ting-TING" — root, fifth, octave — the biggest interval
+// jumps of any family's success, matching how far a glass resonance actually carries.
+const successNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 0.34, pitchMultiplier: 1, volumeMultiplier: 0.75 },
   { offsetFraction: 0.28, lengthFraction: 0.36, pitchMultiplier: 1.5, volumeMultiplier: 0.9 },
   { offsetFraction: 0.56, lengthFraction: 0.44, pitchMultiplier: 2, volumeMultiplier: 1 },
@@ -44,13 +44,13 @@ const toggleNotes: Note[] = [
   { offsetFraction: 0.55, lengthFraction: 0.35, pitchMultiplier: 0.98, volumeMultiplier: 0.7, attack: 0.002, useFilter: false, useDelay: false },
 ];
 
-// submit: same loading-recipe structure as soft-bubble's exact match (slow-attack tone
+// sent: same loading-recipe structure as soft-bubble's exact match (slow-attack tone
 // glide + soft lowpass breath, no shimmer on the breath), tuned to glass-crystal's own
 // register and filter safety instead of copying soft-bubble's numbers. pitchMultiplier
-// 0.8 keeps the tone comfortably above this family's highpass cutoff at submit's own tone
+// 0.8 keeps the tone comfortably above this family's highpass cutoff at sent's own tone
 // value (0.45 -> ~702Hz cutoff; 0.8x = ~837Hz start, clear margin) — the same safety
 // margin every other glass-crystal instance already respects.
-const submitNotes: Note[] = [
+const sentNotes: Note[] = [
   { offsetFraction: 0, lengthFraction: 1, pitchMultiplier: 0.8, volumeMultiplier: 1, sweepTo: 1.5, attack: 0.025 },
   {
     offsetFraction: 0,
@@ -147,12 +147,12 @@ export const recipe: FamilyRecipe = {
   baseFrequency: 1046, // C6
   filterType: 'highpass',
   // Raised from 950 — that cutoff sat below every note this family actually plays
-  // (hover ~1130Hz, click's press ~1004Hz, congrats's first note ~1098Hz), so a pure
+  // (hover ~1130Hz, click's press ~1004Hz, success's first note ~1098Hz), so a pure
   // sine had zero energy there for even a high-Q peak to catch: the "singing resonant
   // peak" qRange below describes was never actually audible, at any tone value. Nudged
   // up just enough to bring the peak within reach of that cluster — click's press note
   // in particular now sits right at the edge at high tone, for a genuine ring — while
-  // staying under submit's own margin-tuned pitch (~837Hz) at its default tone so it
+  // staying under sent's own margin-tuned pitch (~837Hz) at its default tone so it
   // isn't newly silenced.
   filterCutoffRange: [500, 1000],
   // Pushed more resonant than tiny-sparkle's (which went the opposite way, toward
@@ -172,10 +172,10 @@ export const recipe: FamilyRecipe = {
 export const presets: Record<SoundInstance, InstancePreset> = {
   hover: preset(0.18, 0.009, 0.55, 'hover', hoverNote),
   click: preset(0.24, 0.046, 0.5, 'click', clickNotes),
-  congrats: preset(0.3, 0.22, 0.65, 'congrats', congratsNotes),
+  success: preset(0.3, 0.22, 0.65, 'success', successNotes),
   error: preset(0.22, 0.195, 0.3, 'error', errorNotes),
   toggle: preset(0.23, 0.022, 0.5, 'toggle', toggleNotes),
-  submit: preset(0.22, 0.18, 0.45, 'submit', submitNotes),
+  sent: preset(0.22, 0.18, 0.45, 'sent', sentNotes),
   notification: preset(0.2, 0.4, 0.3, 'notification', notificationNotes),
   listening: preset(0.22, 0.36, 0.5, 'listening', listeningNotes),
   delete: preset(0.24, 0.2, 0.5, 'delete', deleteNotes),
