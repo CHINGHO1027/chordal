@@ -198,8 +198,15 @@
   footer.site-foot a:hover { color: var(--accent); }
   .foot-links { display: flex; gap: 1.25rem; }
   /* padding-top reserves room for the now-fixed nav above, same reasoning as
-     index.html's own .hero-band padding-top for its own fixed .site-nav. */
-  .page-head { padding: 5rem 2rem 1.5rem; max-width: 56rem; margin: 0 auto; }
+     index.html's own .hero-band padding-top for its own fixed .site-nav.
+     padding-left is 18.5rem, not the same 2rem as the right side — matches
+     .docs-content's own actual left edge below (2rem .docs-layout padding +
+     14rem sidebar + 2.5rem grid gap), so the title sits directly above the
+     cards it introduces instead of spanning over the sidebar too, which reads
+     like the title belongs to a persistent nav rail it has nothing to do with.
+     Reset back to a plain 2rem on the mobile breakpoint below, where the
+     sidebar collapses out of the layout and .docs-content starts at 2rem too. */
+  .page-head { padding: 5rem 2rem 1.5rem 18.5rem; max-width: 56rem; margin: 0 auto; }
   .page-head h1 { font-family: var(--font-body); }
   .page-head .lede { font-family: var(--font-body); color: var(--text-secondary); font-size: var(--text-body); font-weight: var(--weight-light); margin-top: 0.5rem; }
   /* This whole page used to be a single centered column with no grids to collapse;
@@ -208,12 +215,11 @@
      rather than just tightening padding on a column that no longer exists in this
      shape. The nav's own four items (chordal, Docs, GitHub, agents.md) still need
      their own tightening on genuinely narrow phones, same reasoning as index.html's
-     own matching breakpoint. */
-  @media (max-width: 26rem) {
-    .page-head, .docs-layout { padding-left: 1.1rem; padding-right: 1.1rem; }
-    .docs-nav-item { padding: 0.4rem 0.6rem; }
-    .agents-pill { padding: 0.35rem 0.55rem; }
-  }
+     own matching breakpoint. This query is placed after the 48rem one below (not
+     here where it reads naturally) because both match at once on a phone this
+     narrow, and with equal-specificity selectors the later rule in source order
+     wins — it has to come after 48rem's own .page-head padding-left or that
+     wider-breakpoint value would silently win back over on the narrowest phones. */
   /* Sidebar + one continuous content column, replacing the old three-tab show/hide
      panels. This shape is required, not just preferred — scroll spy (below, in the
      script) needs every section to genuinely exist in the DOM at once so it can
@@ -246,6 +252,7 @@
   .sidebar-toggle { display: none; }
   .docs-content { min-width: 0; }
   @media (max-width: 48rem) {
+    .page-head { padding-left: 2rem; }
     .docs-layout { grid-template-columns: 1fr; }
     .sidebar-toggle {
       display: flex; align-items: center; justify-content: space-between;
@@ -262,6 +269,11 @@
       border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;
     }
     .docs-sidebar.is-open { display: flex; }
+  }
+  @media (max-width: 26rem) {
+    .page-head, .docs-layout { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .docs-nav-item { padding: 0.4rem 0.6rem; }
+    .agents-pill { padding: 0.35rem 0.55rem; }
   }
   .card {
     /* Offsets the fixed .docs-nav when a sidebar link (or a bookmarked #hash URL)
