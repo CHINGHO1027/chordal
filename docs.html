@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chordal Docs</title>
+<meta name="description" content="Installation, the full play()/bind() API, and the family/instance reference for chordal, a zero-audio-file sound design system for the web." />
+<meta property="og:title" content="Chordal Docs" />
+<meta property="og:description" content="Installation, the full play()/bind() API, and the family/instance reference for chordal, a zero-audio-file sound design system for the web." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Chordal Docs" />
+<meta name="twitter:description" content="Installation, the full play()/bind() API, and the family/instance reference for chordal, a zero-audio-file sound design system for the web." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2305030a'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23B86829'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400&family=Roboto+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  /* ---------- shared content primitives ---------- */
+  /* Header bar (filename + Copy, separated by a rule) over a body (the actual code) —
+     not filename floating loose above the code with an absolutely-positioned Copy
+     button just overlaid on top, which is what this used to be. That old structure is
+     also *why* .code-block needed a width:calc(100% - 3.5rem) hack on its own <pre> —
+     the button sat inside the same content area as the code, so long lines had to be
+     manually kept clear of it. Moving Copy into its own header row removes the
+     problem at the root: the code body has no floating button inside it to avoid, so
+     it can just be full width with a plain overflow-x:auto for genuinely long lines. */
+  .code-block {
+    background: var(--waveform-bg);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-md);
+    margin: 0.9rem 0 1.25rem;
+    overflow: hidden;
+  }
+  .code-block-head {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.5rem 0.6rem 0.5rem 1rem;
+    border-bottom: var(--border-width) solid var(--border);
+  }
+  .code-block-head .filename { flex: 1; font-size: var(--text-small); color: var(--text-secondary); margin: 0; }
+  .code-block-head .copy-btn { margin-left: auto; flex-shrink: 0; }
+  .code-block-body { padding: 0.9rem 1rem; overflow-x: auto; }
+  .code-block-body pre { margin: 0; font-family: var(--font-mono); font-size: var(--text-small); line-height: 1.6; }
+
+  .tok-kw { color: #8A5A2E; }
+  .tok-str { color: #4E7A5B; }
+  .tok-fn { color: #2E6B8F; }
+  .tok-com { color: var(--text-secondary); }
+
+  table.ref {
+    /* display:block + overflow-x:auto rather than a wrapper div — cells with
+       long unbroken mono-font attribute names (data-sound-notification, etc.)
+       don't wrap, so the table's own intrinsic width can exceed the viewport
+       at narrow widths; this scrolls the table itself instead of blowing out
+       the whole page. Confirmed via a real 375px-viewport test (an iframe,
+       which gets its own independent CSS viewport) — this table was
+       overflowing the page by ~86px before this fix. */
+    display: block; overflow-x: auto;
+    width: 100%; border-collapse: collapse; margin: 0.75rem 0 1.5rem;
+    font-size: var(--text-small);
+  }
+  table.ref th {
+    text-align: left; font-weight: var(--weight-regular); color: var(--text-secondary);
+    padding: 0.5rem 0.75rem; border-bottom: var(--border-width) solid var(--border);
+    text-transform: uppercase; letter-spacing: 0.03em; font-size: var(--text-small);
+  }
+  table.ref td {
+    padding: 0.6rem 0.75rem; border-bottom: var(--border-width) solid var(--border);
+    vertical-align: top;
+  }
+  table.ref tr:last-child td { border-bottom: none; }
+  .attr-name, .api-sig code { color: var(--accent); }
+
+  .dot { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.5rem; flex-shrink: 0; }
+
+  /* A third visual tier, not just "boxed vs plain text" — a soft fill with NO border,
+     between .code-block (bordered, header bar, copy button — a real copyable
+     snippet) and plain prose. Bare unstyled text was the first fix here and it did
+     stop the signature from looking like a copyable snippet, but it also read as less
+     considered than the rest of the page's own always-designed surfaces. The
+     differentiator that actually matters is the border: .code-block has one, this
+     doesn't, so the two stay visually distinct without this one disappearing into
+     plain text. */
+  .api-sig {
+    font-family: var(--font-mono); font-size: var(--text-small); color: var(--text-secondary);
+    background: var(--waveform-bg); border-radius: var(--radius-sm);
+    padding: 0.6rem 0.85rem; margin: 0.4rem 0 0.9rem;
+  }
+
+  .note {
+    font-size: var(--text-small); color: var(--text-secondary);
+    background: var(--waveform-bg);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.9rem; margin: 0.9rem 0;
+    display: flex; align-items: flex-start; gap: 0.55rem;
+  }
+  .note svg { flex-shrink: 0; margin-top: 0.15rem; color: var(--accent); }
+  .note span { flex: 1; }
+
+  /* ---------- docs page: left-aligned header, filled/outline tab
+     row, card-grouped sections. Hierarchy between the page title and
+     each card's own heading comes from weight, not size — the whole
+     site shares one --text-heading/--text-body/--text-small scale
+     (see tokens.css), matching chordal-playground.ts's own values
+     exactly. The column itself is centered on the page (max-width +
+     auto margins); everything inside it is left-aligned. ---------- */
+  /* Universal site nav, fixed — not the plain scroll-away wordmark this used to be.
+     The API tab in particular runs several cards deep; a fixed nav means "back home"
+     and the agents.md prompt stay reachable the whole way down, not just at the very
+     top of the page. width:fit-content, not a fixed max-width column — matches
+     index.html's own nav exactly in structure (same four items: chordal, Docs,
+     GitHub, agents.md), sized only by its own content on both pages rather than by
+     each page's own, differently-sized content column. That's what actually keeps
+     the nav feeling continuous when you move between pages — same items, same
+     sizing rule, not a coincidentally-matching max-width number. "Docs" is back in
+     this nav (it was dropped earlier as "redundant since you're already on the docs
+     page") — it isn't redundant once it's the active-page indicator rather than a
+     plain link; see .is-active below. Solid var(--surface) fill, not index.html's
+     own translucent blur — that one's tuned to sit over the hero's dark photo, where
+     the blur's point is letting rich background show through; over this page's own
+     flat --page-bg a blurred translucent pill would read as a barely-there smudge,
+     so this uses the same "elevated surface against flat page" language .card/
+     .tab-btn already use everywhere else here. */
+  .docs-nav {
+    position: fixed; top: 1rem; left: 0; right: 0; z-index: 5;
+    width: fit-content; max-width: calc(100vw - 2rem); margin: 0 auto;
+    background: var(--surface); border: var(--border-width) solid var(--border);
+    display: flex; align-items: center; gap: 0.25rem;
+    padding: 0.4rem; border-radius: 999px; overflow-x: auto;
+  }
+  /* Same base-class + .is-active modifier pattern as .tab-btn/.tab-btn.active below
+     (and as index.html's own .site-nav-item) — one shared item style, only the
+     active one gets a visible fill. "Docs" carries .is-active here since this is the
+     docs page; index.html gives that same class to "chordal" instead. */
+  .docs-nav-item {
+    position: relative; z-index: 1;
+    font-family: var(--font-body); font-size: var(--text-small); color: var(--text-secondary);
+    text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 999px; white-space: nowrap;
+  }
+  /* Hover/focus switch straight to var(--text-primary), the same dark color
+     .is-active uses — not var(--accent) anymore, now that hover sits on
+     .docs-nav-pill's own solid fill (below) rather than directly on the bare bar. */
+  /* text-decoration:none repeated here (not just above) — tokens.css's own global
+     a:hover sets underline, invisible before only because the old hover state's
+     color change was subtle enough nobody noticed the underline riding along with
+     it. Now that hover is meant to fully match .is-active's own look (which never
+     underlines), it needs its own explicit override too. */
+  .docs-nav-item:hover, .docs-nav-item:focus-visible { color: var(--text-primary); text-decoration: none; }
+  /* No fill of its own anymore — .docs-nav-pill (below) is the single shared "you are
+     here" indicator, JS-positioned under whichever item is active, hovered, or
+     focused, and animated between them. Text color still flags the active item even
+     if JS never runs, but the visible fill itself now comes entirely from the pill. */
+  .docs-nav-item.is-active { color: var(--text-primary); }
+  /* var(--border), not var(--waveform-bg) — the outer bar itself is already solid
+     var(--surface) (pure white) on this page, unlike index.html's own translucent
+     dark-tinted bar where var(--surface) reads as a clear, contrasting fill. Measured:
+     --waveform-bg (#FAF7F3) is only a few RGB values off pure white and would barely
+     register as "filled" sitting on top of an already-white bar. --border (#E8E0D5) is
+     a real, visible tan with enough contrast to actually read as the active state.
+     Same shared-pill pattern as index.html's own .site-nav-pill — see the JS near
+     the end of body for how it's positioned. */
+  .docs-nav-pill {
+    position: absolute; top: 0; left: 0; z-index: 0;
+    border-radius: 999px; background: var(--border); pointer-events: none;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .docs-nav-pill.is-instant { transition: none; }
+  /* Border-only, transparent fill — not the solid var(--surface) fill this used to
+     share with the outer bar itself. Now that a real "current page" pill exists in
+     this same nav (.is-active above), a second solid-fill pill right next to it
+     would read as the same kind of thing when they mean opposite things: one says
+     "you are here," this one says "click to do something." Transparent fill still
+     reads as clearly boxed against this bar's own solid background — the border
+     alone is enough — without needing a fill color tuned specifically to sit on top
+     of an already-solid surface. */
+  .agents-pill {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light);
+    color: var(--text-primary); border: var(--border-width) solid var(--border);
+    background: transparent; border-radius: 999px;
+    padding: 0.4rem 0.75rem; cursor: pointer; white-space: nowrap;
+  }
+  .agents-pill:hover { border-color: var(--text-secondary); }
+  .agents-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .agents-pill .icon-check { display: none; }
+  .agents-pill.is-copied .icon-copy { display: none; }
+  .agents-pill.is-copied .icon-check { display: block; }
+  /* padding-top reserves room for the now-fixed nav above, same reasoning as
+     index.html's own .hero-band padding-top for its own fixed .site-nav. */
+  .page-head { padding: 5rem 2rem 1.5rem; max-width: 40rem; margin: 0 auto; }
+  .page-head h1 { font-family: var(--font-body); }
+  .page-head .lede { font-family: var(--font-body); color: var(--text-secondary); font-size: var(--text-body); font-weight: var(--weight-light); margin-top: 0.5rem; }
+  .tabs {
+    display: flex; justify-content: flex-start; gap: 0.6rem;
+    max-width: 40rem; margin: 0 auto; padding: 0 2rem 2rem; flex-wrap: wrap;
+  }
+  /* This whole page is already a single centered column with no grids to
+     collapse — the only real gap on a narrow phone is the 2rem side padding
+     eating a disproportionate share of the available width. The nav's own four
+     items (chordal, Docs, GitHub, agents.md) need their own tightening too, same
+     reasoning as index.html's own matching breakpoint — .docs-nav itself
+     already has a small fit-content-driven padding, so it's each item's padding
+     that needs to shrink, not the outer bar's. */
+  @media (max-width: 26rem) {
+    .page-head, .tabs, .panel { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .docs-nav-item { padding: 0.4rem 0.6rem; }
+    .agents-pill { padding: 0.35rem 0.55rem; }
+  }
+  /* 999px pill + var(--border) fill, not the small-radius dark-brown block this used
+     to be — that was its own third "this one's selected" language, different from
+     both .docs-nav's own pill above and .agents-pill's shape, for no real reason
+     other than being built separately. Matching .docs-nav-item.is-active exactly
+     (same shape, same fill, same dark text) makes this read as the same kind of
+     control as the nav above it — a set of destinations with one currently
+     selected — rather than a visually unrelated button group. */
+  .tab-btn {
+    font-family: var(--font-body); font-weight: var(--weight-regular); font-size: var(--text-small);
+    border: var(--border-width) solid var(--border); background: var(--surface);
+    color: var(--text-primary); border-radius: 999px;
+    padding: 0.55rem 1.1rem; cursor: pointer;
+  }
+  .tab-btn.active { background: var(--border); border-color: var(--border); color: var(--text-primary); }
+  .tab-btn:hover { border-color: var(--text-secondary); }
+  .tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .panel { display: none; max-width: 40rem; margin: 0 auto; padding: 0 2rem 4rem; }
+  .panel.active { display: block; }
+  .card {
+    background: var(--surface); border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.25rem;
+  }
+  .card h3 { font-family: var(--font-body); font-size: var(--text-emphasis); font-weight: var(--weight-regular); margin: 0 0 0.5rem; }
+  /* SOUND_FAMILIES / SOUND_INSTANCES only — measured identical 16.25px/400 weight to
+     every sibling h3 (confirmed via computed style, not a real font-size bug), but
+     SCREAMING_SNAKE_CASE has no ascenders/descenders and fills its line more evenly
+     than mixed-case neighbors like setFamily(family), so it reads visually heavier at
+     the same literal size. A small negative letter-spacing (the same device the
+     homepage's own hero h1 already uses to compact heavy/large type) counters that
+     without touching font-size, weight, or wrapping it in a new pill/code treatment
+     none of its sibling headings get. */
+  .card h3.const-heading { letter-spacing: -0.02em; }
+  .card p { font-family: var(--font-body); font-size: var(--text-body); font-weight: var(--weight-light); }
+  .card > p:first-of-type { margin-top: 0; }
+</style>
+</head>
+<body>
+  <nav class="docs-nav" aria-label="Chordal">
+    <span class="docs-nav-pill is-instant" aria-hidden="true"></span>
+    <a class="docs-nav-item sound-click" href="index.html">chordal</a>
+    <a class="docs-nav-item is-active" href="docs.html">Docs</a>
+    <a class="docs-nav-item sound-click" href="https://github.com/CHINGHO1027/chordal" target="_blank" rel="noopener">GitHub</a>
+    <button type="button" class="agents-pill"
+      title="Copy a prompt that points your AI agent at AGENTS.md"
+      data-copy="Read [your-deployed-url]/AGENTS.md and follow it to install chordal and add interaction sounds to this project.">
+      agents.md
+      <span class="icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg></span>
+      <span class="icon-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg></span>
+    </button>
+  </nav>
+  <div class="page-head">
+    <h1>Chordal docs</h1>
+    <p class="lede">Mark up your HTML with <code>data-sound-*</code> attributes and call <code>bind()</code> once, or call <code>play()</code> directly whenever you need exact control.</p>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="start">Getting started</button>
+    <button class="tab-btn" data-tab="api">API</button>
+    <button class="tab-btn" data-tab="reference">Reference</button>
+  </div>
+
+  <div class="panel active" data-panel="start">
+    <div class="card">
+      <h3>Install</h3>
+      <div class="code-block">
+        <div class="code-block-head"><button class="copy-btn" aria-label="Copy install command" data-copy="npm install chordal">Copy</button></div>
+        <div class="code-block-body"><pre>$ <span class="tok-fn">npm install</span> <span class="tok-str">chordal</span></pre></div>
+      </div>
+      <p>ESM-only, zero runtime dependencies, safe to import during SSR.</p>
+    </div>
+
+    <div class="card">
+      <h3>Quick start</h3>
+      <div class="code-block">
+        <div class="code-block-head"><span class="filename">index.html</span><button class="copy-btn" aria-label="Copy quick start HTML" data-copy="&lt;button data-sound-hover data-sound-click&gt;Save&lt;/button&gt;">Copy</button></div>
+        <div class="code-block-body"><pre>&lt;button <span class="tok-kw">data-sound-hover</span> <span class="tok-kw">data-sound-click</span>&gt;Save&lt;/button&gt;</pre></div>
+      </div>
+      <div class="code-block">
+        <div class="code-block-head"><span class="filename">app.ts</span><button class="copy-btn" aria-label="Copy quick start script" data-copy="import { bind } from 'chordal';&#10;&#10;bind();">Copy</button></div>
+        <div class="code-block-body"><pre><span class="tok-kw">import</span> { bind } <span class="tok-kw">from</span> <span class="tok-str">'chordal'</span>;
+
+bind();</pre></div>
+      </div>
+      <p><code>bind()</code> scans your markup once and wires up every <code>data-sound-*</code> element it finds.</p>
+    </div>
+
+    <div class="card">
+      <h3>Attributes</h3>
+      <table class="ref">
+        <tr><th>Attribute</th><th>Fires on</th><th>Instance</th></tr>
+        <tr><td class="mono attr-name">data-sound-hover</td><td class="mono">pointerenter</td><td class="mono">hover</td></tr>
+        <tr><td class="mono attr-name">data-sound-click</td><td class="mono">pointerdown</td><td class="mono">click</td></tr>
+        <tr><td class="mono attr-name">data-sound-success</td><td class="mono">click</td><td class="mono">success</td></tr>
+        <tr><td class="mono attr-name">data-sound-error</td><td class="mono">invalid</td><td class="mono">error</td></tr>
+        <tr><td class="mono attr-name">data-sound-toggle</td><td class="mono">click</td><td class="mono">toggle</td></tr>
+        <tr><td class="mono attr-name">data-sound-sent</td><td class="mono">click</td><td class="mono">sent</td></tr>
+        <tr><td class="mono attr-name">data-sound-notification</td><td class="mono">click</td><td class="mono">notification</td></tr>
+      </table>
+      <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span>Leave a value empty to use the active family, or set one (<code>data-sound-click="chime"</code>) to override just that element.</span></div>
+      <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span>Three instances have no <code>data-sound-*</code> attribute at all — <code>listening</code> and <code>delete</code> take a call each to start and stop or confirm, and <code>slider</code> is driven by <code>playContinuous()</code>, not a discrete DOM event. Call these directly; see the API tab.</span></div>
+      <div class="note"><svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM120,104a12,12,0,1,1,12,12A12,12,0,0,1,120,104Z"></path></svg><span><code>data-sound-toggle</code> reads on/off state from the element's own <code>aria-pressed</code> attribute (or a checkbox's <code>checked</code> property) at the moment it's clicked. Wire up your own toggle logic first, then call <code>bind()</code> after it, so it always reads the post-click value:</span></div>
+      <div class="code-block">
+        <div class="code-block-head"><span class="filename">index.html</span><button class="copy-btn" aria-label="Copy toggle button HTML" data-copy="&lt;button id=&quot;dark-mode-toggle&quot; aria-pressed=&quot;false&quot; data-sound-toggle&gt;Dark mode&lt;/button&gt;">Copy</button></div>
+        <div class="code-block-body"><pre>&lt;button id=<span class="tok-str">"dark-mode-toggle"</span> <span class="tok-kw">aria-pressed</span>=<span class="tok-str">"false"</span> <span class="tok-kw">data-sound-toggle</span>&gt;Dark mode&lt;/button&gt;</pre></div>
+      </div>
+      <div class="code-block">
+        <div class="code-block-head"><span class="filename">app.ts</span><button class="copy-btn" aria-label="Copy toggle button script" data-copy="const toggleBtn = document.querySelector('#dark-mode-toggle');&#10;toggleBtn.addEventListener('click', () => {&#10;  const isOn = toggleBtn.getAttribute('aria-pressed') === 'true';&#10;  toggleBtn.setAttribute('aria-pressed', String(!isOn));&#10;});&#10;&#10;bind(); // after your own toggle logic — reads aria-pressed at click time">Copy</button></div>
+        <div class="code-block-body"><pre><span class="tok-kw">const</span> toggleBtn = document.querySelector(<span class="tok-str">'#dark-mode-toggle'</span>);
+toggleBtn.addEventListener(<span class="tok-str">'click'</span>, () =&gt; {
+  <span class="tok-kw">const</span> isOn = toggleBtn.getAttribute(<span class="tok-str">'aria-pressed'</span>) === <span class="tok-str">'true'</span>;
+  toggleBtn.setAttribute(<span class="tok-str">'aria-pressed'</span>, String(!isOn));
+});
+
+bind(); <span class="tok-com">// after your own toggle logic — reads aria-pressed at click time</span></pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" data-panel="api">
+    <div class="card">
+      <h3>play(instance, options?)</h3>
+      <div class="api-sig">play(instance: SoundInstance, options?: PlayOptions): void</div>
+      <p>The direct, imperative trigger, for moments that are not a DOM interaction: an async action that just resolved, or a state your own code already knows about.</p>
+      <p><code>toggle</code> and <code>listening</code> are stateful — pass which state just became active:</p>
+      <div class="code-block">
+        <div class="code-block-head"><button class="copy-btn" aria-label="Copy play() examples" data-copy="play('success', { family: 'glass-crystal' });&#10;play('listening', { state: 'on' });   // mic session started&#10;play('listening', { state: 'off' });  // mic session stopped">Copy</button></div>
+        <div class="code-block-body"><pre>play(<span class="tok-str">'success'</span>, { family: <span class="tok-str">'glass-crystal'</span> });
+play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'on'</span> });   <span class="tok-com">// mic session started</span>
+play(<span class="tok-str">'listening'</span>, { state: <span class="tok-str">'off'</span> });  <span class="tok-com">// mic session stopped</span></pre></div>
+      </div>
+      <p><code>delete</code> has no <code>data-sound-delete</code> attribute — call it yourself, after your own confirmation step, not on a raw click:</p>
+      <div class="code-block">
+        <div class="code-block-head"><button class="copy-btn" aria-label="Copy delete confirmation example" data-copy="await confirmDelete(item);&#10;play('delete');&#10;item.remove();">Copy</button></div>
+        <div class="code-block-body"><pre><span class="tok-kw">await</span> confirmDelete(item);
+play(<span class="tok-str">'delete'</span>);
+item.remove();</pre></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>bind(root?)</h3>
+      <div class="api-sig">bind(root?: ParentNode): void</div>
+      <p>Scans <code>root</code> (defaults to <code>document</code>) for attributes and wires listeners. Safe to call again: already-bound elements are skipped.</p>
+    </div>
+
+    <div class="card">
+      <h3>playContinuous(action, valueRatio, options?)</h3>
+      <div class="api-sig">playContinuous(action: 'slider', valueRatio: number, options?: { family?: SoundFamily }): void</div>
+      <p>For a range slider's <code>input</code> event, pass the current 0–1 ratio. Debounced and pitch-quantized internally.</p>
+    </div>
+
+    <div class="card">
+      <h3>setFamily(family) / getFamily()</h3>
+      <p>The family used when a call doesn't override its own.</p>
+    </div>
+
+    <div class="card">
+      <h3>mute() / unmute() / isMuted()</h3>
+      <p>Global on/off switch for the master output.</p>
+    </div>
+
+    <div class="card">
+      <h3 class="const-heading">SOUND_FAMILIES / SOUND_INSTANCES</h3>
+      <p>Exported readonly arrays for building your own picker UI.</p>
+    </div>
+  </div>
+
+  <div class="panel" data-panel="reference">
+    <div class="card">
+      <h3>Families</h3>
+      <table class="ref" id="families-table"></table>
+    </div>
+    <div class="card">
+      <h3>Instances</h3>
+      <table class="ref" id="instances-table"></table>
+    </div>
+    <div class="card">
+      <h3>Playground</h3>
+      <p>Embed <code>&lt;chordal-playground&gt;</code> for an interactive family/instance browser. It's a dev-time tool, not for production pages.</p>
+    </div>
+    <div class="card">
+      <h3>AGENTS.md</h3>
+      <p>A condensed reference built for AI coding agents: install steps, the family/instance model, and the behavioral details a generated integration would otherwise get wrong.</p>
+      <a href="AGENTS.md" target="_blank" rel="noopener">View AGENTS.md &#8599;</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { play } from './dist/index.js';
+
+    // Same click-sound treatment index.html's own nav already has — one shared
+    // listener over every real destination (excluding the active "Docs" item itself,
+    // same as index.html excludes its own active "chordal" item, and excluding
+    // agents.md, which has its own copy-to-clipboard feedback instead). See each
+    // element's own class="sound-click" in the markup above for exactly which links
+    // this covers.
+    document.querySelectorAll('.sound-click').forEach((link) => {
+      link.addEventListener('click', () => play('click', { family: 'glass-crystal' }));
+    });
+
+    // The shared sliding nav pill (see .docs-nav-pill in the CSS above) — same
+    // pattern as index.html's own .site-nav-pill. Deliberately scoped to
+    // .docs-nav-item only — the agents.md button stays on its own border-only hover
+    // treatment, since a "you are here" pill on a button that copies to your
+    // clipboard rather than navigating would misrepresent what it does.
+    (function initNavPill() {
+      const nav = document.querySelector('.docs-nav');
+      const pill = nav ? nav.querySelector('.docs-nav-pill') : null;
+      const items = nav ? Array.from(nav.querySelectorAll('.docs-nav-item')) : [];
+      if (!nav || !pill || !items.length) return;
+
+      const activeItem = items.find((el) => el.classList.contains('is-active')) || items[0];
+
+      function moveTo(item) {
+        pill.style.width = `${item.offsetWidth}px`;
+        pill.style.height = `${item.offsetHeight}px`;
+        pill.style.transform = `translate(${item.offsetLeft}px, ${item.offsetTop}px)`;
+      }
+
+      // Placed once, instantly (no transition — see .is-instant in the CSS), before
+      // the first hover ever happens. Without this the pill would start at 0×0 in the
+      // top-left corner and visibly slide/grow into place the first time anything is
+      // hovered, instead of already looking like it belongs to the active item.
+      moveTo(activeItem);
+      requestAnimationFrame(() => pill.classList.remove('is-instant'));
+
+      items.forEach((item) => {
+        item.addEventListener('pointerenter', () => moveTo(item));
+        item.addEventListener('focus', () => moveTo(item));
+      });
+      // One leave handler on the bar itself, not per-item — moving the pointer
+      // between two adjacent items would otherwise fire the first item's leave (pill
+      // snaps home) immediately before the second item's enter (pill leaves again),
+      // a visible stutter instead of one continuous glide from item to item.
+      nav.addEventListener('pointerleave', () => moveTo(activeItem));
+      nav.addEventListener('focusout', (e) => {
+        if (!nav.contains(e.relatedTarget)) moveTo(activeItem);
+      });
+
+      window.addEventListener('resize', () => {
+        pill.classList.add('is-instant');
+        moveTo(items.includes(document.activeElement) ? document.activeElement : activeItem);
+        requestAnimationFrame(() => pill.classList.remove('is-instant'));
+      });
+    })();
+
+    const FAMILIES = [
+      ['soft-bubble', '#E0668E', 'Warm, round, gentle: a soft pop with a pleasant, slightly sweet tone.'],
+      ['glass-crystal', '#4FA8A0', 'Bright and resonant, like a light tap on crystal, delicate but clear.'],
+      ['paper-snap', '#5B6472', 'Dry, textured noise: a papery crackle rather than a musical tone.'],
+      ['metallic-tact', '#6E7A8A', 'A mechanical, tactile click, resonant in a way that reads as hardware.'],
+      ['chime', '#D4A72E', 'Bell-like and tonal: a clean ring that decays naturally.'],
+      ['digital-blip', '#2E8FBD', 'Squared-off and retro, clearly electronic, an 8-bit-style blip.'],
+      ['spring', '#6FB238', 'Bouncy and twangy, with a springy pitch character true to the name.'],
+      ['tiny-sparkle', '#C77DD1', 'Delicate and high-pitched: light and glittery.'],
+      ['snap', '#A85A2E', 'A percussive knock, dry and immediate.'],
+    ];
+    const INSTANCES = [
+      ['hover', 'A light, quick probe for pointer-enter feedback, weightless, with no reverb tail.'],
+      ['click', 'The core tactile confirmation for a press.'],
+      ['success', 'A short celebratory phrase for a completed action.'],
+      ['toggle', 'A two-part mechanical snap for switching between on/off states.'],
+      ['error', "A descending, dissonant phrase signaling something went wrong, bound to the native invalid event."],
+      ['sent', 'For the moment an async action actually starts.'],
+      ['notification', 'For when something appears without user action, like a toast.'],
+      ['listening', "A stateful on/off cue for a mic or voice-input session starting and stopping — pass { state: 'on' | 'off' }, same as toggle."],
+      ['delete', "An item being removed or discarded. Programmatic only — trigger it yourself via play('delete', ...); there's no data-sound-delete binding, since deletions should never fire from a raw DOM event without your own confirmation logic."],
+      ['slider', 'Continuous, pitch-quantized feedback while dragging a range input (playContinuous() only).'],
+    ];
+
+    function fillFamilyTable(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = '<tr><th>Family</th><th>Character</th></tr>' + FAMILIES.map(([name, color, desc]) =>
+        `<tr><td class="mono"><span class="dot" style="background:${color}"></span>${name}</td><td>${desc}</td></tr>`
+      ).join('');
+    }
+    function fillInstanceTable(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = '<tr><th>Instance</th><th>Use</th></tr>' + INSTANCES.map(([name, desc]) =>
+        `<tr><td class="mono attr-name">${name}</td><td>${desc}</td></tr>`
+      ).join('');
+    }
+
+    fillFamilyTable('families-table');
+    fillInstanceTable('instances-table');
+
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === btn.dataset.tab));
+      });
+    });
+
+    document.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy);
+          const original = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => { btn.textContent = original; }, 1200);
+        } catch (e) {
+          btn.textContent = 'Press ⌘C';
+        }
+      });
+    });
+
+    // agents.md pill — same icon-swap copy behavior as index.html's own version,
+    // minus the sound calls: this page doesn't import chordal's audio API at all yet,
+    // and adding that just for this one control is a separate, bigger decision than
+    // "bring the nav over."
+    document.querySelectorAll('.agents-pill').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy);
+          btn.classList.add('is-copied');
+          setTimeout(() => btn.classList.remove('is-copied'), 1200);
+        } catch (e) {
+          const textNode = [...btn.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+          if (textNode) {
+            const original = textNode.textContent;
+            textNode.textContent = ' Press ⌘C ';
+            setTimeout(() => { textNode.textContent = original; }, 1200);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

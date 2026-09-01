@@ -1,0 +1,117 @@
+/**
+ * Chordal design tokens — shared by every page (docs-lofi.html, home-lofi.html,
+ * and the real chordal-playground.ts component). One scale, one set of base
+ * rules, pulled in via <link rel="stylesheet" href="tokens.css">.
+ *
+ * Rules this file encodes (see design.md for the full writeup):
+ *  - Mulish (--font-body) is the only text face. Roboto Mono (--font-mono) is
+ *    for numbers and code ONLY — never labels, wordmarks, or headings.
+ *  - Weight: 300 (--weight-light) for body/paragraph text, 400
+ *    (--weight-regular) for labels, headings, and display text. No bold.
+ *  - Sizes: --text-small / --text-heading / --text-body are the one shared
+ *    scale for page content — don't introduce a size outside this set.
+ *    --text-display is the sole, deliberate exception, reserved for marketing
+ *    hero headlines only. The embedded <chordal-playground> widget keeps its
+ *    own smaller, denser internal scale (it's a compact dev tool, not page
+ *    content) — these tokens style everything around it, not inside it.
+ */
+
+:root {
+  --accent: #B86829;
+  --page-bg: #FBFAF9;
+  --surface: #FFFFFF;
+  --waveform-bg: #FAF7F3;
+  --text-primary: #17110C;
+  --text-secondary: #6B5D4E;
+  --border: #E8E0D5;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --border-width: 0.8px;
+
+  --font-body: 'Mulish', system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+
+  --text-display: clamp(2.25rem, 1.4rem + 3.2vw, 3.5rem);
+  --text-heading: 0.9375rem;
+  --text-body: 0.8125rem;
+  --text-small: 0.6875rem;
+  /* Same size as --text-body, weight-regular instead of weight-light — a card title
+     that's body copy but bolder, not a small heading. Sits between --text-small (card
+     description) and --text-heading (page/section titles) without a new raw size. */
+  --text-emphasis: var(--text-body);
+
+  --weight-light: 300;
+  --weight-regular: 400;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-weight: var(--weight-light);
+  font-size: var(--text-body);
+  /* Mulish reads a touch tight at the light (300) weight this whole site uses
+     by default — a small positive tracking opens it up for readability.
+     Code/mono resets to normal below, since letter-spacing on monospace text
+     breaks its fixed-width alignment. Display headlines override to a
+     negative tracking of their own — large type wants tighter, not looser,
+     tracking (see .text-display-heading in design.md). */
+  letter-spacing: 0.01em;
+  line-height: 1.6;
+}
+.mono { font-family: var(--font-mono); letter-spacing: normal; }
+/* Every inline code mention across the site (a function call in a sentence, an
+   attribute name, a card heading naming its own trigger) gets the same small
+   bordered pill — "here is the literal thing you'd type," consistently, rather
+   than plain monospace text that only sometimes stands out. Doesn't touch
+   .mono on its own (table cells use .mono for font only — a whole table of
+   bordered pills would be noise, not signal) or code inside a <pre> block
+   (multi-line snippets are already inside their own bordered .code-block
+   container; wrapping every line in a second nested pill would double up). */
+code {
+  /* font-size/font-weight pinned explicitly (--text-small / --weight-regular), not
+     inherited from wherever a mention happens to sit — the same fixed values the 02
+     section's own card headings (playContinuous('slider') etc.) use. Without this, a
+     badge inside a --text-body paragraph (the docs lede, the homepage ledes) would
+     render visibly larger than one inside a --text-small note or card, even though
+     they're all naming the same kind of thing (a literal call/attribute) and should
+     read as one consistent typographic treatment everywhere. */
+  font-family: var(--font-mono); letter-spacing: normal; color: var(--accent);
+  font-size: var(--text-small); font-weight: var(--weight-regular);
+  background: var(--waveform-bg); border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-sm); padding: 0.15em 0.45em;
+}
+pre code { background: none; border: none; padding: 0; color: inherit; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1, h2, h3 {
+  font-weight: var(--weight-regular);
+  font-size: var(--text-heading);
+  line-height: 1.25;
+  margin: 0 0 0.5em;
+  text-wrap: balance;
+}
+img, svg { max-width: 100%; }
+
+/* ---------- shared small components ---------- */
+
+/* Compact utility button (code-block "Copy", etc.) — the same radius/hover
+   language as tab-btn and .btn below, just smaller and inline. */
+.copy-btn {
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-weight: var(--weight-light);
+  border: var(--border-width) solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+.copy-btn:hover { border-color: var(--text-secondary); }
+.copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; background: var(--text-secondary); }

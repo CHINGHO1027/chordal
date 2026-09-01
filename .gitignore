@@ -2,8 +2,5 @@ node_modules/
 dist/
 .DS_Store
 
-# Working docs/planning artifacts — not part of the public repo.
-docs.html
-home-lofi.html
-tokens.css
+# Private planning doc — not part of the deployed site.
 design.md

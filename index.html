@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chordal: Sound design for interfaces</title>
+<meta name="description" content="A tunable, zero-audio-file sound design system for the web. Nine synthesized sound families, ten interaction shapes, no audio files, powered by the Web Audio API." />
+<meta property="og:title" content="Chordal: Sound design for interfaces" />
+<meta property="og:description" content="A tunable, zero-audio-file sound design system for the web. Nine synthesized sound families, ten interaction shapes, no audio files, powered by the Web Audio API." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Chordal: Sound design for interfaces" />
+<meta name="twitter:description" content="A tunable, zero-audio-file sound design system for the web. Nine synthesized sound families, ten interaction shapes, no audio files, powered by the Web Audio API." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2305030a'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23B86829'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400&family=Roboto+Mono:wght@300&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  /* ---------- shared content primitives ---------- */
+  .eyebrow {
+    font-size: var(--text-small); color: var(--accent); letter-spacing: 0.08em;
+    text-transform: uppercase; font-weight: var(--weight-regular); margin-bottom: 0.5rem;
+  }
+  .cta-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  /* 999px pill, not var(--radius-sm) — matches the nav, docs tabs, agents.md, and
+     every other pill-shaped control on the site now that they've all converged on
+     one shape language. This was the one holdout still using the small-radius
+     button scale. */
+  .btn {
+    font-family: var(--font-body); font-weight: var(--weight-regular); font-size: var(--text-small);
+    border: var(--border-width) solid var(--border); background: var(--surface);
+    color: var(--text-primary); border-radius: 999px;
+    padding: 0.55rem 1.1rem; cursor: pointer;
+  }
+  /* A deepened accent, not the raw --accent token — the primary action should
+     carry the site's one accent color (it's the whole point of having an
+     accent), but --accent with white text lands at ~4.2:1 contrast, just
+     under WCAG AA for this button's normal-size (11px) label. This shade is
+     --accent scaled ~12% darker (same hue, same "this is the accent color"
+     read), which clears AA with real margin (~5.2:1) and, as a solid filled
+     shape, reads as the boldest accent instance on the page — appropriately,
+     since it's the one thing here you're actually meant to click. */
+  .btn-primary { background: #A25B24; color: var(--surface); border-color: #A25B24; }
+  .btn-secondary:hover { border-color: var(--text-secondary); }
+  .btn:hover { text-decoration: none; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .why-card, .family-card {
+    background: var(--surface); border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-md); padding: 1.1rem 1.2rem;
+    /* Same grid-blowout fix as .get-started-grid > div elsewhere on this page: a why-card
+       is a grid item of .why-grid, and its own default min-width (based on its content's
+       intrinsic width) resists shrinking below that — the "Override the default" card's
+       unbroken play('hover', { pitch: 1.3 }); line was forcing the card wider than its
+       own 1fr track once why-grid went 3-across, clipping behind the Copy button instead
+       of scrolling. */
+    min-width: 0;
+  }
+  /* Flex column with a floor: every card's own supporting proof (the code block, the
+     size bar, the env toggle) carries margin-top:auto, so it always sinks to the card's
+     own bottom edge — and since .why-grid is a CSS grid row (default align-items:stretch),
+     every card in the row is already the same height, so all three proofs land on one
+     shared baseline regardless of how many lines each card's own description wraps to. */
+  .why-card { display: flex; flex-direction: column; gap: 0.6rem; }
+  .why-card h3, .family-card h3 { font-size: var(--text-emphasis); }
+  .family-card h3 { margin-bottom: 0.4rem; }
+  .why-card p, .family-card p { font-size: var(--text-small); color: var(--text-secondary); margin: 0; }
+  /* The "Override the default" card's own one-line override example — reuses
+     .code-block as-is (same border/background/copy-btn already used everywhere else
+     on the page) rather than a new local style. margin-top:auto, not a fixed value —
+     see the .why-card comment above for why. */
+  .why-card .code-block { margin-top: auto; padding: 0.6rem 0.75rem; }
+  /* pre-wrap, scoped to just these two cards' own short one-liners — not a global
+     .code-block pre change, since the Get Started section's own blocks intentionally
+     rely on horizontal scroll for longer snippets (a real fix from earlier this
+     session; don't undo it). Without this, the part of the line that actually changes
+     (the pitch value, or the whole import statement) was rendering off screen,
+     scrollable but never actually seen without a visitor manually dragging it into
+     view — the entire point of the proof was invisible by default. */
+  .why-card .code-block pre { font-size: var(--text-small); white-space: pre-wrap; overflow-wrap: break-word; }
+  /* No copy button on these two cards' code (see fillWhyGrid) — the global .code-block
+     pre rule reserves 3.5rem of width for a button that isn't there, so reclaim it. */
+  .code-block.no-copy pre { width: 100%; }
+  /* A bit less horizontal padding than the default .code-block, only on the no-copy
+     variant — with the button gone this box has no fixed-width neighbor to butt
+     against, so the two full-length examples that live here (card 2's pitch call,
+     card 3's import line) get a little more room to actually fit their real content
+     instead of leaving a sliver-thin, font-rendering-dependent margin. */
+  .code-block.no-copy { padding-left: 0.6rem; padding-right: 0.6rem; }
+
+  /* Card 1's proof: the actual 6.9KB → 4.2KB claim in the copy, redrawn as a bar so
+     "smaller when you only import one family" is something you watch happen, not just
+     read. Both numbers are measured, not estimated — gzipped output of a real `npm run
+     build`, index.js plus every chunk it actually imports for the full bundle, lite.js
+     plus one family's own chunks for the single-family case (checked against all nine
+     families: 4.15KB-4.25KB, ~4.2KB is representative of all of them, not just one).
+     JS (below) tweens the fill width and the label text together on hover; only the
+     width transition needs to live in CSS since the label's own text can't be animated
+     by CSS alone. */
+  .why-sizebar { margin-top: auto; display: flex; align-items: center; gap: 0.6rem; }
+  .why-sizebar-track { flex: 1; height: 4px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  .why-sizebar-fill {
+    height: 100%; width: 100%; border-radius: 999px; background: var(--accent);
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .why-card:hover .why-sizebar-fill { width: 60.9%; } /* 4.2 / 6.9 */
+  .why-sizebar-label {
+    font-family: var(--font-mono); font-size: var(--text-small); color: var(--text-secondary);
+    min-width: 4ch; text-align: right; font-variant-numeric: tabular-nums;
+  }
+
+  /* Card 2's proof: a tiny slider, matching the real Volume/Pitch/Length/Tone controls
+     already in section 01's own playground Inspector (real range inputs, not a rotary
+     dial — this reuses that exact shape so it reads as the same kind of control, not a
+     new invented widget), paired with the pitch value in the code line right above it
+     tweening in sync (JS below) — the two move together as one proof, rather than a
+     dial that moves next to a number that doesn't. Both ends are real: the thumb's rest
+     position is the real family default (1.08, from src/families/shared.ts's own
+     INSTANCE_PITCH table) and its hover position is the real override this card's own
+     example passes (1.3), a true diff rather than decorative motion. Grouped with its
+     code block in .why-proof-group so the pair moves to the card's bottom edge
+     together — see that rule below. */
+  .why-proof-group { margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+  .why-proof-group .code-block { margin-top: 0; }
+  .why-dial-track { position: relative; width: 100%; height: 3px; border-radius: 999px; background: var(--border); }
+  .why-dial-thumb {
+    position: absolute; top: 50%; left: 39%; width: 0.6rem; height: 0.6rem;
+    border-radius: 50%; background: var(--accent); transform: translate(-50%, -50%);
+    transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .why-card:hover .why-dial-thumb { left: 53%; } /* 1.08 default -> 1.3 override, mapped over a 0.5-2.0 display range */
+
+  /* Card 3's proof: the real import line types itself out on hover, styled with the
+     same tok-kw/tok-str colors as card 2's own code. One line, not the earlier two-line
+     split — that split was sized around the copy button's reserved width; with the
+     button gone (and this card's own padding trimmed a bit further, see .no-copy
+     above) the full line now genuinely fits, and forcing a wrap anyway just left a
+     large empty gap after the text that read as the line being cut off rather than a
+     deliberate line break. JS below removes+re-adds .is-typing on every hover (with a
+     forced reflow in between) so the reveal replays each time, the same restart
+     technique the old settle animation used — a plain :hover-triggered CSS animation
+     would revert to its own "from" state (width:0, i.e. blank) the instant the mouse
+     leaves, which would leave the line invisible between hovers instead of settled at
+     fully readable like every other proof in this row. */
+  .why-type-line {
+    display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: top;
+    width: calc(var(--chars, 0) * 1ch);
+  }
+  @keyframes why-type-reveal { from { width: 0; } to { width: calc(var(--chars, 0) * 1ch); } }
+  .why-type-line.is-typing { animation: why-type-reveal 0.7s steps(var(--chars, 1), end) both; }
+  .why-type-cursor {
+    display: inline-block; width: 2px; height: 0.9em; background: var(--accent);
+    margin-left: 1px; opacity: 0; vertical-align: text-bottom;
+  }
+  /* One keyframe animation, not two layered on the same property — two separate
+     `animation` entries both driving opacity at once (the old blink + fade pair) can
+     fight over which one's value actually wins at a given moment, which is what left
+     the cursor stuck visibly flashing after typing finished instead of resolving
+     cleanly to hidden. A single timeline avoids that class of bug entirely: hidden
+     while the line is still typing, appears once it's done, then fades and stays
+     hidden — the "from"/base opacity:0 above and this animation's own 100% stop agree,
+     so there's nothing left mid-fight over the value once it ends. */
+  .why-type-cursor.is-typing { animation: why-cursor-rest 0.9s ease; }
+  @keyframes why-cursor-rest {
+    0%, 78% { opacity: 0; }
+    84% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .why-dial-thumb, .why-sizebar-fill { transition: none; }
+    .why-type-line.is-typing, .why-type-cursor.is-typing { animation: none; }
+  }
+  .family-card { display: flex; flex-direction: column; gap: 0.5rem; }
+  .family-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
+  .family-card .fam-head { display: flex; align-items: center; gap: 0.5rem; }
+  .family-card .fam-head h3 { margin: 0; }
+
+  .code-block {
+    position: relative; background: var(--waveform-bg); border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-md); padding: 0.9rem 1rem; overflow-x: auto;
+  }
+  /* width:calc(100% - 3.5rem), not padding-right — a <pre>'s own white-space:pre content
+     overflows straight past padding (padding isn't a hard boundary for overflowing
+     content) and renders underneath .copy-btn regardless, confirmed by directly
+     measuring the text's own rendered rect against the button's. A real width reduction
+     makes the <pre> box itself end 3.5rem before .code-block's own right edge — genuine
+     empty space the button sits in, not empty-looking padding that overflow can still
+     paint into. overflow-x:auto on the <pre> itself (not just the outer .code-block)
+     then correctly scrolls/clips within that narrower box. This is a real, pre-existing
+     bug affecting every single-line .code-block on the page, e.g. Get Started's own
+     "Mark up and bind" snippet, not just one new instance — harmless on multi-line
+     blocks, which only ever have this conflict on the one line sharing the button's row. */
+  .code-block pre { margin: 0; width: calc(100% - 3.5rem); overflow-x: auto; font-family: var(--font-mono); font-size: var(--text-small); line-height: 1.6; }
+  .code-block .filename { font-size: var(--text-small); color: var(--text-secondary); margin-bottom: 0.5rem; display: block; }
+  .code-block .copy-btn { position: absolute; top: 0.6rem; right: 0.6rem; }
+  .tok-kw { color: #8A5A2E; } .tok-str { color: #4E7A5B; } .tok-fn { color: #2E6B8F; }
+
+  chordal-playground { display: block; }
+
+  /* ---------- sticky glass site nav ---------- */
+  /* fixed, not sticky — nav lives inside .hero-band (see below) so the sky image
+     runs behind it too, but a sticky element can only stick within its own parent's
+     box, and .hero-band's own height is finite; sticky would let nav scroll away the
+     instant you passed the band. width:fit-content, not a fixed max-width column —
+     the bar is only ever as wide as its own four items need, the same way it is on
+     docs.html despite that page's own content column being a different width
+     entirely. Two pages showing the same nav items, sized the same way, is what
+     actually keeps the nav feeling continuous across pages — matching a shared
+     max-width number would only coincidentally line up, and would leave dead space
+     stretched between items on whichever page's set of items happens to be sparser.
+     left/right:0 + margin:0 auto centers a fit-content box exactly the same way it
+     centers a fixed-width one. max-width + overflow-x:auto is the narrow-viewport
+     safety net — if four items genuinely can't fit even at reduced padding, the bar
+     scrolls internally rather than overflowing the page or wrapping awkwardly. */
+  /* 40% surface / blur(18px), not the playground panel's own 58%/blur(10px)
+     (chordal-playground.ts) — those two numbers were close enough (both landing in
+     "roughly 60-70% white, moderate blur") that the nav and the panel below it read
+     as the same glass device twice rather than two different ones. They have
+     different jobs: the panel is real content, opaque enough to keep its own dark
+     text/dots legible; the nav is chrome, meant to feel light and stay out of the
+     way while scrolling. Lower opacity here is deliberate, not a smaller version of
+     the panel's own value — more blur (18px vs the panel's 10px) compensates so the
+     photo's own detail doesn't show through sharply enough to hurt legibility (its
+     light-on-dark text color is set on .site-nav-item below, verified against the
+     real rendered sky photo, not eyeballed).
+
+     This translucent, light-text treatment is only correct while the nav is
+     actually over the hero photo, though — .site-nav is position:fixed, so it stays
+     pinned at the same viewport position for the WHOLE page, including every
+     lighter --page-bg section below the hero. .is-scrolled (JS-toggled once the
+     hero band's own bottom edge scrolls above the nav, see the script near the end
+     of body) swaps the whole nav to the exact treatment docs.html's own nav already
+     uses solid var(--surface), dark text — since once scrolled past the hero,
+     this nav sits over the literal same cream page background docs.html has
+     throughout, so the same fix applies unchanged. */
+  .site-nav {
+    position: fixed; top: 1rem; left: 0; right: 0; z-index: 5;
+    width: fit-content; max-width: calc(100vw - 2rem); margin: 0 auto;
+    background: color-mix(in oklab, var(--surface) 40%, transparent);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    border: var(--border-width) solid var(--border);
+    display: flex; align-items: center; gap: 0.25rem;
+    padding: 0.4rem; border-radius: 999px; overflow-x: auto;
+    transition: background-color 0.2s ease;
+  }
+  .site-nav.is-scrolled {
+    background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .site-nav.is-scrolled .site-nav-item { color: var(--text-secondary); }
+  .site-nav.is-scrolled .site-nav-item:hover,
+  .site-nav.is-scrolled .site-nav-item:focus-visible { color: var(--text-primary); }
+  .site-nav.is-scrolled .site-nav-item.is-active { color: var(--text-primary); }
+  .site-nav.is-scrolled .site-nav-pill { background: var(--border); }
+  .site-nav.is-scrolled .agents-pill { color: var(--text-primary); }
+  .site-nav.is-scrolled .agents-pill:hover { border-color: var(--text-secondary); }
+  /* One shared item style for every real destination (the "chordal" mark included —
+     it's just the Home destination) rather than a separate .site-nav-mark rule for
+     the wordmark and a bare `.site-nav a` rule for everything else. Same padding/
+     radius on all of them, active or not, so hover/click target size stays
+     consistent — only .is-active's own solid fill differs, exactly the same
+     base-class + modifier pattern docs.html's own .tab-btn/.tab-btn.active already
+     uses for its in-page tabs, just applied one level up. */
+  /* var(--hero-bright), not the site's usual var(--text-secondary) — the outer bar
+     dropped to 40% opacity (see .site-nav above) specifically so more of the dark
+     hero photo shows through, but that means the rendered background behind these
+     plain items is now much closer to near-black than to white. Dark warm-brown text
+     (text-secondary's own actual color) measured at 1.13:1 contrast against that —
+     nowhere near WCAG's 4.5:1 floor, confirmed by real pixel-sampling of the photo at
+     this exact position, not assumed. --hero-bright is the same light ivory already
+     verified against this identical photo for the hero heading below — reusing it
+     here (5.04:1, real margin) instead of inventing a third color for a third
+     dark-photo-backed surface. Hover/focus switch straight to var(--text-primary), the
+     same dark color .is-active uses — not a lighter in-between tint anymore, now that
+     hover sits on .site-nav-pill's own solid fill (below) rather than directly on the
+     dark bar. Same combination already verified for .is-active, just reused here. */
+  .site-nav-item {
+    position: relative; z-index: 1;
+    font-family: var(--font-body); font-size: var(--text-small); color: var(--hero-bright);
+    text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 999px; white-space: nowrap;
+  }
+  /* text-decoration:none repeated here (not just above) — tokens.css's own global
+     a:hover sets underline, invisible before only because the old hover state's
+     color change was subtle enough nobody noticed the underline riding along with
+     it. Now that hover is meant to fully match .is-active's own look (which never
+     underlines), it needs its own explicit override too. */
+  .site-nav-item:hover, .site-nav-item:focus-visible { color: var(--text-primary); text-decoration: none; }
+  /* No fill of its own anymore — .site-nav-pill (below) is the single shared "you are
+     here" indicator, JS-positioned under whichever item is active, hovered, or
+     focused, and animated between them. Text color still flags the active item even
+     if JS never runs, but the visible fill itself now comes entirely from the pill. */
+  .site-nav-item.is-active { color: var(--text-primary); }
+  /* The shared sliding pill: one element, JS-driven (see the script near the end of
+     body), that becomes the visible fill under whichever .site-nav-item is currently
+     active, hovered, or keyboard-focused — replacing what used to be .is-active's own
+     static background. transform (position) and width both transition so it reads as
+     one pill physically relocating and resizing to fit its new target, not a fill
+     disappearing from one spot and reappearing in another. position:absolute against
+     .site-nav (the nearest positioned ancestor) so JS can place it using each item's
+     own offsetLeft/offsetTop/offsetWidth/offsetHeight directly, no separate
+     coordinate math. z-index:0 under the items' own z-index:1 so their text always
+     paints on top of it, whatever it's currently covering. */
+  .site-nav-pill {
+    position: absolute; top: 0; left: 0; z-index: 0;
+    border-radius: 999px; background: var(--surface); pointer-events: none;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .site-nav-pill.is-instant { transition: none; }
+
+  /* The agents.md pill: still deliberately NOT a plain nav item, even though it now
+     sits among pill-shaped items rather than plain text ones — Docs/GitHub/chordal
+     all navigate, this one copies, and looking identical to them would make a
+     click's actual effect (something lands in your clipboard, nothing on screen
+     changes) surprising. But it also can't look like .is-active's own solid fill,
+     now that a real "current page" pill exists in this same bar — two solid-white
+     pills next to each other would read as the same kind of thing when they mean
+     opposite things (one says "you are here," the other says "click to do
+     something"). Border-only, transparent fill, is the fix: it stays visibly boxed
+     against either this page's dark glass bar or docs.html's own light one without
+     needing a fill color tuned per-page background, and it can never be confused
+     with the solid .is-active treatment. Icon swaps copy->check on click (same
+     .is-copied toggle pattern already shipped in chordal-playground.ts's own
+     .code-copy-btn) rather than text swapping to "Copied" — no spare label slot to
+     grow into here, and a small icon-only confirmation reads cleanly next to a label
+     that doesn't need to move. */
+  /* var(--hero-bright), not var(--text-primary) — same reasoning as .site-nav-item
+     above: this pill's own fill is transparent, so its text sits directly on the now
+     much-more-transparent outer bar, not on a solid surface of its own. Border stays
+     var(--border) at rest (a light tan, already visible against the darker
+     background) but hover switches to var(--hero-bright) instead of the site's usual
+     text-secondary darkening — darkening a border that's sitting on an already-dark
+     backdrop would make it disappear on the exact interaction meant to give it more
+     presence. */
+  .agents-pill {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light);
+    color: var(--hero-bright); border: var(--border-width) solid var(--border);
+    background: transparent; border-radius: 999px;
+    padding: 0.4rem 0.75rem; cursor: pointer; white-space: nowrap;
+  }
+  .agents-pill:hover { border-color: var(--hero-bright); }
+  .agents-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .agents-pill .icon-check { display: none; }
+  .agents-pill.is-copied .icon-copy { display: none; }
+  .agents-pill.is-copied .icon-check { display: block; }
+
+  footer.site-foot {
+    border-top: var(--border-width) solid var(--border);
+    padding: 1.75rem 1.5rem; font-size: var(--text-small); color: var(--text-secondary);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
+  }
+  footer.site-foot a { color: var(--text-secondary); }
+  footer.site-foot a:hover { color: var(--accent); }
+  .foot-links { display: flex; gap: 1.25rem; }
+
+  /* ---------- home page: explorer-led, single scrolling column,
+     numbered sections mirroring how the hero's live proof leads
+     straight into the story below it. ---------- */
+
+  /* Full-bleed night-sky band behind both the headline and the playground
+     panel — one continuous backdrop, not two separately-colored blocks.
+     Fades to --page-bg at its own bottom edge so section 01 picks up on
+     the plain page background again. sky-1.jpg runs black (top) into a
+     warm amber horizon glow (bottom) — #05030a fallback/loading color is
+     sampled from that same near-black top tone so there's never a flash
+     of mismatched color. */
+  .hero-band {
+    position: relative;
+    /* Same #05030a the photo's own background-color fallback used — not a new
+       color choice. Every contrast number below (and the nav's own light-text
+       treatment) was verified against that photo's real measured near-black
+       pixels; keeping the exact same base tone means that work carries over
+       instead of needing to be redone from a different starting color. The
+       canvas itself (first child, see markup) paints the starfield on top of
+       this; this background-color is what shows through on the very first
+       paint before the canvas's own first draw, and as a fallback if canvas
+       somehow fails to init. */
+    background: #05030a;
+    /* .site-nav lives inside this band now (so the image runs behind it
+       too) but is position:fixed, so it's out of normal flow entirely —
+       this padding-top stands in for the vertical space nav used to
+       reserve when it was an in-flow sticky element, so .hero's own
+       headline lands in the same spot as before instead of sliding up
+       underneath the now-fixed nav. */
+    padding-top: 4.5rem;
+    /* One ivory, two tones — no second color, no accent, anywhere in the
+       hero's own text. --hero-bright is the full-strength base color for
+       the phrases doing the emphasizing; --hero-dim is the exact same
+       color at 55% alpha for the connective words around them, chosen by
+       real pixel-sampling the rendered sky photo + gradient overlay under
+       the actual h1/lede text position (near-black, ~rgb(13,2,1)) and
+       computing WCAG contrast at that measured background: 55% alpha
+       lands at 5.72:1, comfortably past the 4.5:1 normal-text minimum
+       that governs the lede (the stricter of the two — the h1's large
+       text only needs 3:1) with real margin, not a knife-edge pass. */
+    --hero-bright: #F7F2E9;
+    --hero-dim: rgba(247, 242, 233, 0.55);
+  }
+  /* First child, absolutely positioned to fill the band, no z-index needed —
+     default stacking order already puts it behind .hero-band::after (a
+     pseudo-element paints after its element's real children) and behind
+     .hero/.explorer (explicit z-index:1 below). aria-hidden: this is pure
+     decoration, replaces nothing a screen reader needs, same as the photo it
+     replaces never had alt text of its own either. */
+  .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* Eased, not a straight linear ramp — a plain two-stop linear-gradient fade has a
+     well-known perceptual problem: alpha changes linearly with position, but the eye
+     doesn't perceive it that way, so a pure linear fade reads as having a faint "kink"
+     right where it starts and where it finishes, even though the underlying math is
+     smooth the whole way. These extra stops are real samples of a standard
+     ease-in-out cubic curve (slow at both ends, fastest through the middle), taken at
+     t = 0, 0.15, 0.3, 0.5, 0.7, 0.85, 1 — color-mix(... X%, transparent) at each stop
+     is that curve's own alpha at that point, not arbitrary numbers.
+     Range is 21%-100%, not 55%-100% — starting right at 55% left the fade with zero
+     head start by the time .explorer's own opaque panel begins at 44.6% (see that
+     class below), so the panel's top corners sat directly against still-fully-dark
+     background: a hard box-on-black seam, not a fade, right where the panel appears.
+     21% is chosen so the eased curve (flat near its own start) stays under ~6% mix
+     through the headline/lede/CTA text above (13.7%-40.6% — see those rules), keeping
+     their contrast against the dark background essentially untouched, while still
+     reaching ~11% mix by 44.6% where the panel begins, so the background is already
+     visibly transitioning by the time the panel's edge meets it. */
+  .hero-band::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent 21%,
+      color-mix(in oklab, var(--page-bg) 1%, transparent) 32.85%,
+      color-mix(in oklab, var(--page-bg) 11%, transparent) 44.7%,
+      color-mix(in oklab, var(--page-bg) 50%, transparent) 60.5%,
+      color-mix(in oklab, var(--page-bg) 89%, transparent) 76.3%,
+      color-mix(in oklab, var(--page-bg) 99%, transparent) 88.15%,
+      var(--page-bg) 100%
+    );
+  }
+  /* .hero and .explorer only — NOT .site-nav, which sets its own
+     position:fixed/z-index:5 for a different reason (escaping the band's
+     own box entirely, see .site-nav above). A wildcard `> *` here would
+     tie with .site-nav's selector on specificity and, being later in the
+     stylesheet, win — silently reverting nav back to position:relative. */
+  .hero-band > .hero, .hero-band > .explorer { position: relative; z-index: 1; }
+
+  .hero {
+    /* Same box as .explorer below (max-width, margin, side padding) — not its
+       own narrower centered column — so the headline/lede/CTA's left edge
+       lands exactly on the playground panel's own left edge instead of two
+       independently-centered blocks that happen to look close. */
+    max-width: 56rem; margin: 0 auto; text-align: left;
+    padding: 4rem 1.5rem 2.5rem;
+  }
+  .hero h1 {
+    font-size: var(--text-display); letter-spacing: -0.02em; line-height: 1.05;
+    /* Dim by default — the setup ("Give your interface a") recedes;
+       .hero-bright below lifts only the payoff ("harmonious voice."). */
+    color: var(--hero-dim);
+  }
+  .hero .lede {
+    /* Same dim ivory as the h1, not a separate taupe — one color family,
+       two tones, site-wide within the hero. .hero-bright spans below lift
+       the phrases actually worth emphasizing out of this dim baseline. */
+    color: var(--hero-dim);
+    margin: 0 0 1.5rem; max-width: 34rem;
+  }
+  /* The one shared "lift this phrase" class for hero text — h1 and lede
+     both reach for this instead of their own one-off bright rules, so
+     the two tones can never quietly drift apart from each other. */
+  .hero-bright { color: var(--hero-bright); }
+  .hero .cta-row { justify-content: flex-start; }
+
+  /* Responsive: narrower viewports get less hero padding (the 4rem/4.5rem top
+     spacing was tuned for desktop and reads as excessive once the viewport itself
+     is only a little wider than that) and each nav item's own padding tightens up
+     too, since four items at full desktop padding can genuinely not fit a ~375px
+     phone — the nav's own max-width + overflow-x:auto (see .site-nav) is still
+     there as a last-resort safety net, but shrinking the padding first means most
+     phones never need to actually invoke it. font-size already scales fluidly on
+     its own (--text-display is a clamp()), so no breakpoint needed for that. */
+  @media (max-width: 40rem) {
+    .site-nav-item { padding: 0.4rem 0.6rem; }
+    .agents-pill { padding: 0.35rem 0.55rem; }
+    .hero-band { padding-top: 3.75rem; }
+    .hero { padding: 2.5rem 1.25rem 2rem; }
+  }
+
+
+  /* "harmonious" width-expand insertion — see the init script at the bottom of the
+     page. Dropped every earlier approach (a bar cluster crossfading into the word, a
+     scanning playhead, a per-letter unfurl) for the simplest version: the word sits in
+     a span clipped to max-width:0, and "revealing" it is just animating that max-width
+     open to the word's own real measured width (--word-w). Reads literally like the
+     word is being typed/inserted into the sentence in real time — the growing box
+     physically shoves "voice." rightward as it opens, with a slight overshoot on the
+     easing so it reads as a genuine push rather than a smooth glide. Real text the
+     whole time (never display:none, never opacity:0 — only ever clipped), so screen
+     readers and no-JS/reduced-motion visitors always just get "a harmonious voice".
+
+     The h1 markup has a hard <br> between "interface" and "a" — without it, "Give
+     your interface a [voice.]" (harmonious collapsed) fits on one line at most
+     viewport widths, and "a harmonious voice." only reflows down to its own line as
+     a side effect of the growing word eventually not fitting anymore. That's a
+     dynamic, width-dependent break, not a deliberate one — at some viewport widths
+     it might never wrap at all, or the wrap point could land somewhere else
+     entirely. The explicit <br> makes "a harmonious voice." its own line
+     unconditionally, so the word only ever grows within a line that's already
+     reserved for it, never triggering a reflow of its own. */
+  .word-reveal {
+    position: relative; display: inline-block; overflow: hidden; vertical-align: bottom;
+    max-width: 0;
+    transition: max-width 3.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .word-reveal.is-open { max-width: var(--word-w, 20rem); }
+  .word-reveal .word-text { display: inline-block; color: var(--hero-bright); }
+  @media (prefers-reduced-motion: reduce) {
+    .word-reveal { transition: none; }
+  }
+
+  .explorer { max-width: 56rem; margin: 0 auto; padding: 0 1.5rem 4rem; }
+  .explorer chordal-playground {
+    border: var(--border-width) solid var(--border); border-radius: var(--radius-lg);
+    overflow: hidden; background: transparent;
+  }
+  .explorer .caption {
+    margin: 0.85rem 0 0; font-size: var(--text-small);
+    /* --text-secondary (the plain-page brown), not .hero .lede's light taupe — unlike
+       the hero text above, this caption sits at ~92% down .hero-band, well past the
+       ::after gradient's fade-to-page-bg point (21%-100%), so its real backdrop here is
+       already almost fully the light page background, not the dark sky image. The
+       light-on-dark taupe read as washed out and low contrast at this position;
+       confirmed by measuring the caption's own offset against the band's height rather
+       than guessing. */
+    color: var(--text-secondary);
+  }
+
+  section.page-section { max-width: 56rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
+  section.page-section + section.page-section { border-top: var(--border-width) solid var(--border); }
+  .page-section h2 { font-size: var(--text-heading); }
+  .page-section .section-lede { color: var(--text-secondary); max-width: 34rem; margin-bottom: 1.5rem; }
+
+  .family-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; }
+  .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; }
+  .get-started-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
+  /* min-width:0 overrides the grid item's own default automatic minimum size
+     (which is based on its content's intrinsic width, not 0) — without this,
+     the unbroken <pre> line inside .code-block below forces this whole grid
+     item wider than its own 1fr track, blowing the entire grid (and the
+     page) out past the viewport at narrow widths. .code-block's own
+     overflow-x:auto can only do its job once this item is actually allowed
+     to shrink to the track's real width. Confirmed via a real 375px-viewport
+     test (an iframe, which gets its own independent CSS viewport) — this
+     exact grid was overflowing the page by ~158px before this fix. */
+  .get-started-grid > div { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+  .get-started-grid h3 { font-size: var(--text-emphasis); margin: 0; }
+
+  /* ---------- 02 · Instances demo cards ---------- */
+  .instance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; }
+  .instance-card {
+    background: var(--surface); border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column;
+  }
+  /* Same tint chordal-playground.ts's own .waveform-wrap uses for its live canvas — the
+     "this is where the sound-thing happens" zone reads consistently across the whole site
+     rather than introducing a new surface color just for these three cards. */
+  .instance-card .stage {
+    background: var(--waveform-bg); min-height: 6rem; padding: 1.1rem 1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .instance-card .content { padding: 1rem 1.2rem 1.2rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  /* The card heading is the actual call that triggers this instance — plain <code>, no
+     local class or font-size override needed, since tokens.css now gives every inline
+     code mention site-wide the exact same fixed size/weight (this card heading's own
+     pill was the reference point for that shared value). Naming the real call instead
+     of a plain word ("Slider", "Listening", "Delete") ties the heading directly to the
+     code a visitor would write. */
+  .instance-card h3 { font-size: var(--text-emphasis); margin: 0; }
+  .instance-card .desc { font-size: var(--text-small); color: var(--text-secondary); margin: 0; }
+  /* The one-line "how to trigger it" hint — accent-colored (same single accent as the
+     rest of the page's interactive cues) so it reads as an instruction, not more prose. */
+  .instance-card .usage { font-size: var(--text-small); color: var(--accent); margin: 0; }
+
+  /* Slider demo: same accent-filled track language as chordal-playground.ts's own
+     .slider-demo, reproduced here rather than imported since this lives in plain page
+     CSS, not the web component's shadow DOM.
+
+     Rest state is the plain small accent dot (unchanged). :active (native, while the
+     thumb is actually being pressed/dragged) grows it into a wide white glass capsule,
+     iOS-brightness-slider style: no accent tint on the thumb itself at all — the
+     track's own accent/border line reads straight through the translucent white fill
+     by ordinary alpha compositing (track paints first, thumb paints on top of it at
+     partial opacity, both pseudo-elements of the same input), no blur needed or used.
+     --stretch is a JS-driven
+     custom property (see the slider's own input handler below) reusing continuous.ts's
+     own delta-ratio-over-time speed formula — the same math already used for the
+     audio side's filter-brightness feel — so a fast flick elongates the thumb along the
+     drag axis further than a slow drag, then both the native :active state and the
+     JS-set --stretch revert together on release, animated by the shared bouncy
+     cubic-bezier already used for the hero's own "harmonious" reveal, for a springy
+     rebound rather than a flat snap back. */
+  .range-demo-row { display: flex; align-items: center; gap: 0.75rem; width: 100%; }
+  input[type="range"].range-demo {
+    flex: 1; appearance: none; -webkit-appearance: none; background: transparent; cursor: pointer;
+  }
+  input[type="range"].range-demo::-webkit-slider-runnable-track {
+    height: 3px; border-radius: 999px;
+    background: linear-gradient(to right, var(--accent) 0 var(--fill, 40%), var(--border) var(--fill, 40%) 100%);
+  }
+  input[type="range"].range-demo::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 0.85rem; height: 0.85rem; border-radius: 50%;
+    background: var(--accent); margin-top: -0.31rem; cursor: pointer;
+    transform: scaleX(var(--stretch, 1));
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+      width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), height 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+      margin-top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  input[type="range"].range-demo:active::-webkit-slider-thumb {
+    /* Explicit stadium radius, not the inherited 50% circle rule — 50% on a
+       box this much wider than tall renders as a full ellipse (curved along
+       its whole edge), where the reference is a true capsule: flat top/bottom
+       edges with fully round caps at each end. 999px forces that regardless
+       of the box's own aspect ratio. */
+    width: 2.1rem; height: 1.1rem; margin-top: -0.46rem; border-radius: 999px;
+    /* Water-drop capsule, not a frosted-white one — a real droplet has almost no
+       fill color of its own; it's near-fully transparent, and what reads as
+       "glass" is only the specular glint where light catches the curved top, a
+       faint darkened ring at the very edge where the surface bends light (real
+       refraction, not a coat of white), and a shadow underneath for depth. No
+       flat white layer over the whole shape — the track's own accent/border
+       line underneath shows through at near-full strength, exactly like looking
+       at a slider through an actual drop of water sitting on top of it. */
+    /* One shared tint for every "shaded" surface — rim, drop shadow, underside —
+       the accent color darkened toward black and let back down to translucent,
+       so every shaded edge reads as the track's own color falling into shadow
+       through the glass, not a neutral gray/white line unrelated to what's
+       actually underneath. Only the specular glint below stays true white —
+       that's a genuine light reflection, which doesn't take on the color of
+       the surface it's bouncing off. */
+    --glass-shade: color-mix(in oklab, color-mix(in oklab, var(--accent) 45%, black) 25%, transparent);
+    background: radial-gradient(circle at 32% 20%, rgba(255, 255, 255, 0.85), transparent 38%),
+      radial-gradient(ellipse at center, transparent 60%, var(--glass-shade) 100%);
+    /* outline, not border — a border adds to the box's own footprint (risky on a
+       UA-shadow pseudo-element where box-sizing inheritance from the page's own
+       * { box-sizing: border-box } rule isn't guaranteed), where an outline draws
+       without changing layout size at all, so the rim can't ever throw off the
+       width/height/margin-top values right above it. */
+    outline: 1px solid var(--glass-shade); outline-offset: -1px;
+    box-shadow: 0 6px 14px -5px var(--glass-shade),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -2px 3px var(--glass-shade);
+  }
+  input[type="range"].range-demo::-moz-range-track { height: 3px; border-radius: 999px; background: var(--border); }
+  input[type="range"].range-demo::-moz-range-progress { height: 3px; border-radius: 999px; background: var(--accent); }
+  input[type="range"].range-demo::-moz-range-thumb {
+    width: 0.85rem; height: 0.85rem; border: none; border-radius: 50%; background: var(--accent); cursor: pointer;
+    transform: scaleX(var(--stretch, 1));
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+      width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), height 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+      background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  input[type="range"].range-demo:active::-moz-range-thumb {
+    width: 2.1rem; height: 1.1rem; border-radius: 999px;
+    --glass-shade: color-mix(in oklab, color-mix(in oklab, var(--accent) 45%, black) 25%, transparent);
+    background: radial-gradient(circle at 32% 20%, rgba(255, 255, 255, 0.85), transparent 38%),
+      radial-gradient(ellipse at center, transparent 60%, var(--glass-shade) 100%);
+    outline: 1px solid var(--glass-shade); outline-offset: -1px;
+    box-shadow: 0 6px 14px -5px var(--glass-shade),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -2px 3px var(--glass-shade);
+  }
+  .range-demo-readout {
+    font-family: var(--font-mono); font-size: var(--text-small); color: var(--text-primary);
+    font-variant-numeric: tabular-nums; min-width: 2.4rem; text-align: right;
+  }
+
+  /* Listening demo: a round avatar button, the shape a real voice agent's own mic
+     control actually takes (a ChatGPT Voice Mode-style icon button, not an instruction
+     pill spelling out "Start listening" on itself — a real control doesn't caption
+     itself, the card's own .usage line below already says "Tap to start"). Idle shows a
+     mic glyph; active swaps to a small waveform in place of it. Each bar gets its own
+     fixed base height (--h, uneven on purpose — a flat row of equal-height bars reads as
+     a decoration, not a waveform) plus its own animation-delay, so they pulse out of
+     phase with each other rather than in identical lockstep, which is what actually
+     reads as "alive" rather than a generic loading spinner. */
+  .listening-demo {
+    display: flex; align-items: center; justify-content: center;
+    width: 3.4rem; height: 3.4rem; padding: 0; border-radius: 50%;
+    border: var(--border-width) solid var(--border); background: var(--surface);
+    color: var(--text-secondary); cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+  .listening-demo:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .listening-demo.is-active { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+  .listening-demo .mic-icon { display: flex; }
+  .listening-demo.is-active .mic-icon { display: none; }
+  .listening-demo .bars { display: none; align-items: center; gap: 2.5px; height: 1.15rem; }
+  .listening-demo.is-active .bars { display: flex; }
+  .listening-demo .bars .bar {
+    width: 2.5px; border-radius: 1px; background: currentColor;
+    height: var(--h, 45%);
+  }
+  .listening-demo.is-active .bars .bar {
+    animation: instance-bar-pulse 0.7s ease-in-out infinite alternate;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes instance-bar-pulse {
+    from { transform: scaleY(0.55); }
+    to { transform: scaleY(1.35); }
+  }
+
+  /* Delete demo: a realistic file row. .is-confirming swaps the trash icon for a red
+     "Confirm Delete?" label (same destructive-action-needs-a-second-tap pattern real
+     file managers use) rather than deleting on the first click — the two-step
+     interaction IS the explanation for why this instance has no data-sound-delete
+     attribute in the first place. .is-leaving plays the fade+slide the row would do in
+     a real list; it resets after so the demo stays replayable. */
+  .file-row {
+    display: flex; align-items: center; gap: 0.6rem; width: 100%; max-width: 18rem;
+    background: var(--surface); border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.6rem;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .file-row.is-leaving { opacity: 0; transform: translateX(0.75rem); }
+  .file-row .file-icon { flex-shrink: 0; color: var(--text-secondary); }
+  .file-row .file-name {
+    flex: 1; font-family: var(--font-mono); font-size: var(--text-small); color: var(--text-primary);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .file-row .file-delete-btn {
+    flex-shrink: 0; display: flex; align-items: center; border: none; background: none;
+    cursor: pointer; color: var(--text-secondary); padding: 0.25rem; border-radius: var(--radius-sm);
+  }
+  .file-row .file-delete-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .file-row.is-confirming .file-delete-btn {
+    color: #C4463A; display: flex; align-items: center; gap: 0.3rem;
+    font-family: var(--font-body); font-size: var(--text-small); white-space: nowrap;
+  }
+  .file-row.is-confirming .file-delete-btn .confirm-label { display: inline; }
+  .file-row .file-delete-btn .confirm-label { display: none; }
+  .file-row.is-confirming .file-delete-btn .icon-label { display: none; }
+
+  /* Family cards get an extra step (3 -> 2 -> 1) since 3-across is the first
+     thing on the page to feel cramped as width drops — a tablet still has
+     room for 2, a phone doesn't comfortably fit more than 1. Why/get-started
+     only need one step each, straight to a single column, since 2-across
+     doesn't get uncomfortable until a narrower width than 3-across does.
+     Family cards keep their full icon+name+description layout at every
+     width — only the column count changes, the content never does. (A
+     compact dot+name chip variant was tried here and reverted: that's the
+     right shape for a plain name list — see chordal-playground.ts's own
+     .family-list, which got exactly that treatment — but this section's
+     description is real content, not something to hide on small screens.) */
+  @media (max-width: 48rem) {
+    /* why-grid is now also 3-across (see .why-grid above), same intermediate step as
+       family-grid for the same reason: 3-across is the first thing to feel cramped as
+       width drops, and a tablet still comfortably fits 2. */
+    .family-grid, .why-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 40rem) {
+    .family-grid, .why-grid, .get-started-grid, .instance-grid { grid-template-columns: 1fr; }
+    section.page-section { padding: 2rem 1.25rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="hero-band">
+    <canvas class="hero-canvas" aria-hidden="true"></canvas>
+    <nav class="site-nav" aria-label="Chordal">
+      <span class="site-nav-pill is-instant" aria-hidden="true"></span>
+      <a class="site-nav-item is-active" href="index.html">chordal</a>
+      <a class="site-nav-item sound-click" href="docs.html">Docs</a>
+      <a class="site-nav-item sound-click" href="https://github.com/CHINGHO1027/chordal" target="_blank" rel="noopener">GitHub</a>
+      <button type="button" class="agents-pill"
+        title="Copy a prompt that points your AI agent at AGENTS.md"
+        data-copy="Read [your-deployed-url]/AGENTS.md and follow it to install chordal and add interaction sounds to this project.">
+        agents.md
+        <span class="icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg></span>
+        <span class="icon-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"></path></svg></span>
+      </button>
+    </nav>
+
+    <div class="hero">
+      <h1>Give your interface<br>a <span class="word-reveal" id="harmoniousReveal"><span class="word-text">harmonious</span></span> <span class="hero-bright">voice.</span></h1>
+      <p class="lede"><span class="hero-bright">Nine</span> sound families, <span class="hero-bright">zero audio files</span>. <span class="hero-bright">Synthesized live</span> to light up your interactions without making noise.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary sound-click" href="docs.html">Get started</a>
+        <a class="btn btn-secondary sound-click" href="https://github.com/CHINGHO1027/chordal" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+
+    <div class="explorer">
+      <chordal-playground></chordal-playground>
+      <p class="caption">Tune it here, then copy the exact <code>play()</code> call into your own code.</p>
+    </div>
+  </div>
+
+  <section class="page-section" id="families">
+    <div class="eyebrow">01 &middot; Families</div>
+    <h2>Nine voices, one instrument.</h2>
+    <p class="section-lede">Each family is a complete sonic identity. Call <code>setFamily()</code> once to pick the one that matches your product, and every instance inherits its character.</p>
+    <div class="family-grid" data-family-grid></div>
+  </section>
+
+  <section class="page-section" id="instances">
+    <div class="eyebrow">02 &middot; Instances</div>
+    <h2>Dynamic Interactions</h2>
+    <p class="section-lede">Advanced sound behaviors designed for real world application logic. Call <code>play()</code> or <code>playContinuous()</code> for anything more than a single attribute. Each card below is live, so go ahead and try it.</p>
+    <div class="instance-grid">
+      <div class="instance-card">
+        <div class="stage">
+          <div class="range-demo-row">
+            <input type="range" class="range-demo" min="0" max="100" value="40" data-demo="slider" style="--fill:40%" aria-label="Slider demo" />
+            <span class="range-demo-readout" data-demo-readout>40%</span>
+          </div>
+        </div>
+        <div class="content">
+          <h3><code>playContinuous('slider')</code></h3>
+          <p class="desc">Continuous feedback that quantizes pitch while you drag any range input.</p>
+          <p class="usage">Drag to hear it.</p>
+        </div>
+      </div>
+
+      <div class="instance-card">
+        <div class="stage">
+          <button type="button" class="listening-demo" data-demo="listening" aria-pressed="false" aria-label="Toggle voice listening demo">
+            <span class="mic-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor"><path d="M128,176a48.05,48.05,0,0,0,48-48V64a48,48,0,0,0-96,0v64A48.05,48.05,0,0,0,128,176ZM96,64a32,32,0,0,1,64,0v64a32,32,0,0,1-64,0Zm40,143.6V240a8,8,0,0,1-16,0V207.6A80.11,80.11,0,0,1,48,128a8,8,0,0,1,16,0,64,64,0,0,0,128,0,8,8,0,0,1,16,0A80.11,80.11,0,0,1,136,207.6Z"></path></svg></span>
+            <span class="bars" aria-hidden="true">
+              <span class="bar" style="--h:35%; --d:0s"></span>
+              <span class="bar" style="--h:70%; --d:0.12s"></span>
+              <span class="bar" style="--h:50%; --d:0.24s"></span>
+              <span class="bar" style="--h:90%; --d:0.06s"></span>
+              <span class="bar" style="--h:45%; --d:0.18s"></span>
+            </span>
+          </button>
+        </div>
+        <div class="content">
+          <h3><code>play('listening')</code></h3>
+          <p class="desc">A stateful cue for voice sessions. It tells users the moment your agent starts and stops hearing them.</p>
+          <p class="usage">Tap to start, tap again to stop.</p>
+        </div>
+      </div>
+
+      <div class="instance-card">
+        <div class="stage">
+          <div class="file-row" data-demo="delete">
+            <span class="file-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Z"/></svg>
+            </span>
+            <span class="file-name">invoice_2026.pdf</span>
+            <button type="button" class="file-delete-btn" data-demo-trigger aria-label="Delete invoice_2026.pdf">
+              <span class="icon-label" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/></svg>
+              </span>
+              <span class="confirm-label">Confirm delete?</span>
+            </button>
+          </div>
+        </div>
+        <div class="content">
+          <h3><code>play('delete')</code></h3>
+          <p class="desc">Programmatic only, by design. It plays after your own confirmation step, never on a raw click.</p>
+          <p class="usage">Confirm to trigger the sound.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section" id="why">
+    <div class="eyebrow">03 &middot; Why chordal</div>
+    <h2>Pick a family for consistency. Tune each call for control.</h2>
+    <p class="section-lede">Lightweight, flexible, and zero friction. Hover any card to see it in action.</p>
+    <div class="why-grid" data-why-grid></div>
+  </section>
+
+  <section class="page-section" id="start">
+    <div class="eyebrow">04 &middot; Get started</div>
+    <h2>Two lines from silent to alive.</h2>
+    <div class="get-started-grid">
+      <div>
+        <h3>1. Install</h3>
+        <div class="code-block">
+          <button class="copy-btn" data-copy="npm install chordal">Copy</button>
+          <pre>$ <span class="tok-fn">npm install</span> <span class="tok-str">chordal</span></pre>
+        </div>
+      </div>
+      <div>
+        <h3>2. Mark up and bind</h3>
+        <div class="code-block">
+          <button class="copy-btn" data-copy="&lt;button data-sound-hover data-sound-click&gt;Save&lt;/button&gt;&#10;&#10;import { bind } from 'chordal';&#10;bind();">Copy</button>
+          <pre>&lt;button <span class="tok-kw">data-sound-hover</span> <span class="tok-kw">data-sound-click</span>&gt;Save&lt;/button&gt;
+
+<span class="tok-kw">import</span> { bind } <span class="tok-kw">from</span> <span class="tok-str">'chordal'</span>;
+bind();</pre>
+        </div>
+      </div>
+    </div>
+    <p class="section-lede" style="margin-top:1.25rem;">Full API, every attribute, and the family/instance reference live in the <a href="docs.html">docs</a>.</p>
+  </section>
+
+  <footer class="site-foot">
+    <span>MIT licensed.</span>
+    <div class="foot-links">
+      <a class="sound-click" href="docs.html">Docs</a>
+      <a class="sound-click" href="https://www.npmjs.com/package/chordal" target="_blank" rel="noopener">npm</a>
+      <a class="sound-click" href="https://github.com/CHINGHO1027/chordal" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </footer>
+
+  <script type="module" src="./dist/playground/chordal-playground.js"></script>
+  <script type="module">
+    import { play, playContinuous, getFamily } from './dist/index.js';
+
+    // Hero background: a starfield (replacing the old sky-1.jpg photo, same
+    // near-black base tone). Density scaled to the band's own area, not a
+    // fixed count — keeps the same visual sparseness the old photo had whether
+    // the viewport is a phone or an ultrawide monitor, rather than looking
+    // crowded or empty.
+    (function initHeroCanvas() {
+      const canvas = document.querySelector('.hero-canvas');
+      const heroBand = document.querySelector('.hero-band');
+      if (!canvas || !heroBand) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const BASE_COLOR = '#05030a';
+      // Roughly one star in six twinkles, not the whole field — a handful of stars
+      // drifting in brightness reads as alive; every star doing it reads as noise.
+      // Each twinkling star gets its own random period and phase so they rise and
+      // fall independently rather than pulsing in lockstep.
+      const TWINKLE_FRACTION = 0.18;
+
+      let width = 0, height = 0;
+      let stars = [];
+      let rafId = null;
+      let isVisible = true;
+
+      function resize() {
+        const rect = heroBand.getBoundingClientRect();
+        width = Math.max(rect.width, 1);
+        height = Math.max(rect.height, 1);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        generateStars();
+        draw(performance.now());
+      }
+
+      function generateStars() {
+        const count = Math.round((width * height) / 9000);
+        stars = Array.from({ length: count }, () => {
+          const twinkle = !prefersReducedMotion && Math.random() < TWINKLE_FRACTION;
+          // Roughly 40% of twinkling stars (not the whole field) render as a small
+          // 4-point sparkle cross instead of a plain dot — a rare, deliberate accent
+          // rather than a busy pattern. Restricted to twinklers specifically: a
+          // sparkle that never animates would just look like a frozen glyph, not a
+          // sparkle. Non-twinkling stars always stay plain dots.
+          const shape = twinkle && Math.random() < 0.4 ? 'sparkle' : 'dot';
+          return {
+            x: Math.random() * width,
+            y: Math.random() * height,
+            // Twinkling stars are deliberately a bit bigger and brighter at their own
+            // peak than the ambient field — the ambient stars' own alpha (0.15-0.65)
+            // is too dim for a brightness swing to actually read at normal viewing
+            // distance, which is why the first version of this went unnoticed. These
+            // don't need to be starker than the field at rest, only at their peak.
+            // Sparkles get their own, larger size range — a cross this small would be
+            // indistinguishable from a dot at a 1-2px radius.
+            r: shape === 'sparkle' ? Math.random() * 1.6 + 2.6 : twinkle ? Math.random() * 0.6 + 1.0 : Math.random() * 1.1 + 0.3,
+            a: twinkle ? Math.random() * 0.25 + 0.55 : Math.random() * 0.5 + 0.15,
+            twinkle,
+            shape,
+            period: 1800 + Math.random() * 2200,
+            phase: Math.random() * Math.PI * 2,
+          };
+        });
+      }
+
+      // 8 vertices alternating outer/inner radius at 45° steps — outer points land on
+      // the four cardinal directions, giving the classic 4-point sparkle (✦) silhouette
+      // rather than a generic 8-pointed burst. inner ~28% of outer keeps the arms thin.
+      function drawSparkle(x, y, outer, color) {
+        const inner = outer * 0.28;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const angle = (Math.PI / 4) * i;
+          const radius = i % 2 === 0 ? outer : inner;
+          const px = x + Math.cos(angle) * radius;
+          const py = y + Math.sin(angle) * radius;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      function draw(now) {
+        ctx.fillStyle = BASE_COLOR;
+        ctx.fillRect(0, 0, width, height);
+        stars.forEach((s) => {
+          let a = s.a;
+          if (s.twinkle) {
+            const wave = Math.sin((now / s.period) * Math.PI * 2 + s.phase);
+            // Swings from 15% to 100% of this star's own peak alpha — near-invisible
+            // at its dimmest, clearly the brightest thing nearby at its peak.
+            a = s.a * (0.15 + 0.85 * ((wave + 1) / 2));
+          }
+          const color = `rgba(247, 242, 233, ${a})`;
+          if (s.shape === 'sparkle') {
+            drawSparkle(s.x, s.y, s.r, color);
+          } else {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+          }
+        });
+      }
+
+      function tick(now) {
+        draw(now);
+        rafId = isVisible ? requestAnimationFrame(tick) : null;
+      }
+
+      // Only animates while actually on screen — no point spending frames on a
+      // hero band a visitor has already scrolled past to read the rest of the page.
+      const io = new IntersectionObserver(([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible && rafId === null && !prefersReducedMotion) rafId = requestAnimationFrame(tick);
+      }, { threshold: 0 });
+      io.observe(heroBand);
+
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 150);
+      });
+
+      resize();
+      if (!prefersReducedMotion) rafId = requestAnimationFrame(tick);
+    })();
+
+    const FAMILIES = [
+      ['soft-bubble', '#E0668E', 'Warm, round, gentle: a soft pop with a pleasant, slightly sweet tone.'],
+      ['glass-crystal', '#4FA8A0', 'Bright and resonant, like a light tap on crystal, delicate but clear.'],
+      ['paper-snap', '#5B6472', 'Dry, textured noise: a papery crackle rather than a musical tone.'],
+      ['metallic-tact', '#6E7A8A', 'A mechanical, tactile click, resonant in a way that reads as hardware.'],
+      ['chime', '#D4A72E', 'Bell-like and tonal: a clean ring that decays naturally.'],
+      ['digital-blip', '#2E8FBD', 'Squared-off and retro, clearly electronic, an 8-bit-style blip.'],
+      ['spring', '#6FB238', 'Bouncy and twangy, with a springy pitch character true to the name.'],
+      ['tiny-sparkle', '#C77DD1', 'Delicate and high-pitched: light and glittery.'],
+      ['snap', '#A85A2E', 'A percussive knock, dry and immediate.'],
+    ];
+
+    // Third array entry (optional) is a one-line override example rendered as a small
+    // code block inside that card only — see fillWhyGrid below. Fourth entry (optional)
+    // names which hover proof fillWhyGrid should render for that card — 'sizebar' pairs
+    // with no example, 'dial' pairs with and sits below an example, 'typewriter' renders
+    // its own code line and needs no example. Cards 2 and 3's code blocks have no copy
+    // button (see fillWhyGrid) — they're illustrative snippets, not ones a visitor would
+    // actually want to lift verbatim the way the Get Started section's are.
+    const WHY = [
+      ['Import just the family you use', 'Under 6.9KB for all nine families, or 4.2KB for a single family when you want maximum optimization.', null, 'sizebar'],
+      [
+        'Override the default when you need to',
+        'volume, pitch, length, and tone can all be set per call, without touching your family default.',
+        `play(<span class="tok-str">'hover'</span>, { pitch: <span class="tok-num" data-pitch-default="1.08" data-pitch-override="1.3">1.08</span> });`,
+        'dial',
+      ],
+      ['Safe to drop into any codebase', 'Pure ESM, zero dependencies, and safe without a window or AudioContext, so it never breaks server side rendering.', null, 'typewriter'],
+    ];
+
+    function fillFamilyGrid(root) {
+      root.innerHTML = FAMILIES.map(([name, color, desc]) => `
+        <div class="family-card">
+          <div class="fam-head">
+            <span class="family-dot" style="background:${color}"></span>
+            <h3>${name}</h3>
+          </div>
+          <p>${desc}</p>
+        </div>
+      `).join('');
+    }
+
+    function fillWhyGrid(root) {
+      root.innerHTML = WHY.map(([title, desc, example, visual]) => `
+        <div class="why-card">
+          <h3>${title}</h3>
+          <p>${desc}</p>
+          ${example && visual === 'dial' ? `
+            <div class="why-proof-group">
+              <div class="code-block no-copy"><pre>${example}</pre></div>
+              <div class="why-dial-track" aria-hidden="true"><div class="why-dial-thumb"></div></div>
+            </div>
+          ` : example ? `
+            <div class="code-block">
+              <button class="copy-btn" data-copy="${example.replace(/<[^>]+>/g, '').replace(/"/g, '&quot;')}">Copy</button>
+              <pre>${example}</pre>
+            </div>
+          ` : ''}
+          ${visual === 'sizebar' ? `
+            <div class="why-sizebar" aria-hidden="true">
+              <div class="why-sizebar-track"><div class="why-sizebar-fill"></div></div>
+              <span class="why-sizebar-label" data-sizebar-label>6.9KB</span>
+            </div>
+          ` : ''}
+          ${visual === 'typewriter' ? `
+            <div class="code-block no-copy">
+              <pre><span class="why-type-line" style="--chars:31"><span class="tok-kw">import</span> { play } <span class="tok-kw">from</span> <span class="tok-str">'chordal'</span>;</span><span class="why-type-cursor" aria-hidden="true"></span></pre>
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+
+      // Card 1's proof: tween the bar width's paired label between the two real numbers
+      // the copy itself states (6.9KB full bundle, 4.2KB single-family), so hovering
+      // watches the actual size claim happen instead of just reading it once above.
+      // Skips the tween entirely under reduced motion (jumps straight to the end value)
+      // — the bar's own CSS width change already has no transition in that case (see
+      // the shared @media rule above), so the label shouldn't animate either.
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      root.querySelectorAll('.why-sizebar').forEach((bar) => {
+        const card = bar.closest('.why-card');
+        const label = bar.querySelector('[data-sizebar-label]');
+        let raf;
+        function tween(from, to) {
+          if (prefersReducedMotion) {
+            label.textContent = to.toFixed(1) + 'KB';
+            return;
+          }
+          cancelAnimationFrame(raf);
+          const start = performance.now();
+          const duration = 500;
+          function frame(now) {
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            label.textContent = (from + (to - from) * eased).toFixed(1) + 'KB';
+            if (t < 1) raf = requestAnimationFrame(frame);
+          }
+          raf = requestAnimationFrame(frame);
+        }
+        card.addEventListener('mouseenter', () => tween(6.9, 4.2));
+        card.addEventListener('mouseleave', () => tween(4.2, 6.9));
+      });
+
+      // Card 2's proof: the .why-dial-thumb itself is a plain :hover-driven CSS
+      // transition (see the styles above), no JS needed there. But the pitch number
+      // sitting right above it tweens in step with it, so the two read as one moving
+      // proof rather than a dial that moves next to a number that just sits there —
+      // real default (1.08) at rest, real override (1.3) on hover, same duration as
+      // the dial's own transition.
+      root.querySelectorAll('[data-pitch-default]').forEach((numEl) => {
+        const card = numEl.closest('.why-card');
+        const from = parseFloat(numEl.dataset.pitchDefault);
+        const to = parseFloat(numEl.dataset.pitchOverride);
+        let raf;
+        function tween(a, b, finalText) {
+          if (prefersReducedMotion) {
+            numEl.textContent = finalText;
+            return;
+          }
+          cancelAnimationFrame(raf);
+          const start = performance.now();
+          const duration = 500;
+          function frame(now) {
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            numEl.textContent = t < 1 ? (a + (b - a) * eased).toFixed(2) : finalText;
+            if (t < 1) raf = requestAnimationFrame(frame);
+          }
+          raf = requestAnimationFrame(frame);
+        }
+        card.addEventListener('mouseenter', () => tween(from, to, String(to)));
+        card.addEventListener('mouseleave', () => tween(to, from, String(from)));
+      });
+
+      // Card 3's proof: replay the import line's typing animation on every hover —
+      // remove then re-add .is-typing on both lines and the cursor (forcing a reflow in
+      // between) since a CSS animation won't restart on its own if the class never
+      // actually left the element. Left at rest between hovers (no reset on
+      // mouseleave): the "to" keyframe already matches the line's own static full
+      // width, so once a hover finishes typing it stays fully readable exactly like
+      // every other proof in this row, rather than blanking out again when the mouse
+      // leaves.
+      root.querySelectorAll('.why-type-cursor').forEach((cursor) => {
+        const card = cursor.closest('.why-card');
+        card.addEventListener('mouseenter', () => {
+          card.querySelectorAll('.why-type-line').forEach((el) => {
+            el.classList.remove('is-typing');
+            void el.offsetWidth;
+            el.classList.add('is-typing');
+          });
+          cursor.classList.remove('is-typing');
+          void cursor.offsetWidth;
+          cursor.classList.add('is-typing');
+        });
+      });
+    }
+
+    document.querySelectorAll('[data-family-grid]').forEach(fillFamilyGrid);
+    document.querySelectorAll('[data-why-grid]').forEach(fillWhyGrid);
+
+    document.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy);
+          const original = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => { btn.textContent = original; }, 1200);
+        } catch (e) {
+          btn.textContent = 'Press ⌘C';
+        }
+      });
+    });
+
+    // agents.md pill: icon-swap feedback (copy -> check, matching
+    // chordal-playground.ts's own .code-copy-btn pattern) instead of the text-swap
+    // .copy-btn uses above — this pill's own label doesn't have a spare slot to grow
+    // into the word "Copied" without shifting the pill's width, where the icon has
+    // room to change in place. Failure path still swaps the label to "Press ⌘C",
+    // same fallback text .copy-btn already uses, since that's the one state where
+    // showing the shortcut actually helps.
+    document.querySelectorAll('.agents-pill').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy);
+          btn.classList.add('is-copied');
+          setTimeout(() => btn.classList.remove('is-copied'), 1200);
+          play('success', { family: 'glass-crystal' });
+        } catch (e) {
+          const textNode = [...btn.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+          if (textNode) {
+            const original = textNode.textContent;
+            textNode.textContent = ' Press ⌘C ';
+            setTimeout(() => { textNode.textContent = original; }, 1200);
+          }
+          play('error', { family: 'glass-crystal' });
+        }
+      });
+    });
+
+    // .site-nav is position:fixed, so it stays pinned at the same spot in the
+    // viewport for the entire page, not just while it's actually over the hero
+    // photo its translucent, light-text treatment was designed for. .is-scrolled
+    // swaps it to a solid background with dark text (see the CSS above) — the same
+    // treatment docs.html's own nav already uses, since that's genuinely the same
+    // kind of background (flat --page-bg) the nav ends up sitting over.
+    //
+    // The trigger point is NOT .hero-band's own bottom edge — that measures the
+    // band's full DOM height, but .hero-band::after's own gradient (elsewhere in
+    // this file) is most of the way to --page-bg well before the band's true
+    // bottom. The band visually already reads as "light" there, so using the
+    // literal bottom edge as the threshold left the nav's light text sitting over
+    // an already-light background for a large stretch of scroll — the exact bug
+    // this fixes. fadeMidY below is the gradient's own 50%-mix point (60.5% of
+    // the band's height — see the eased stops in that rule, t=0.5 lands there),
+    // not the point the fade first starts: the fade now starts much earlier (21%)
+    // than the background actually reads as light, so the start point alone is
+    // no longer a useful proxy for "the nav should look like it's over a light
+    // page now." Computed from the band's own actual measured height, not a
+    // guessed pixel value.
+    const siteNav = document.querySelector('.site-nav');
+    const heroBandEl = document.querySelector('.hero-band');
+    if (siteNav && heroBandEl) {
+      const navThreshold = siteNav.getBoundingClientRect().height + 24;
+      const updateNavScrollState = () => {
+        const heroRect = heroBandEl.getBoundingClientRect();
+        const fadeMidY = heroRect.top + heroRect.height * 0.605;
+        siteNav.classList.toggle('is-scrolled', fadeMidY < navThreshold);
+      };
+      window.addEventListener('scroll', updateNavScrollState, { passive: true });
+      updateNavScrollState();
+    }
+
+    // The shared sliding nav pill (see .site-nav-pill in the CSS above). Deliberately
+    // scoped to .site-nav-item only — the agents.md button stays on its own
+    // border-only hover treatment, since a "you are here" pill on a button that
+    // copies to your clipboard rather than navigating would misrepresent what it does.
+    (function initNavPill() {
+      const nav = document.querySelector('.site-nav');
+      const pill = nav ? nav.querySelector('.site-nav-pill') : null;
+      const items = nav ? Array.from(nav.querySelectorAll('.site-nav-item')) : [];
+      if (!nav || !pill || !items.length) return;
+
+      const activeItem = items.find((el) => el.classList.contains('is-active')) || items[0];
+
+      function moveTo(item) {
+        pill.style.width = `${item.offsetWidth}px`;
+        pill.style.height = `${item.offsetHeight}px`;
+        pill.style.transform = `translate(${item.offsetLeft}px, ${item.offsetTop}px)`;
+      }
+
+      // Placed once, instantly (no transition — see .is-instant in the CSS), before
+      // the first hover ever happens. Without this the pill would start at 0×0 in the
+      // top-left corner and visibly slide/grow into place the first time anything is
+      // hovered, instead of already looking like it belongs to the active item.
+      moveTo(activeItem);
+      requestAnimationFrame(() => pill.classList.remove('is-instant'));
+
+      items.forEach((item) => {
+        item.addEventListener('pointerenter', () => moveTo(item));
+        item.addEventListener('focus', () => moveTo(item));
+      });
+      // One leave handler on the bar itself, not per-item — moving the pointer
+      // between two adjacent items would otherwise fire the first item's leave (pill
+      // snaps home) immediately before the second item's enter (pill leaves again),
+      // a visible stutter instead of one continuous glide from item to item.
+      nav.addEventListener('pointerleave', () => moveTo(activeItem));
+      nav.addEventListener('focusout', (e) => {
+        if (!nav.contains(e.relatedTarget)) moveTo(activeItem);
+      });
+
+      window.addEventListener('resize', () => {
+        pill.classList.add('is-instant');
+        moveTo(items.includes(document.activeElement) ? document.activeElement : activeItem);
+        requestAnimationFrame(() => pill.classList.remove('is-instant'));
+      });
+    })();
+
+    // Site sound, hardcoded to glass-crystal rather than getFamily() — deliberately
+    // different from section 02's own demos (which follow whatever family a visitor
+    // picks in section 01). This is chrome, not a demo: the nav, the "why chordal"
+    // cards, and the agents.md pill above are the site's own fixed identity, the same
+    // way a favicon doesn't change based on what a visitor is trying out elsewhere on
+    // the page.
+    //
+    // Section 03 cards: hover only, wired as its own independent listener rather than
+    // added into any of the three existing per-card mouseenter callbacks above (the
+    // size-bar tween, the dial spring, the typewriter reveal) — sound and animation
+    // are separate concerns here, so neither breaks if the other changes later.
+    document.querySelectorAll('.why-card').forEach((card) => {
+      card.addEventListener('mouseenter', () => play('hover', { family: 'glass-crystal' }));
+    });
+
+    // Real navigational chrome only — top nav, footer, and the two hero CTA buttons —
+    // not the inline "docs" link inside section 03's own lede paragraph. That link is
+    // body copy, not chrome; wiring sound to every anchor that happens to appear in
+    // prose is a much bigger, different decision than "add sound to the nav," so it's
+    // deliberately left untouched. See each element's own class="sound-click" in the
+    // markup for exactly which seven links this covers.
+    document.querySelectorAll('.sound-click').forEach((link) => {
+      link.addEventListener('click', () => play('click', { family: 'glass-crystal' }));
+    });
+
+    // "harmonious" width-expand insertion — see .word-reveal's own CSS comment for the
+    // full rationale. Two things have to be right for the measured width to actually
+    // fit the real word: offsetWidth, not getBoundingClientRect().width (stays tied to
+    // real layout size regardless of any transform), and waiting on document.fonts.ready
+    // — measuring before Mulish finishes loading would lock the width to a narrower
+    // fallback-font metric that the real font later overflows, clipping the last letter
+    // or two. A couple of px of slack on top absorbs any remaining sub-pixel rounding.
+    (function initHarmoniousReveal() {
+      const wrap = document.getElementById('harmoniousReveal');
+      if (!wrap) return;
+      const textEl = wrap.querySelector('.word-text');
+
+      const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+
+      fontsReady.then(() => {
+        const width = textEl.offsetWidth;
+        wrap.style.setProperty('--word-w', `${width + 2}px`);
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          wrap.classList.add('is-open');
+          return;
+        }
+
+        // Double rAF, not a single one: a single rAF can land on the very first paint
+        // opportunity the page gets, before the browser has actually committed/painted
+        // the max-width:0 state — if that happens, the class change has no "before"
+        // state to transition from and the word just appears fully open with no
+        // visible animation at all. Two nested rAFs guarantee at least one full paint
+        // happens with the clipped state before the class flips.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            wrap.classList.add('is-open');
+          });
+        });
+      });
+
+      // --word-w is a measured pixel value, not a fluid unit — h1's own font-size is a
+      // clamp() that changes with viewport width, so the word's real rendered width
+      // changes too whenever the window resizes or the phone rotates. Once the reveal
+      // has already run, re-measure and update --word-w on resize (debounced) so the
+      // container's max-width keeps matching the word's actual current width instead
+      // of staying pinned to whatever it measured at load time — otherwise a later
+      // resize could clip the word (box now too narrow for the new, larger glyphs) or
+      // leave stray empty space (box wider than the word now needs).
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        if (!wrap.classList.contains('is-open')) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          wrap.style.setProperty('--word-w', `${textEl.offsetWidth + 2}px`);
+        }, 150);
+      });
+    })();
+
+    // 02 · Instances demo cards. All three use getFamily() rather than a hardcoded
+    // family — whatever family the visitor is currently exploring in the playground
+    // above carries into these three demos too, so the section feels connected to the
+    // rest of the page instead of playing an arbitrary default sound.
+
+    // Slider: playContinuous() is debounced (~20ms) and designed for an 'input'
+    // event's own natural firing rate, so no extra throttling is needed here.
+    const sliderDemo = document.querySelector('[data-demo="slider"]');
+    const sliderReadout = document.querySelector('[data-demo-readout]');
+
+    // Liquid-lens thumb stretch state — kept local to this handler, not shared with
+    // playContinuous()'s own internal debounce state, since this only drives the visual
+    // and has no reason to affect (or be affected by) the audio-side timing.
+    let lastSliderVisualRatio = null;
+    let lastSliderVisualTimestamp = 0;
+
+    sliderDemo?.addEventListener('input', () => {
+      const value = Number(sliderDemo.value);
+      sliderDemo.style.setProperty('--fill', `${value}%`);
+      if (sliderReadout) sliderReadout.textContent = `${value}%`;
+
+      // Same delta-ratio-over-time speed formula as continuous.ts's own
+      // computeSliderVoices, reused here for the thumb's visual stretch instead of the
+      // audio filter brightness — a fast flick elongates the thumb further along the
+      // drag axis (scaleX) than a slow drag. Capped at +45% width.
+      const ratio = value / 100;
+      const now = performance.now();
+      let speed = 0;
+      if (lastSliderVisualRatio !== null && lastSliderVisualTimestamp) {
+        const dtSeconds = Math.max((now - lastSliderVisualTimestamp) / 1000, 0.001);
+        speed = Math.min(Math.abs(ratio - lastSliderVisualRatio) / dtSeconds / 4, 1);
+      }
+      lastSliderVisualRatio = ratio;
+      lastSliderVisualTimestamp = now;
+      sliderDemo.style.setProperty('--stretch', String(1 + speed * 0.45));
+
+      playContinuous('slider', ratio, { family: getFamily() });
+    });
+
+    // Release: reset --stretch to 1 so the thumb's own transform transition (the same
+    // bouncy cubic-bezier used elsewhere on the page) plays the spring-back, in sync
+    // with the native :active state's own reversion (size/opacity) firing at the same
+    // moment. pointerup covers mouse and touch; pointercancel covers a drag that ends
+    // off-element (e.g. the pointer leaving the input while still pressed).
+    ['pointerup', 'pointercancel'].forEach((eventName) => {
+      sliderDemo?.addEventListener(eventName, () => {
+        sliderDemo.style.setProperty('--stretch', '1');
+        lastSliderVisualRatio = null;
+      });
+    });
+
+    // Listening: toggles on each click rather than press-and-hold — matches the real
+    // stateful shape (one call to start, one to stop), not a momentary trigger. The
+    // mic icon/waveform swap and aria-pressed state are enough feedback on their own;
+    // no text label to update (see the CSS comment on .listening-demo for why).
+    const listeningDemo = document.querySelector('[data-demo="listening"]');
+    let listeningActive = false;
+    listeningDemo?.addEventListener('click', () => {
+      listeningActive = !listeningActive;
+      listeningDemo.classList.toggle('is-active', listeningActive);
+      listeningDemo.setAttribute('aria-pressed', String(listeningActive));
+      play('listening', { family: getFamily(), state: listeningActive ? 'on' : 'off' });
+    });
+
+    // Delete: first click arms a 3s-auto-reverting "Confirm delete?" state (a real
+    // destructive-action pattern, not just decoration — see the .file-row CSS comment);
+    // only the second click, while still armed, actually fires the sound. The row then
+    // fades/slides out and resets after its own transition finishes, so this demo card
+    // stays replayable instead of being a one-shot.
+    const deleteRow = document.querySelector('[data-demo="delete"]');
+    const deleteBtn = deleteRow?.querySelector('[data-demo-trigger]');
+    let deleteConfirmTimer;
+    deleteBtn?.addEventListener('click', () => {
+      if (!deleteRow.classList.contains('is-confirming')) {
+        deleteRow.classList.add('is-confirming');
+        deleteConfirmTimer = setTimeout(() => deleteRow.classList.remove('is-confirming'), 3000);
+        return;
+      }
+      clearTimeout(deleteConfirmTimer);
+      play('delete', { family: getFamily() });
+      deleteRow.classList.remove('is-confirming');
+      deleteRow.classList.add('is-leaving');
+      setTimeout(() => deleteRow.classList.remove('is-leaving'), 600);
+    });
+  </script>
+</body>
+</html>
