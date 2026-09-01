@@ -265,16 +265,14 @@ const STYLES = `
   .slider-row.is-inert input[type="range"] { cursor: not-allowed; }
   .slider-row.is-inert .val { font-family: var(--font-body); font-style: italic; }
 
-  .code-toggle {
-    margin-top: 1.25rem;
-    font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-light);
-    border: var(--border-width) solid var(--border); background: var(--surface);
-    border-radius: 999px; padding: 0.3rem 0.7rem; cursor: pointer; color: var(--text-secondary);
-  }
-  /* Was missing entirely — hovering this button did nothing. Same treatment
-     .code-copy-btn:hover and .tab-btn:hover already use, since this is the same
-     "small bordered secondary button" family as both of them. */
-  .code-toggle:hover { border-color: var(--text-secondary); }
+  /* Was a standalone pill button; now the same .instance-ctrl-row + .switch pattern
+     "Toggle switch" and "Listening" already use above, in the Instance pane — reusing
+     their exact CSS as-is, nothing new needed here beyond this row's own top spacing
+     (replacing the old button's own margin-top). Label text stays fixed ("View code"),
+     never swapping to "Hide code" the old button text did — same convention those two
+     switches already use, where the switch's own position communicates state instead
+     of the label changing. */
+  .code-toggle-row { margin-top: 1.25rem; }
   .code-export {
     position: relative;
     margin-top: 0.6rem; background: var(--page-bg); border: var(--border-width) solid var(--border);
@@ -897,7 +895,13 @@ export class ChordalPlayground extends HTMLElement {
         <div class="pane">
           <div class="pane-head">Inspector</div>
           <div class="sliders">${slidersHtml}</div>
-          <button type="button" class="code-toggle" aria-expanded="false">View code</button>
+          <div class="instance-ctrl-row code-toggle-row">
+            <span class="instance-ctrl-label">View code</span>
+            <label class="switch">
+              <input type="checkbox" class="code-toggle-input" />
+              <span class="switch-track"><span class="switch-knob"></span></span>
+            </label>
+          </div>
           <div class="code-export" hidden>
             <button type="button" class="code-copy-btn" aria-label="Copy code">
               <span class="icon-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"></path></svg></span>
@@ -919,13 +923,17 @@ export class ChordalPlayground extends HTMLElement {
       btn.addEventListener('click', () => this.selectFamily(btn.dataset.family as SoundFamily));
     });
 
-    const codeToggle = this.shadow.querySelector<HTMLButtonElement>('.code-toggle');
+    const codeToggle = this.shadow.querySelector<HTMLInputElement>('.code-toggle-input');
     const codeExport = this.shadow.querySelector<HTMLElement>('.code-export');
-    codeToggle?.addEventListener('click', () => {
-      const nowVisible = codeExport?.hasAttribute('hidden');
-      codeExport?.toggleAttribute('hidden', !nowVisible);
-      codeToggle.setAttribute('aria-expanded', String(nowVisible));
-      codeToggle.textContent = nowVisible ? 'Hide code' : 'View code';
+    codeToggle?.addEventListener('change', () => {
+      codeExport?.toggleAttribute('hidden', !codeToggle.checked);
+      // Hardcoded glass-crystal, not this.family — this switch is the playground's own
+      // fixed UI chrome (show/hide a panel), not a demo of whatever family a visitor is
+      // currently auditioning, so it shouldn't change tone based on that selection.
+      // Deliberately NOT routed through setActiveInstance/triggerTest either — unlike
+      // the real "Toggle switch" test control above, this one only opens/closes a panel
+      // and shouldn't silently change which instance's code View Code is showing.
+      play('toggle', { family: 'glass-crystal' });
     });
 
     const codeCopyBtn = this.shadow.querySelector<HTMLButtonElement>('.code-copy-btn');
