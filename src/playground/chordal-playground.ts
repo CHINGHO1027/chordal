@@ -38,7 +38,7 @@ const STYLES = `
     --surface: #FFFFFF;
     --waveform-bg: ${WAVEFORM_BG};
     --text-primary: #17110C;
-    --text-secondary: #6B5D4E;
+    --text-secondary: #5E5448;
     --border: #E8E0D5;
     /* Same alias as tokens.css's own --tint: var(--border) — declared locally here too,
        not left to inherit across the shadow boundary from the page's tokens.css, since

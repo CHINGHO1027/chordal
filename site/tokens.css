@@ -22,7 +22,7 @@
   --surface: #FFFFFF;
   --waveform-bg: #FAF7F3;
   --text-primary: #17110C;
-  --text-secondary: #6B5D4E;
+  --text-secondary: #5E5448;
   --border: #E8E0D5;
   /* Same value as --border, aliased under its own name — same move as
      --text-emphasis below being var(--text-body) under a different name.
