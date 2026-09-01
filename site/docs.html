@@ -251,6 +251,18 @@
   .sidebar-link.is-active { background: var(--border); color: var(--text-primary); }
   .sidebar-toggle { display: none; }
   .docs-content { min-width: 0; }
+  /* display:contents on desktop — the wrapper's own box disappears, so
+     .docs-sidebar (the button stays display:none and drops out of grid
+     placement entirely) becomes a direct grid item again, same as before this
+     wrapper existed. That matters because a grid item's containing block is
+     its full grid area (as tall as the .docs-content row, ~6700px+), which is
+     what lets its position:sticky actually have room to stick; nested one
+     level deeper inside a real, shrink-to-fit wrapper box, its containing
+     block collapses to that wrapper's own ~600px content height instead, and
+     sticky has nowhere to go — confirmed live (sidebar scrolled off-screen
+     with the page instead of pinning). Mobile below turns the wrapper back
+     into a real sticky box on purpose, for the toggle+panel grouping. */
+  .sidebar-mobile-nav { display: contents; }
   @media (max-width: 48rem) {
     .page-head { padding-left: 2rem; }
     .docs-layout { grid-template-columns: 1fr; }
@@ -263,7 +275,7 @@
        Toggle and panel are wrapped together so they stick as one unit — the
        panel opens directly under wherever the toggle is currently pinned, not
        under its original unscrolled position in the layout. */
-    .sidebar-mobile-nav { position: sticky; top: 4.25rem; z-index: 4; }
+    .sidebar-mobile-nav { display: block; position: sticky; top: 4.25rem; z-index: 4; }
     .sidebar-toggle {
       display: flex; align-items: center; justify-content: space-between;
       width: 100%; font-family: var(--font-body); font-size: var(--text-body);
