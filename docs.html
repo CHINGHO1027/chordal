@@ -186,6 +186,17 @@
   .agents-pill .icon-check { display: none; }
   .agents-pill.is-copied .icon-copy { display: none; }
   .agents-pill.is-copied .icon-check { display: block; }
+  /* Same footer as index.html's own — matches that one exactly, just with
+     "chordal" (home) in place of "Docs" among the links, since linking to the
+     page you're already on is the one thing that needs to differ here. */
+  footer.site-foot {
+    border-top: var(--border-width) solid var(--border);
+    padding: 1.75rem 1.5rem; font-size: var(--text-small); color: var(--text-secondary);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
+  }
+  footer.site-foot a { color: var(--text-secondary); }
+  footer.site-foot a:hover { color: var(--accent); }
+  .foot-links { display: flex; gap: 1.25rem; }
   /* padding-top reserves room for the now-fixed nav above, same reasoning as
      index.html's own .hero-band padding-top for its own fixed .site-nav. */
   .page-head { padding: 5rem 2rem 1.5rem; max-width: 40rem; margin: 0 auto; }
@@ -392,6 +403,15 @@ item.remove();</pre></div>
       <a href="AGENTS.md" target="_blank" rel="noopener">View AGENTS.md &#8599;</a>
     </div>
   </div>
+
+  <footer class="site-foot">
+    <span>MIT licensed.</span>
+    <div class="foot-links">
+      <a class="sound-click" href="index.html">chordal</a>
+      <a class="sound-click" href="https://www.npmjs.com/package/chordal" target="_blank" rel="noopener">npm</a>
+      <a class="sound-click" href="https://github.com/CHINGHO1027/chordal" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </footer>
 
   <script type="module">
     import { play } from './dist/index.js';
