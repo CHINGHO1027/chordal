@@ -4,16 +4,32 @@
 
 ## Installation & Setup
 
-Install via npm, then mark up HTML elements with `data-sound-*` attributes and call `bind()` once:
+Two ways to install, depending on how many sound families the product needs. If it's unclear from the project which applies, ask before choosing.
+
+**One family for the whole product** (the recommended pattern — see Guidance below) — install `chordal/lite` for a smaller bundle (~4.2KB vs ~6.9KB, about 39% smaller, since the other eight families' data is never bundled at all):
+
+```ts
+import chime from "chordal/chime";
+import { createPlayer } from "chordal/lite";
+
+const { play, bind } = createPlayer(chime);
+bind();
+```
+
+**Multiple families at runtime** (e.g. a per-theme sound identity, or a family picker) — install the full package:
 
 ```ts
 import { bind } from "chordal";
 bind();
 ```
 
+Mark up HTML elements with `data-sound-*` attributes either way:
+
 ```html
 <button data-sound-hover data-sound-click>Save</button>
 ```
+
+Note: `chordal/lite`'s `bind()` has no per-element family override (`data-sound-click="x"`) — there's only ever the one family loaded. If the product needs that, install the full package regardless of family count.
 
 The library is ESM-only and safe to import during SSR: nothing plays until a real user gesture triggers it in a browser.
 
@@ -35,7 +51,7 @@ Every sound is a **family** (its timbre) paired with an **instance** (its intera
 
 - Zero runtime dependencies, pure ESM
 - SSR-safe: `getContext()` returns `null` with no `window`/`AudioContext` present, every call becomes a silent no-op, never a throw
-- ~6.9KB gzipped for all nine families; a single family via `chordal/lite`'s `createPlayer()` is ~4.2KB, about 39% smaller since the other eight families' data is never bundled at all
+- Full package ~6.9KB gzipped; `chordal/lite` per-family ~4.2KB — see Installation & Setup for which to pick
 - `mute()` / `unmute()` / `isMuted()` for a global on/off switch
 - `SOUND_FAMILIES` / `SOUND_INSTANCES` exported as readonly arrays for building your own family/instance picker UI
 
