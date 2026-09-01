@@ -73,7 +73,7 @@ const STYLES = `
   }
   * { box-sizing: border-box; }
   @media (prefers-reduced-motion: reduce) {
-    button, .swatch { transition: none !important; }
+    button { transition: none !important; }
   }
 
   .studio {
@@ -217,8 +217,8 @@ const STYLES = `
     color: var(--text-primary); border-radius: 999px;
     padding: 0.5rem 0.85rem; cursor: pointer;
   }
-  /* Neutral border darken on hover, not accent — same move .tab-btn:hover and
-     .agents-pill:hover already make elsewhere on this page. var(--accent) stays
+  /* Neutral border darken on hover, not accent — same move .agents-pill:hover
+     already makes elsewhere on this page. var(--accent) stays
      reserved exclusively for .active (the instance actually being tested), so
      hovering some other button never reads as "this one's now active too." */
   .test-btn:hover { border-color: var(--text-secondary); }

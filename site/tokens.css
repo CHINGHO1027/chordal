@@ -1,5 +1,5 @@
 /**
- * Chordal design tokens — shared by every page (docs-lofi.html, home-lofi.html,
+ * Chordal design tokens — shared by every page (docs.html, index.html,
  * and the real chordal-playground.ts component). One scale, one set of base
  * rules, pulled in via <link rel="stylesheet" href="tokens.css">.
  *
@@ -112,7 +112,7 @@ img, svg { max-width: 100%; }
 /* ---------- shared small components ---------- */
 
 /* Compact utility button (code-block "Copy", etc.) — the same radius/hover
-   language as tab-btn and .btn below, just smaller and inline. */
+   language as .btn below, just smaller and inline. */
 .copy-btn {
   font-family: var(--font-body);
   font-size: var(--text-small);
