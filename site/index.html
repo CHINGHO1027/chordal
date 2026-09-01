@@ -274,13 +274,24 @@
     width: fit-content; max-width: calc(100vw - 2rem); margin: 0 auto;
     background: color-mix(in oklab, var(--surface) 40%, transparent);
     backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-    border: var(--border-width) solid var(--border);
+    /* Full-strength --border reads fine against the page's own cream/white —
+       its native habitat — but at that same opacity over the hero photo
+       (any color, any background) it draws a crisp, high-contrast ring the
+       rest of the site's borders never do. Toned down here only, the same
+       way the fill above is 40% surface rather than solid — once .is-scrolled
+       swaps this back onto the flat cream page (below), it reverts to the
+       ordinary full-strength border every other subtle border on the site uses. */
+    border: var(--border-width) solid color-mix(in oklab, var(--border) 25%, transparent);
     display: flex; align-items: center; gap: 0.25rem;
     padding: 0.4rem; border-radius: 999px; overflow-x: auto;
     transition: background-color 0.2s ease;
   }
   .site-nav.is-scrolled {
     background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none;
+    /* Full-strength again once scrolled — this now sits on the flat cream page,
+       the same context every other border on the site is tuned for, so the
+       toned-down photo-only value above doesn't apply here. */
+    border-color: var(--border);
   }
   .site-nav.is-scrolled .site-nav-item { color: var(--text-secondary); }
   .site-nav.is-scrolled .site-nav-item:hover,
