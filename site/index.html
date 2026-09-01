@@ -1408,35 +1408,59 @@ bind();</pre></div>
       const activeItem = items.find((el) => el.classList.contains('is-active')) || items[0];
 
       // The chordal mark's own label collapses/expands on scroll (see .nav-mark-label
-      // in the CSS above), independently of hover/focus/resize. expandedWidth minus
-      // the label's own current width+margin gives exactly what the item's width
-      // will be once the label finishes collapsing to 0/0, since nothing else about
-      // the item's box changes — precomputed once up front so it's available however
-      // moveTo() ends up getting called for this item, not just from one code path.
+      // in the CSS above), independently of hover/focus/resize.
       const markItem = activeItem;
       const markLabel = markItem.querySelector('.nav-mark-label');
-      const markWidths = markLabel
-        ? {
-            expanded: markItem.offsetWidth,
-            collapsed: markItem.offsetWidth - (markLabel.offsetWidth + parseFloat(getComputedStyle(markLabel).marginLeft)),
-          }
-        : null;
+      let markWidths = null;
+      let widthDelta = 0;
+      let baseLefts = new Map();
 
-      // markWidths, not item.offsetWidth, whenever item is the mark — offsetWidth
-      // reflects whatever the mark's actual rendered width happens to be at the exact
-      // instant this runs, which is wrong if it's called mid-collapse (a resize event
-      // firing off a scrollbar appearing/disappearing during the same scroll that
-      // triggers the collapse, for instance — confirmed live, not hypothetical: that
-      // race let a stale mid-transition width get baked in as an instant, untransitioned
-      // jump, permanently wrong until the next unrelated hover). Every caller below
-      // goes through this one function, so all of them get it right automatically.
+      // Measures markWidths/widthDelta/baseLefts fresh, always from the expanded
+      // state — if the nav happens to be scrolled when this runs (a resize while
+      // already scrolled down), briefly un-scrolling its own state just to measure,
+      // then restoring it, keeps the measurement correct without ever letting that
+      // intermediate state actually paint (synchronous, no yielding in between — the
+      // browser doesn't paint mid-task). Needed on resize specifically because a real
+      // window resize can change these items' actual widths, not just the scroll
+      // state this whole cache otherwise assumes is the only thing that moves.
+      // expandedWidth minus the label's own current width+margin gives exactly what
+      // the mark's own width will be once the label finishes collapsing to 0/0, since
+      // nothing else about its box changes. widthDelta/baseLefts do the same for
+      // every item after the mark (Docs, GitHub, agents.md) — chordal is the first
+      // item, so they all reflow left by that same amount as it collapses, the same
+      // way any flex sibling shifts after an earlier item's width changes.
+      function measureMarkGeometry() {
+        if (!markLabel) return;
+        const wasScrolled = nav.classList.contains('is-scrolled');
+        if (wasScrolled) nav.classList.remove('is-scrolled');
+        markWidths = {
+          expanded: markItem.offsetWidth,
+          collapsed: markItem.offsetWidth - (markLabel.offsetWidth + parseFloat(getComputedStyle(markLabel).marginLeft)),
+        };
+        widthDelta = markWidths.expanded - markWidths.collapsed;
+        baseLefts = new Map(items.map((item) => [item, item.offsetLeft]));
+        if (wasScrolled) nav.classList.add('is-scrolled');
+      }
+      measureMarkGeometry();
+
+      // markWidths/baseLefts, not live offsetWidth/offsetLeft, whenever the mark's own
+      // collapse affects this item — live reads reflect whatever the actual rendered
+      // geometry happens to be at the exact instant this runs, which is wrong mid-
+      // transition (confirmed live, not hypothetical: a resize event firing off a
+      // scrollbar appearing/disappearing during the same scroll that triggers the
+      // collapse can catch either mid-flight, baking in a stale value as an instant,
+      // untransitioned jump with nothing left to correct it — first for the mark's
+      // own width, then again for every other item's position once that was fixed).
+      // Computing both analytically instead of reading either live means every
+      // caller below gets the right answer regardless of when it runs relative to
+      // the transition.
       function moveTo(item) {
-        const width = item === markItem && markWidths
-          ? (nav.classList.contains('is-scrolled') ? markWidths.collapsed : markWidths.expanded)
-          : item.offsetWidth;
+        const scrolled = nav.classList.contains('is-scrolled');
+        const width = item === markItem && markWidths ? (scrolled ? markWidths.collapsed : markWidths.expanded) : item.offsetWidth;
+        const left = (baseLefts.get(item) ?? item.offsetLeft) - (scrolled && item !== markItem ? widthDelta : 0);
         pill.style.width = `${width}px`;
         pill.style.height = `${item.offsetHeight}px`;
-        pill.style.transform = `translate(${item.offsetLeft}px, ${item.offsetTop}px)`;
+        pill.style.transform = `translate(${left}px, ${item.offsetTop}px)`;
       }
 
       // Placed once, instantly (no transition — see .is-instant in the CSS), before
@@ -1461,6 +1485,10 @@ bind();</pre></div>
 
       window.addEventListener('resize', () => {
         pill.classList.add('is-instant');
+        // Re-measured here, not just relying on the cache from page load — a real
+        // resize can change these items' own widths, which the cache has no way to
+        // know about on its own.
+        measureMarkGeometry();
         moveTo(items.includes(document.activeElement) ? document.activeElement : activeItem);
         requestAnimationFrame(() => pill.classList.remove('is-instant'));
       });

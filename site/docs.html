@@ -679,28 +679,52 @@ setFamily(familyForTheme[theme]);</pre></div>
       const COLLAPSE_AT = 32;
       const markItem = nav.querySelector('.nav-mark');
       const markLabel = markItem?.querySelector('.nav-mark-label');
-      const markWidths = markLabel
-        ? {
-            expanded: markItem.offsetWidth,
-            collapsed: markItem.offsetWidth - (markLabel.offsetWidth + parseFloat(getComputedStyle(markLabel).marginLeft)),
-          }
-        : null;
+      let markWidths = null;
+      let widthDelta = 0;
+      let baseLefts = new Map();
 
-      // markWidths, not item.offsetWidth, whenever item is the mark — offsetWidth
-      // reflects whatever the mark's actual rendered width happens to be at the exact
-      // instant this runs, which is wrong if it's called mid-collapse (a resize event
-      // firing off a scrollbar appearing/disappearing during the same scroll that
-      // triggers the collapse, for instance — confirmed live, not hypothetical: that
-      // race let a stale mid-transition width get baked in as an instant, untransitioned
-      // jump, permanently wrong until the next unrelated hover). Every caller below
-      // goes through this one function, so all of them get it right automatically.
+      // Measures markWidths/widthDelta/baseLefts fresh, always from the expanded
+      // state — if the nav happens to be collapsed when this runs (a resize while
+      // already scrolled down), briefly un-collapsing it just to measure, then
+      // restoring it, keeps the measurement correct without ever letting that
+      // intermediate state actually paint (synchronous, no yielding in between —
+      // the browser doesn't paint mid-task). Needed on resize specifically because a
+      // real window resize can cross a breakpoint (see the 26rem media query below)
+      // and change these items' actual widths/padding, not just the collapse state
+      // this whole cache otherwise assumes is the only thing that moves.
+      function measureMarkGeometry() {
+        if (!markLabel) return;
+        const wasCollapsed = nav.classList.contains('is-collapsed');
+        if (wasCollapsed) nav.classList.remove('is-collapsed');
+        markWidths = {
+          expanded: markItem.offsetWidth,
+          collapsed: markItem.offsetWidth - (markLabel.offsetWidth + parseFloat(getComputedStyle(markLabel).marginLeft)),
+        };
+        widthDelta = markWidths.expanded - markWidths.collapsed;
+        baseLefts = new Map(items.map((item) => [item, item.offsetLeft]));
+        if (wasCollapsed) nav.classList.add('is-collapsed');
+      }
+      measureMarkGeometry();
+
+      // markWidths/baseLefts, not live offsetWidth/offsetLeft, whenever the mark's own
+      // collapse affects this item — live reads reflect whatever the actual rendered
+      // geometry happens to be at the exact instant this runs, which is wrong mid-
+      // transition (confirmed live, not hypothetical: a resize event firing off a
+      // scrollbar appearing/disappearing during the same scroll that triggers the
+      // collapse can catch either mid-flight, baking in a stale value as an instant,
+      // untransitioned jump with nothing left to correct it — first for the mark's
+      // own width, then again for every other item's position once that was fixed:
+      // moveTo(activeItem) right as is-collapsed toggles reads Docs' offsetLeft before
+      // its own reflow has caught up, same race, different property). Computing both
+      // analytically instead of reading either live means every caller below gets the
+      // right answer regardless of when it happens to run relative to the transition.
       function moveTo(item) {
-        const width = item === markItem && markWidths
-          ? (nav.classList.contains('is-collapsed') ? markWidths.collapsed : markWidths.expanded)
-          : item.offsetWidth;
+        const collapsed = nav.classList.contains('is-collapsed');
+        const width = item === markItem && markWidths ? (collapsed ? markWidths.collapsed : markWidths.expanded) : item.offsetWidth;
+        const left = (baseLefts.get(item) ?? item.offsetLeft) - (collapsed && item !== markItem ? widthDelta : 0);
         pill.style.width = `${width}px`;
         pill.style.height = `${item.offsetHeight}px`;
-        pill.style.transform = `translate(${item.offsetLeft}px, ${item.offsetTop}px)`;
+        pill.style.transform = `translate(${left}px, ${item.offsetTop}px)`;
       }
 
       // Placed once, instantly (no transition — see .is-instant in the CSS), before
@@ -725,6 +749,10 @@ setFamily(familyForTheme[theme]);</pre></div>
 
       window.addEventListener('resize', () => {
         pill.classList.add('is-instant');
+        // Re-measured here, not just relying on the cache from page load — a real
+        // resize can cross a breakpoint and change these items' own widths/padding,
+        // which the cache has no way to know about on its own.
+        measureMarkGeometry();
         moveTo(items.includes(document.activeElement) ? document.activeElement : activeItem);
         requestAnimationFrame(() => pill.classList.remove('is-instant'));
       });
