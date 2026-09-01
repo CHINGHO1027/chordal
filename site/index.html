@@ -455,16 +455,26 @@
      their contrast against the dark background essentially untouched, while still
      reaching ~11% mix by 44.6% where the panel begins, so the background is already
      visibly transitioning by the time the panel's edge meets it. */
+  /* --hero-fade-progress (set by the scroll listener near the bottom of this file, off
+     the same heroRect the nav's own is-scrolled toggle already reads) scales just the
+     five color-mix stops' own mix percentages — not their positions, and not the two
+     anchor stops (the transparent 21% start, and the literal var(--page-bg) 100% end).
+     Leaving those two alone matters: scaling the start would just move where the fade
+     begins rather than how strong it is, and scaling the 100% stop down at rest would
+     flatten it back into transparent right where it needs to stay solid page-bg — the
+     exact hard-seam bug the 21% start point above was already chosen to avoid once.
+     Default var(--hero-fade-progress, 1) is the original, unscaled curve — the resting
+     look for no-JS or before the first scroll tick sets a real value. */
   .hero-band::after {
     content: ''; position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(
       to bottom,
       transparent 21%,
-      color-mix(in oklab, var(--page-bg) 1%, transparent) 32.85%,
-      color-mix(in oklab, var(--page-bg) 11%, transparent) 44.7%,
-      color-mix(in oklab, var(--page-bg) 50%, transparent) 60.5%,
-      color-mix(in oklab, var(--page-bg) 89%, transparent) 76.3%,
-      color-mix(in oklab, var(--page-bg) 99%, transparent) 88.15%,
+      color-mix(in oklab, var(--page-bg) calc(1% * var(--hero-fade-progress, 1)), transparent) 32.85%,
+      color-mix(in oklab, var(--page-bg) calc(11% * var(--hero-fade-progress, 1)), transparent) 44.7%,
+      color-mix(in oklab, var(--page-bg) calc(50% * var(--hero-fade-progress, 1)), transparent) 60.5%,
+      color-mix(in oklab, var(--page-bg) calc(89% * var(--hero-fade-progress, 1)), transparent) 76.3%,
+      color-mix(in oklab, var(--page-bg) calc(99% * var(--hero-fade-progress, 1)), transparent) 88.15%,
       var(--page-bg) 100%
     );
   }
@@ -1330,17 +1340,37 @@ bind();</pre></div>
     // no longer a useful proxy for "the nav should look like it's over a light
     // page now." Computed from the band's own actual measured height, not a
     // guessed pixel value.
+    // --hero-fade-progress: continuous, proportional to how far the hero band has
+    // scrolled past the top of the viewport (0 at the very top, 1 once a full band
+    // height has scrolled by) — not a one-shot reveal that plays once and locks, it
+    // keeps tracking scroll position for as long as the band is in range. Floored at
+    // 0.6 rather than 0: letting it reach 0 would scale every color-mix stop down to
+    // nothing, including the ones right under the headline/lede text whose contrast
+    // was tuned against the *current* (progress = 1) curve — flattening them out from
+    // under that text at rest, not just softening the fade lower down. 0.6 keeps the
+    // gradient recognizably present at the top of the page, just weaker, and lets it
+    // reach its full, originally-tuned strength once scrolled.
+    // Skips entirely under prefers-reduced-motion, same convention this file already
+    // uses elsewhere — the CSS's own var(--hero-fade-progress, 1) fallback then just
+    // keeps the original, unscaled curve.
+    const prefersReducedMotionHero = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const siteNav = document.querySelector('.site-nav');
     const heroBandEl = document.querySelector('.hero-band');
     if (siteNav && heroBandEl) {
       const navThreshold = siteNav.getBoundingClientRect().height + 24;
-      const updateNavScrollState = () => {
+      const MIN_HERO_FADE = 0.6;
+      const updateHeroScrollState = () => {
         const heroRect = heroBandEl.getBoundingClientRect();
         const fadeMidY = heroRect.top + heroRect.height * 0.605;
         siteNav.classList.toggle('is-scrolled', fadeMidY < navThreshold);
+        if (!prefersReducedMotionHero) {
+          const scrolledThrough = Math.min(Math.max(-heroRect.top / heroRect.height, 0), 1);
+          const fadeProgress = MIN_HERO_FADE + (1 - MIN_HERO_FADE) * scrolledThrough;
+          heroBandEl.style.setProperty('--hero-fade-progress', String(fadeProgress));
+        }
       };
-      window.addEventListener('scroll', updateNavScrollState, { passive: true });
-      updateNavScrollState();
+      window.addEventListener('scroll', updateHeroScrollState, { passive: true });
+      updateHeroScrollState();
     }
 
     // The shared sliding nav pill (see .site-nav-pill in the CSS above). Deliberately
