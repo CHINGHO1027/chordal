@@ -244,11 +244,24 @@
     text-decoration: none; padding: 0.35rem 0.6rem; border-radius: var(--radius-sm);
     line-height: 1.4;
   }
-  .sidebar-link:hover { color: var(--text-primary); }
+  /* Partial-opacity wash of the same fill .is-active uses below, not an unrelated
+     hover color — same move .family-btn makes in chordal-playground.ts, so hover
+     reads as "part-way to selected" rather than a third, disconnected state.
+     text-decoration:none overrides the site-wide a:hover underline (tokens.css) —
+     a nav link shouldn't underline on hover, that's a body-copy-link affordance. */
+  .sidebar-link:hover {
+    background: color-mix(in oklab, var(--border) 55%, transparent);
+    color: var(--text-primary);
+    text-decoration: none;
+  }
   /* Same light-fill/dark-text "you are here" language every other selected state on
      the site already converged on (nav pill, docs tabs before this, family list) —
      var(--border) fill, no new color introduced just for this one new element. */
   .sidebar-link.is-active { background: var(--border); color: var(--text-primary); }
+  /* Hover shouldn't visually downgrade an already-selected link — same reasoning as
+     .family-btn[aria-pressed="true"]:hover in chordal-playground.ts, which keeps its
+     full active fill instead of falling back to the weaker hover wash above. */
+  .sidebar-link.is-active:hover { background: var(--border); }
   .sidebar-toggle { display: none; }
   .docs-content { min-width: 0; }
   /* display:contents on desktop — the wrapper's own box disappears, so
