@@ -453,6 +453,14 @@ export class ChordalPlayground extends HTMLElement {
   private shadow: ShadowRoot;
   private family: SoundFamily = getFamily();
   private instance: SoundInstance = 'hover';
+  // Separate from `instance` on purpose: 'slider' isn't a member of SoundInstance (it's
+  // playContinuous's own action literal, not a play()-triggerable instance — no PRESETS
+  // entry exists for it), so it can't just widen `instance`'s own type without breaking
+  // every PRESETS[this.family][this.instance] lookup elsewhere. This tracks which control
+  // is active for View Code + the test-area highlight only; `instance` keeps meaning "the
+  // SoundInstance the tuning sliders/PRESETS lookups apply to" and is left untouched while
+  // the slider control is active, since dragging it doesn't change any of that.
+  private activeControl: SoundInstance | 'slider' = 'hover';
   private overrides = new Map<string, Partial<InstanceTuning>>();
   private rafId: number | null = null;
   private idleTimer: number | null = null;
@@ -713,6 +721,24 @@ export class ChordalPlayground extends HTMLElement {
   }
 
   private buildSnippet(): string {
+    // slider is playContinuous's own action, not a play()-triggerable SoundInstance (see
+    // activeControl above) — a different function with a narrower options shape (no
+    // volume/pitch/length/tone; see the four tuning sliders going inert in refreshSliders
+    // when this is active), so it gets its own branch rather than forcing it through the
+    // play()-shaped template below. Shows the realistic wiring (an input event handler),
+    // not a frozen one-off call — a bare literal ratio isn't how this is actually used,
+    // same reasoning as docs.html's own playContinuous() card.
+    if (this.activeControl === 'slider') {
+      return [
+        "import { playContinuous } from 'chordal';",
+        '',
+        "const slider = document.querySelector('#volume');",
+        "slider.addEventListener('input', () => {",
+        '  const ratio = Number(slider.value) / 100;',
+        `  playContinuous('slider', ratio, { family: '${this.family}' });`,
+        '});',
+      ].join('\n');
+    }
     const tuning = this.currentTuning();
     return [
       "import { play } from 'chordal';",
@@ -739,12 +765,16 @@ export class ChordalPlayground extends HTMLElement {
   private refreshSliders(): void {
     const tuning = this.currentTuning();
     const toneAudible = isToneAudible(FAMILY_RECIPES[this.family], PRESETS[this.family][this.instance].notes, tuning);
+    // playContinuous only accepts { family } (see buildSnippet's slider branch above) —
+    // none of these four tuning knobs actually reach it, so all of them go inert while
+    // slider is the active control, not just tone the way it can be per-family otherwise.
+    const sliderActive = this.activeControl === 'slider';
     SLIDER_SPECS.forEach((spec) => {
       const input = this.shadow.querySelector<HTMLInputElement>(`input[data-key="${spec.key}"]`);
       const val = this.shadow.querySelector<HTMLElement>(`.val[data-key="${spec.key}"]`);
       const row = input?.closest<HTMLElement>('.slider-row');
       const value = tuning[spec.key];
-      const inert = spec.key === 'tone' && !toneAudible;
+      const inert = sliderActive || (spec.key === 'tone' && !toneAudible);
       if (input) {
         input.value = String(value);
         input.disabled = inert;
@@ -780,11 +810,14 @@ export class ChordalPlayground extends HTMLElement {
   /**
    * Test elements double as the instance selector — triggering one both plays it and
    * makes it what the Inspector's sliders are tuning. No separate Instance section.
+   * Accepts 'slider' too (see activeControl above) — the slider control routes through
+   * here as well now, just without touching `instance` itself.
    */
-  private setActiveInstance(instance: SoundInstance): void {
-    this.instance = instance;
+  private setActiveInstance(control: SoundInstance | 'slider'): void {
+    this.activeControl = control;
+    if (control !== 'slider') this.instance = control;
     this.shadow.querySelectorAll<HTMLElement>('[data-instance-trigger]').forEach((el) => {
-      el.classList.toggle('active', el.dataset.instanceTrigger === instance);
+      el.classList.toggle('active', el.dataset.instanceTrigger === control);
     });
     this.refreshSliders();
     this.refreshCodeExport();
@@ -849,7 +882,7 @@ export class ChordalPlayground extends HTMLElement {
               </div>
               <div class="instance-ctrl-row">
                 <span class="instance-ctrl-label">Slider</span>
-                <input type="range" class="slider-demo" min="0" max="100" value="50" data-test="slider" />
+                <input type="range" class="slider-demo" min="0" max="100" value="50" data-test="slider" data-instance-trigger="slider" />
               </div>
             </div>
           </div>
@@ -953,6 +986,10 @@ export class ChordalPlayground extends HTMLElement {
     const sliderDemo = this.shadow.querySelector<HTMLInputElement>('[data-test="slider"]');
     sliderDemo?.style.setProperty('--fill', `${sliderDemo.value}%`);
     sliderDemo?.addEventListener('input', () => {
+      // Routes through the same instance-tracking every other test control uses (see
+      // activeControl above) — without this, View Code never picks up the slider
+      // interaction at all, and the tuning sliders never go inert for it either.
+      this.setActiveInstance('slider');
       const ratio = Number(sliderDemo.value) / 100;
       sliderDemo.style.setProperty('--fill', `${sliderDemo.value}%`);
       playContinuous('slider', ratio, { family: this.family });
