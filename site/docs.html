@@ -717,7 +717,6 @@ setFamily(familyForTheme[theme]);</pre></div>
         baseLefts = new Map(items.map((item) => [item, item.offsetLeft]));
         if (wasCollapsed) nav.classList.add('is-collapsed');
       }
-      measureMarkGeometry();
 
       // markWidths/baseLefts, not live offsetWidth/offsetLeft, whenever the mark's own
       // collapse affects this item — live reads reflect whatever the actual rendered
@@ -740,10 +739,29 @@ setFamily(familyForTheme[theme]);</pre></div>
         pill.style.transform = `translate(${left}px, ${item.offsetTop}px)`;
       }
 
+      // Establishes the real is-collapsed state — from the actual current scroll
+      // position, not an assumed default — before anything below ever measures or
+      // positions the pill. This has to happen first: the page can load already
+      // scrolled past COLLAPSE_AT (the browser restoring scroll position after a
+      // refresh, for instance — confirmed live, not hypothetical), and initializing
+      // as if always-expanded left the very first paint wrong, with nothing watching
+      // yet to catch and correct it (the MutationObserver below wasn't attached at
+      // the time this first ran, so it silently missed the one is-collapsed change
+      // that mattered most). Every later class change is still handled reactively by
+      // that observer; this only covers the one that happens before anything is
+      // listening.
+      const updateNavCollapse = () => {
+        nav.classList.toggle('is-collapsed', window.scrollY > COLLAPSE_AT);
+      };
+      updateNavCollapse();
+
       // Placed once, instantly (no transition — see .is-instant in the CSS), before
       // the first hover ever happens. Without this the pill would start at 0×0 in the
       // top-left corner and visibly slide/grow into place the first time anything is
-      // hovered, instead of already looking like it belongs to the active item.
+      // hovered, instead of already looking like it belongs to the active item. Runs
+      // after updateNavCollapse() above specifically so it reads the real is-collapsed
+      // state, not the pre-measurement default.
+      measureMarkGeometry();
       moveTo(activeItem);
       requestAnimationFrame(() => pill.classList.remove('is-instant'));
 
@@ -770,11 +788,7 @@ setFamily(familyForTheme[theme]);</pre></div>
         requestAnimationFrame(() => pill.classList.remove('is-instant'));
       });
 
-      const updateNavCollapse = () => {
-        nav.classList.toggle('is-collapsed', window.scrollY > COLLAPSE_AT);
-      };
       window.addEventListener('scroll', updateNavCollapse, { passive: true });
-      updateNavCollapse();
 
       // Fires only on a genuine is-collapsed transition (classList.toggle is a no-op,
       // and so is this observer, whenever the value doesn't actually change).
@@ -788,6 +802,10 @@ setFamily(familyForTheme[theme]);</pre></div>
       // where Docs used to be. moveTo() already computes the right width for
       // whichever item it's given (markWidths for the mark, live offsetWidth for
       // everything else, which doesn't change), so it's correct for either case.
+      // Attached before updateNavCollapse() re-runs from any real scroll event, so
+      // every is-collapsed change from here on is caught — only the very first,
+      // pre-measurement one above (before this existed to listen) needed handling
+      // separately.
       new MutationObserver(() => {
         const current = items.includes(document.activeElement) ? document.activeElement : activeItem;
         moveTo(current);
