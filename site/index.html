@@ -452,16 +452,30 @@
      of mismatched color. */
   .hero-band {
     position: relative;
-    /* Same #05030a the photo's own background-color fallback used — not a new
-       color choice. Every contrast number below (and the nav's own light-text
-       treatment) was verified against that photo's real measured near-black
-       pixels; keeping the exact same base tone means that work carries over
-       instead of needing to be redone from a different starting color. The
-       canvas itself (first child, see markup) paints the starfield on top of
-       this; this background-color is what shows through on the very first
-       paint before the canvas's own first draw, and as a fallback if canvas
-       somehow fails to init. */
-    background: #05030a;
+    /* Hard clip, not just careful gradient math — .hero-glow below is deliberately
+       larger and softer than the band itself so its falloff never shows a visible
+       edge, which means its box genuinely does extend past the band's own bottom.
+       overflow:hidden guarantees none of that ever paints into the families section
+       below regardless of the glow's own size or blend mode — a geometric clip, not
+       something that depends on tuning the gradient correctly. Doesn't clip
+       .site-nav — position:fixed escapes an ancestor's overflow:hidden unless that
+       ancestor also creates a new containing block (transform/filter/etc.), which
+       this rule doesn't. */
+    overflow: hidden;
+    /* The canvas itself (first child, see markup) paints the starfield on top of
+       this; this background is what shows through on the very first paint before
+       the canvas's own first draw, and as a fallback if canvas somehow fails to
+       init. Same three stops as the canvas's own buildSkyGradient() below, kept
+       in sync by hand (a canvas gradient can't read a CSS custom property or
+       this rule directly) — a flat depthless single-color sky was the whole
+       problem being fixed here, so this fallback needs the same depth, not just
+       whichever single tone used to sit here. */
+    background: linear-gradient(
+      in oklab to bottom,
+      #171D30 0%,
+      #26304E 40%,
+      color-mix(in oklab, #26304E 85%, var(--border)) 66%
+    );
     /* .site-nav lives inside this band now (so the image runs behind it
        too) but is position:fixed, so it's out of normal flow entirely —
        this padding-top stands in for the vertical space nav used to
@@ -482,59 +496,183 @@
     --hero-bright: #F7F2E9;
     --hero-dim: rgba(247, 242, 233, 0.55);
   }
-  /* First child, absolutely positioned to fill the band, no z-index needed —
-     default stacking order already puts it behind .hero-band::after (a
-     pseudo-element paints after its element's real children) and behind
-     .hero/.explorer (explicit z-index:1 below). aria-hidden: this is pure
-     decoration, replaces nothing a screen reader needs, same as the photo it
-     replaces never had alt text of its own either. */
-  .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  /* Eased, not a straight linear ramp — a plain two-stop linear-gradient fade has a
-     well-known perceptual problem: alpha changes linearly with position, but the eye
-     doesn't perceive it that way, so a pure linear fade reads as having a faint "kink"
-     right where it starts and where it finishes, even though the underlying math is
-     smooth the whole way. These extra stops are real samples of a standard
-     ease-in-out cubic curve (slow at both ends, fastest through the middle), taken at
-     t = 0, 0.15, 0.3, 0.5, 0.7, 0.85, 1 — color-mix(... X%, transparent) at each stop
-     is that curve's own alpha at that point, not arbitrary numbers.
-     Range is 21%-100%, not 55%-100% — starting right at 55% left the fade with zero
-     head start by the time .explorer's own opaque panel begins at 44.6% (see that
-     class below), so the panel's top corners sat directly against still-fully-dark
-     background: a hard box-on-black seam, not a fade, right where the panel appears.
-     21% is chosen so the eased curve (flat near its own start) stays under ~6% mix
-     through the headline/lede/CTA text above (13.7%-40.6% — see those rules), keeping
-     their contrast against the dark background essentially untouched, while still
-     reaching ~11% mix by 44.6% where the panel begins, so the background is already
-     visibly transitioning by the time the panel's edge meets it. */
-  /* --hero-fade-progress (set by the scroll listener near the bottom of this file, off
-     the same heroRect the nav's own is-scrolled toggle already reads) scales just the
-     five color-mix stops' own mix percentages — not their positions, and not the two
-     anchor stops (the transparent 21% start, and the literal var(--page-bg) 100% end).
-     Leaving those two alone matters: scaling the start would just move where the fade
-     begins rather than how strong it is, and scaling the 100% stop down at rest would
-     flatten it back into transparent right where it needs to stay solid page-bg — the
-     exact hard-seam bug the 21% start point above was already chosen to avoid once.
-     Default var(--hero-fade-progress, 1) is the original, unscaled curve — the resting
-     look for no-JS or before the first scroll tick sets a real value. */
+  /* First child, absolutely positioned to fill the band. Explicit z-index:0 (and
+     explicit values on every other layer below: the linear fade at 1, .hero-glow
+     at 2, .hero/.explorer's real content at 3) rather than relying on default
+     DOM-order stacking alone for everything — spelling out the numeric layer
+     directly is less error-prone than trusting paint order to stay right as this
+     section keeps changing. aria-hidden: this is pure decoration,
+     replaces nothing a screen reader
+     needs, same as the photo it replaces never had alt text of its own either. */
+  .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+  /* Back to a true last-resort safety net — plain and quiet on purpose. The rich
+     dark→indigo→magenta→accent story now lives entirely in .hero-glow-shape below
+     (the dome-plus-band glow, wide enough at its own base to reach past both
+     screen edges), so this layer no longer needs to carry any hue at all. Its
+     only remaining job: guarantee the sliver of far-corner viewport beyond even
+     that wide base still resolves to page-bg, so there's never a genuinely
+     uncovered hard seam at the very edges on an extreme-wide screen.
+     Holds dark (mixing only toward more #26304E, never toward page-bg) through
+     66% — the shoulder height, NOT .hero-glow-shape's own base (72%) — then
+     resolves to page-bg by 90%, the panel's own bottom edge. Those two used to
+     be the same point (72%), on the reasoning that both mark "where the dark
+     background is done being solid." But 66%-72% is entirely hidden under the
+     glow shape's own opaque flat band regardless of what this gradient does
+     there, since the band already reaches full viewport width (and beyond) by
+     the shoulder — so pinning this hold to 72% bought nothing in that range,
+     while creating a real seam right at 72% itself: the instant the glow's
+     vivid reflection-boost color ends, this gradient was still fully dark
+     there, so the margins revealed a solid dark-blue stripe before any
+     lightening had even begun. Holding through 66% instead means that by 72%,
+     when this gradient becomes visible again, it's already partway resolved
+     toward --border/page-bg — the reveal is a lighter, already-transitioning
+     color, not a flat dark one.
+     `in oklab` set directly on the gradient itself (not just inside each
+     color-mix()) so the interpolation *between* stops matches the space each
+     stop's own color was computed in — left at the default (sRGB) it can dull
+     or greatly under-saturate the mid-point between two very different stops.
+     The 66%→74% pair is a seam in kind, not just degree: everything through 66%
+     mixes #26304E toward transparent (still letting the starfield canvas show
+     through faintly), while 74% onward mixes toward an opaque color directly
+     (no transparency involved) — two different systems meeting at one point.
+     The 70% stop bridges them (still transparent-mixed, but most of the way
+     there) so the handoff has a step in between instead of meeting cold.
+     From 74% on, the opaque resolve no longer mixes #26304E straight to
+     page-bg — it routes through --border (#E8E0D5, a warm low-saturation tan)
+     as a waypoint at 79% first. #26304E is a saturated, cool blue-indigo;
+     --page-bg is a warm cream; those two are far enough apart that a straight
+     interpolation between them (in oklab or otherwise) dips through a visibly
+     grey/muddy midpoint before it reaches the warm endpoint — the exact "muddy"
+     band this was built to fix. Splitting it into #26304E → --border (74%-79%)
+     then --border → page-bg (79%-90%) turns one long cross-hue jump into two
+     shorter ones — the second one in particular barely moves at all, since
+     --border and --page-bg are already close in hue and lightness — so neither
+     jump has far enough to travel to desaturate into visible mud. */
   .hero-band::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
     background: linear-gradient(
-      to bottom,
-      transparent 21%,
-      color-mix(in oklab, var(--page-bg) calc(1% * var(--hero-fade-progress, 1)), transparent) 32.85%,
-      color-mix(in oklab, var(--page-bg) calc(11% * var(--hero-fade-progress, 1)), transparent) 44.7%,
-      color-mix(in oklab, var(--page-bg) calc(50% * var(--hero-fade-progress, 1)), transparent) 60.5%,
-      color-mix(in oklab, var(--page-bg) calc(89% * var(--hero-fade-progress, 1)), transparent) 76.3%,
-      color-mix(in oklab, var(--page-bg) calc(99% * var(--hero-fade-progress, 1)), transparent) 88.15%,
-      var(--page-bg) 100%
+      in oklab to bottom,
+      transparent 14%,
+      color-mix(in oklab, #26304E 20%, transparent) 35%,
+      color-mix(in oklab, #26304E 55%, transparent) 50%,
+      color-mix(in oklab, #26304E 85%, transparent) 65%,
+      color-mix(in oklab, #26304E 95%, transparent) 66%,
+      color-mix(in oklab, #26304E 90%, transparent) 70%,
+      color-mix(in oklab, var(--border) 30%, #26304E) 74%,
+      var(--border) 79%,
+      color-mix(in oklab, var(--page-bg) 65%, var(--border)) 85%,
+      var(--page-bg) 90%
     );
+  }
+  /* Split across TWO elements (.hero-glow the wrapper, .hero-glow-shape the actual
+     clipped/filled box below) because clip-path + filter:blur on the SAME element
+     does not produce a soft edge — clip-path is a hard, binary cut applied AFTER
+     filters run, so it re-slices any blur back down to a perfectly crisp boundary
+     every time, no matter the blur radius. Putting the blur on this outer wrapper
+     instead, with no clip-path of its own, makes it the true last step: it blurs
+     the inner shape's already-hard-clipped pixels with nothing left to re-cut them
+     afterward, which is what actually softens the curve's edge into a glow instead
+     of a flat cutout. */
+  .hero-glow {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    /* No mix-blend-mode anymore — paints normally (opaque), not screen-blended.
+       Every earlier version of this glow relied on screen blend to composite its
+       color against whatever backdrop happened to be underneath, and every washed-
+       out/muddy artifact this session ran into eventually traced back to that:
+       screen blend's result depends on the backdrop, so at partial alpha or over a
+       backdrop that's itself mid-transition, the visible color was never fully
+       predictable. This shape's own gradient (see .hero-glow-shape below) now
+       carries a complete, deliberate journey — dark base at the top, blending into
+       page-bg at the bottom — so there's nothing left for a blend mode to resolve;
+       painting it as opaque color is what actually guarantees "this pixel is this
+       color," full stop, regardless of backdrop. */
+    filter: blur(clamp(24px, 3.5vw, 56px));
+  }
+  /* One dome-plus-band glow, not an ellipse and not a separate horizontal-band
+     element. An ellipse has constant curvature everywhere, so widening it enough
+     to glow at the screen edges also flattened its curve enough to stop reading
+     as a dome — those two goals fought each other the whole time it was an
+     ellipse. This silhouette (see the clip-path below) is narrow at the apex,
+     widens through a curve, then — past the shoulder — runs flat/straight at the
+     full overshoot width down to the base, so the taper does the "reads as a
+     dome" job and the flat band does the "reaches past both edges" job (work a
+     separate .hero-glow-band used to do as its own element), without those two
+     goals pulling against each other the way they did as a plain ellipse.
+     Fill is a radial gradient now, not linear — a strict top-to-bottom fill made
+     every horizontal slice a single flat hue (the dome reading as pure indigo, the
+     base as pure accent, nothing blending across a row), which is backwards from
+     an actual sunrise sky: real dawn light rings outward from the sun's own
+     position, so color varies with distance from that point in every direction,
+     not just with altitude. Centered low, near the panel (50% 66%) — roughly
+     where a low sun would sit — with an elongated ellipse (90% 42%) so the rings
+     roughly track the cone's own tall, narrow proportions instead of blowing out
+     sideways faster than they climb. --accent (warmest) sits innermost and stays
+     the dominant read through most of the ring sequence; #6B3357 magenta and
+     #2B2352 indigo never reach full saturation on their own — every magenta/
+     indigo stop is a color-mix blended back toward --accent, so they read as
+     connective tinting along the journey outward rather than as their own
+     featured colors. Every stop, including the innermost --accent one, is also
+     mixed back toward #26304E by a growing percentage as it moves outward (30%
+     at center, up to 90% at the outer edge) — nothing in this gradient reaches
+     its own full, undiluted saturation anywhere, which is what keeps the whole
+     glow reading as subtle/restrained rather than any one hue popping out.
+     Darkest (near #26304E) lands at the ring's outer edge. Because the center
+     sits low and off to the
+     side of the apex, the apex (far from center, mostly vertical distance) and
+     the base's own far corners (far from center, mostly horizontal distance) both
+     land in the same cool outer rings — so neither the dome nor the base reads as
+     one flat hue anymore, they're just cool for different (vertical vs.
+     horizontal) reasons. One consequence: the base's own outer corners, near the
+     screen edges, now carry real indigo/dark presence again rather than a flat
+     resolve to page-bg — .hero-band::after's own safety net (unchanged) is still
+     what guarantees the true viewport edges beyond the cone's own reach fully
+     resolve, so nothing is left uncovered. */
+  .hero-glow-shape {
+    position: absolute; inset: 0;
+    clip-path: url(#hero-glow-shape-clip);
+    /* Reflection boost, matching the reference sunset-over-water photo: the
+       richest, most saturated color there isn't the sun's own glow — it's the
+       water beneath it, which stays saturated (unlike the sky, it doesn't fade
+       toward a neutral/cool tone as it goes down). A single radial can't produce
+       that on its own — it only knows distance from its center, so it fades the
+       same way in every direction; it can't make "down" reintensify while "up"
+       keeps cooling. So this is layered as a second gradient, on top of the
+       radial below, opaque only near the shape's own base (72%, the same height
+       as the clip-path's own base) and fully transparent above 61% — ordinary
+       alpha compositing, not a blend mode (mix-blend-mode was dropped from this
+       whole system earlier for being unpredictable over a variable backdrop;
+       stacking two normal, fully-defined layers has none of that problem, since
+       each layer's own color is deliberate regardless of what's under it).
+       Also uniform across the full width at a given height, not tapered by x —
+       which incidentally also strengthens the base's far corners, undoing some
+       of the leftover dark/indigo tint noted as a tradeoff when the radial
+       gradient was first introduced. */
+    --glow-base-boost: color-mix(in oklab, #6B3357 70%, var(--accent));
+    background:
+      linear-gradient(
+        to bottom,
+        transparent 61%,
+        color-mix(in oklab, transparent 85%, var(--glow-base-boost)) 66%,
+        color-mix(in oklab, transparent 45%, var(--glow-base-boost)) 69%,
+        var(--glow-base-boost) 72%
+      ),
+      radial-gradient(
+        ellipse 90% 42% at 50% 66%,
+        color-mix(in oklab, #26304E 30%, var(--accent)) 0%,
+        color-mix(in oklab, #26304E 35%, var(--accent)) 20%,
+        color-mix(in oklab, #26304E 40%, color-mix(in oklab, var(--accent) 70%, #6B3357)) 45%,
+        color-mix(in oklab, #26304E 45%, color-mix(in oklab, var(--accent) 40%, #6B3357)) 65%,
+        color-mix(in oklab, #26304E 55%, color-mix(in oklab, #6B3357 35%, #2B2352)) 80%,
+        color-mix(in oklab, #26304E 70%, #2B2352) 92%,
+        color-mix(in oklab, #26304E 90%, #2B2352) 100%
+      );
   }
   /* .hero and .explorer only — NOT .site-nav, which sets its own
      position:fixed/z-index:5 for a different reason (escaping the band's
      own box entirely, see .site-nav above). A wildcard `> *` here would
      tie with .site-nav's selector on specificity and, being later in the
      stylesheet, win — silently reverting nav back to position:relative. */
-  .hero-band > .hero, .hero-band > .explorer { position: relative; z-index: 1; }
+  .hero-band > .hero, .hero-band > .explorer { position: relative; z-index: 3; }
 
   .hero {
     /* Same box as .explorer below (max-width, margin, side padding) — not its
@@ -576,6 +714,21 @@
     .agents-pill { padding: 0.35rem 0.55rem; }
     .hero-band { padding-top: 3.75rem; }
     .hero { padding: 2.5rem 1.25rem 2rem; }
+    /* The dome+band glow's clip-path fractions are relative to .hero-glow's own
+       box, which stretches to match the band's real height — and on a narrow
+       viewport the panel's own content reflows to a single column and stacks
+       much taller, ballooning that height well past what the shape was tuned
+       for. Capping the glow's own box height doesn't fix this cleanly either:
+       the shape's base is tied to roughly where the panel sits, and a much
+       taller panel means the glow would end partway down the panel while the
+       panel (and the plain dark background around it) kept going for a while
+       after — a mismatch no amount of reproportioning the shape alone fixes,
+       short of dynamically measuring the panel's actual rendered height in JS
+       just for a decorative effect. Simplest correct fix: drop the shape
+       entirely below this breakpoint. .hero-canvas (the starfield) and
+       .hero-band::after (the dark-to-page-bg fade) are unaffected and still
+       carry the whole background on their own. */
+    .hero-glow { display: none; }
   }
 
 
@@ -862,7 +1015,42 @@
 </head>
 <body>
   <div class="hero-band">
+    <!-- Cone/bell silhouette for .hero-glow-shape below, defined once here and
+         referenced via clip-path:url(#...). clipPathUnits="objectBoundingBox" is what
+         makes this responsive — coordinates are fractions (0-1) of whichever element
+         references them, not fixed pixels, so the curve rescales with the hero band's
+         own width/height instead of staying a fixed size. A plain SVG path string
+         (bezier curves) draws an actual smooth curve directly, rather than
+         approximating one from many straight clip-path:polygon() segments.
+         Two-part silhouette now, matching the reference sunset-over-water photo's
+         own two-part composition (a domed sky above a flat, constant-width strip
+         of water) rather than one continuous taper all the way down. Rounded apex
+         around y=0.28-0.31 (three close points, not one sharp corner — reads as a
+         soft peak once blurred) widens through a curve, same as before, but that
+         curve now finishes early — at y=0.66, the "shoulder" — already out to the
+         full -0.3/1.3 overshoot width (deliberately past both screen edges, since
+         this is what provides full-width glow presence in the margins, a job a
+         separate .hero-glow-band used to do as its own element). From that
+         shoulder down to the base at y=0.72, the sides run straight/vertical at
+         that same -0.3/1.3 width instead of continuing to taper — a genuine flat
+         band, not a slower curve, since the water in the reference photo doesn't
+         taper at all. This is also exactly the height range .hero-glow-shape's
+         own reflection-boost gradient (below) ramps in across, so the flat band
+         and the boosted color band line up as the same region rather than one
+         drifting relative to the other.
+         Base pinned to 0.72 — .hero-band::after's own dark-hold point now sits
+         earlier, at 0.66 (the shoulder), specifically so it's already partway
+         resolved toward page-bg by the time this base reveals it again; see
+         that rule's own comment for why they no longer share one height. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <clipPath id="hero-glow-shape-clip" clipPathUnits="objectBoundingBox">
+          <path d="M -0.3,0.72 L -0.3,0.66 C 0.05,0.66 0.15,0.547 0.24,0.462 C 0.30,0.406 0.36,0.360 0.42,0.326 C 0.46,0.298 0.48,0.286 0.5,0.28 C 0.52,0.286 0.54,0.298 0.58,0.326 C 0.64,0.360 0.70,0.406 0.76,0.462 C 0.85,0.547 0.95,0.66 1.3,0.66 L 1.3,0.72 Z" />
+        </clipPath>
+      </defs>
+    </svg>
     <canvas class="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-glow" aria-hidden="true"><div class="hero-glow-shape"></div></div>
     <nav class="site-nav" aria-label="Chordal">
       <span class="site-nav-pill is-instant" aria-hidden="true"></span>
       <a class="site-nav-item is-active nav-mark" href="index.html">
@@ -1034,7 +1222,6 @@ bind();</pre></div>
       if (!ctx) return;
 
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const BASE_COLOR = '#05030a';
       // Roughly one star in six twinkles, not the whole field — a handful of stars
       // drifting in brightness reads as alive; every star doing it reads as noise.
       // Each twinkling star gets its own random period and phase so they rise and
@@ -1045,6 +1232,29 @@ bind();</pre></div>
       let stars = [];
       let rafId = null;
       let isVisible = true;
+      let skyGradient = null;
+
+      // Vertical depth for the sky itself, not a flat fill — same three stops as
+      // .hero-band's own CSS background (kept in sync below), so there's no flash
+      // of a different tone before this first draw runs. Deep, more-saturated
+      // navy at the very top (0%) reads as "further into the sky," easing down
+      // through the section's actual identity color (#26304E, 40%) into a
+      // version of it eased toward --border (66%, matching .hero-band::after's
+      // own dark-hold point — NOT .hero-glow-shape's base at 72%, the two no
+      // longer share one height, see that rule's comment) — not warm yet, just
+      // less saturated. Keeping this in sync with .hero-band::after matters:
+      // that layer mixes toward transparent through much of its own early
+      // range, so wherever it's not yet opaque, this canvas shows through — if
+      // this stayed dark until 72% while .hero-band::after started lightening
+      // at 66%, the canvas underneath would still read solid dark blue and
+      // undercut the earlier easing happening above it.
+      function buildSkyGradient() {
+        const g = ctx.createLinearGradient(0, 0, 0, height);
+        g.addColorStop(0, '#171D30');
+        g.addColorStop(0.4, '#26304E');
+        g.addColorStop(0.66, 'color-mix(in oklab, #26304E 85%, #E8E0D5)');
+        return g;
+      }
 
       function resize() {
         const rect = heroBand.getBoundingClientRect();
@@ -1054,12 +1264,13 @@ bind();</pre></div>
         canvas.width = width * dpr;
         canvas.height = height * dpr;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        skyGradient = buildSkyGradient();
         generateStars();
         draw(performance.now());
       }
 
       function generateStars() {
-        const count = Math.round((width * height) / 9000);
+        const count = Math.round((width * height) / 7500);
         stars = Array.from({ length: count }, () => {
           const twinkle = !prefersReducedMotion && Math.random() < TWINKLE_FRACTION;
           // Every star draws as the same 4-point cross now (see drawCross below) — this
@@ -1111,7 +1322,7 @@ bind();</pre></div>
       }
 
       function draw(now) {
-        ctx.fillStyle = BASE_COLOR;
+        ctx.fillStyle = skyGradient;
         ctx.fillRect(0, 0, width, height);
         stars.forEach((s) => {
           let a = s.a;
@@ -1383,41 +1594,21 @@ bind();</pre></div>
     // bottom. The band visually already reads as "light" there, so using the
     // literal bottom edge as the threshold left the nav's light text sitting over
     // an already-light background for a large stretch of scroll — the exact bug
-    // this fixes. fadeMidY below is the gradient's own 50%-mix point (60.5% of
+    // this fixes. fadeMidY below is the gradient's own 50%-mix point (55.5% of
     // the band's height — see the eased stops in that rule, t=0.5 lands there),
     // not the point the fade first starts: the fade now starts much earlier (21%)
     // than the background actually reads as light, so the start point alone is
     // no longer a useful proxy for "the nav should look like it's over a light
     // page now." Computed from the band's own actual measured height, not a
     // guessed pixel value.
-    // --hero-fade-progress: continuous, proportional to how far the hero band has
-    // scrolled past the top of the viewport (0 at the very top, 1 once a full band
-    // height has scrolled by) — not a one-shot reveal that plays once and locks, it
-    // keeps tracking scroll position for as long as the band is in range. Floored at
-    // 0.6 rather than 0: letting it reach 0 would scale every color-mix stop down to
-    // nothing, including the ones right under the headline/lede text whose contrast
-    // was tuned against the *current* (progress = 1) curve — flattening them out from
-    // under that text at rest, not just softening the fade lower down. 0.6 keeps the
-    // gradient recognizably present at the top of the page, just weaker, and lets it
-    // reach its full, originally-tuned strength once scrolled.
-    // Skips entirely under prefers-reduced-motion, same convention this file already
-    // uses elsewhere — the CSS's own var(--hero-fade-progress, 1) fallback then just
-    // keeps the original, unscaled curve.
-    const prefersReducedMotionHero = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const siteNav = document.querySelector('.site-nav');
     const heroBandEl = document.querySelector('.hero-band');
     if (siteNav && heroBandEl) {
       const navThreshold = siteNav.getBoundingClientRect().height + 24;
-      const MIN_HERO_FADE = 0.6;
       const updateHeroScrollState = () => {
         const heroRect = heroBandEl.getBoundingClientRect();
-        const fadeMidY = heroRect.top + heroRect.height * 0.605;
+        const fadeMidY = heroRect.top + heroRect.height * 0.555;
         siteNav.classList.toggle('is-scrolled', fadeMidY < navThreshold);
-        if (!prefersReducedMotionHero) {
-          const scrolledThrough = Math.min(Math.max(-heroRect.top / heroRect.height, 0), 1);
-          const fadeProgress = MIN_HERO_FADE + (1 - MIN_HERO_FADE) * scrolledThrough;
-          heroBandEl.style.setProperty('--hero-fade-progress', String(fadeProgress));
-        }
       };
       window.addEventListener('scroll', updateHeroScrollState, { passive: true });
       updateHeroScrollState();
