@@ -622,11 +622,26 @@
        that already ends in transparent never had one to soften. Centered at
        the same 50% 66% .hero-glow-shape's own radial and .hero-glow-band both
        use, so this reads as bleeding from the same implied sun rather than a
-       second, competing light source. */
+       second, competing light source.
+       Vertical radii capped at 24% on the two larger layers (was 32%/52%) so
+       neither reaches past y=90% — the same height everything else in this
+       system (the panel's own bottom edge, .hero-band::after's own resolve)
+       agrees is where the dark hero background is done. This element is
+       unclipped and sits at z-index 2, above .hero-band::after's z-index 1,
+       so wherever its own gradients still have non-zero alpha, that color
+       shows over whatever's beneath regardless of whether that layer has
+       already resolved to flat page-bg — an ellipse sized to also reach
+       .hero-band's own bottom edge left a visible warm tint over what should
+       already be plain background. An ellipse's radius is symmetric around
+       its own center, so this also pulls in how far these two layers reach
+       ABOVE 66% (the dome's apex used to catch a faint, undesigned trace of
+       the widest layer) — accepted rather than solved with a separate mask,
+       since that upward reach was never an intentional feature to begin
+       with, just a side effect of sizing for the downward reach. */
     background:
       radial-gradient(ellipse 30% 16% at 50% 66%, color-mix(in oklab, var(--page-bg) 25%, var(--accent)) 0%, transparent 100%),
-      radial-gradient(ellipse 60% 32% at 50% 66%, color-mix(in oklab, transparent 60%, var(--glow-base-boost)) 0%, transparent 100%),
-      radial-gradient(ellipse 100% 52% at 50% 66%, color-mix(in oklab, transparent 82%, var(--glow-base-boost)) 0%, transparent 100%);
+      radial-gradient(ellipse 60% 24% at 50% 66%, color-mix(in oklab, transparent 60%, var(--glow-base-boost)) 0%, transparent 100%),
+      radial-gradient(ellipse 100% 24% at 50% 66%, color-mix(in oklab, transparent 82%, var(--glow-base-boost)) 0%, transparent 100%);
   }
   /* Split across TWO elements (.hero-glow the wrapper, .hero-glow-shape the actual
      clipped/filled box below) because clip-path + filter:blur on the SAME element
