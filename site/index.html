@@ -495,10 +495,39 @@
        text only needs 3:1) with real margin, not a knife-edge pass. */
     --hero-bright: #F7F2E9;
     --hero-dim: rgba(247, 242, 233, 0.55);
+    /* Shared by .hero-glow-bloom and .hero-glow-shape below — hoisted here
+       (same reasoning as --hero-bright/--hero-dim above) so both can
+       reference the identical color without duplicating the mix or drifting
+       out of sync with each other. --accent (the site's own CTA color) leads
+       at 60%; #6B3357 magenta is strong enough at 40% to read as a real
+       undertone rather than a trace, not just a faint seasoning. */
+    --glow-base-boost: color-mix(in oklab, #6B3357 40%, var(--accent));
+    /* The near-pure-accent "hot" color shared by the dome's own boost ramp
+       (.hero-glow-shape) and the top of .hero-glow-band's gradient — hoisted
+       here for the same reason as --glow-base-boost above, but even more
+       important to keep in one place: these two rules need to reach this
+       exact same color value for the handoff to read as one continuous
+       surface rather than two separately-tuned gradients that happen to be
+       close — they don't reach it at precisely the same height (the dome's
+       ramp hits it at 66%, the band's own ramp a point or two later), but
+       landing on the identical color is what lets their overlap zone
+       (see .hero-glow-band's own comment) sum correctly rather than drifting
+       toward two different hues at once. Mixed 32% toward #26304E (the dark
+       base, was 15%)
+       so the accent itself reads noticeably more subtle/restrained rather
+       than hitting full raw saturation right at the hottest point — since
+       both the dome's ramp and the band's own top read this same variable,
+       turning it down softens the saturation spike at the seam from both
+       directions in lockstep, without touching the dome's own apex/upper
+       rings (a separate, untuned-by-this gradient) or reopening the
+       gap/ridge mismatch this variable exists to prevent. */
+    --glow-band-top: color-mix(in oklab, #26304E 32%, color-mix(in oklab, #6B3357 15%, var(--accent)));
   }
   /* First child, absolutely positioned to fill the band. Explicit z-index:0 (and
-     explicit values on every other layer below: the linear fade at 1, .hero-glow
-     at 2, .hero/.explorer's real content at 3) rather than relying on default
+     explicit values on every other layer below: the linear fade at 1,
+     .hero-glow-bloom/.hero-glow/.hero-glow-band all at 2 (that DOM order is what
+     keeps bloom behind the other two), .hero/.explorer's real content at 3)
+     rather than relying on default
      DOM-order stacking alone for everything — spelling out the numeric layer
      directly is less error-prone than trusting paint order to stay right as this
      section keeps changing. aria-hidden: this is pure decoration,
@@ -506,22 +535,23 @@
      needs, same as the photo it replaces never had alt text of its own either. */
   .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
   /* Back to a true last-resort safety net — plain and quiet on purpose. The rich
-     dark→indigo→magenta→accent story now lives entirely in .hero-glow-shape below
-     (the dome-plus-band glow, wide enough at its own base to reach past both
-     screen edges), so this layer no longer needs to carry any hue at all. Its
+     dark→indigo→magenta→accent story now lives entirely in the three glow layers
+     below (.hero-glow-bloom, .hero-glow-shape's dome, and .hero-glow-band — the
+     band in particular wide enough at its own width to reach past both screen
+     edges), so this layer no longer needs to carry any hue at all. Its
      only remaining job: guarantee the sliver of far-corner viewport beyond even
      that wide base still resolves to page-bg, so there's never a genuinely
      uncovered hard seam at the very edges on an extreme-wide screen.
      Holds dark (mixing only toward more #26304E, never toward page-bg) through
-     66% — the shoulder height, NOT .hero-glow-shape's own base (72%) — then
+     66% — the shoulder height, NOT .hero-glow-band's own base (72%) — then
      resolves to page-bg by 90%, the panel's own bottom edge. Those two used to
      be the same point (72%), on the reasoning that both mark "where the dark
-     background is done being solid." But 66%-72% is entirely hidden under the
-     glow shape's own opaque flat band regardless of what this gradient does
-     there, since the band already reaches full viewport width (and beyond) by
-     the shoulder — so pinning this hold to 72% bought nothing in that range,
-     while creating a real seam right at 72% itself: the instant the glow's
-     vivid reflection-boost color ends, this gradient was still fully dark
+     background is done being solid." But 66%-72% is entirely hidden under
+     .hero-glow-band's own opaque fill regardless of what this gradient does
+     there, since that band already reaches full viewport width (and beyond) —
+     so pinning this hold to 72% bought nothing in that range, while creating a
+     real seam right at 72% itself: the instant the band's vivid
+     reflection-boost color ends, this gradient was still fully dark
      there, so the margins revealed a solid dark-blue stripe before any
      lightening had even begun. Holding through 66% instead means that by 72%,
      when this gradient becomes visible again, it's already partway resolved
@@ -564,6 +594,40 @@
       var(--page-bg) 90%
     );
   }
+  /* Three separate layers now, not one shape asked to be a light source, a
+     domed silhouette, AND a crisp reflection stripe all at once with a single
+     filter. Each gets only the treatment its own geometry actually needs:
+     .hero-glow-bloom (right below) is naturally soft via its own gradients'
+     falloff, so it needs neither clip-path nor blur; .hero-glow/.hero-glow-shape
+     (further below) is a genuine curved silhouette, so it needs clip-path plus
+     an ordinary isotropic blur; .hero-glow-band (further below still) is a
+     plain rectangle with straight edges, so a plain isotropic blur would be
+     wrong for it too — but not because it needs no blur at all. It needs a
+     directional one (vertical-only, see #hero-glow-band-blur in the SVG defs
+     below), since its edges are purely horizontal or purely vertical: a
+     vertical-only kernel softens the horizontal top/bottom edges into real
+     haze while leaving the vertical left/right edges — the ones that need to
+     stay crisp and full-bleed — completely untouched. Painted in that order
+     (bloom, dome, band) so bloom sits behind both and only ever shows as
+     ambient light bleeding around their edges, never as a competing shape of
+     its own. */
+  .hero-glow-bloom {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    /* Actual bloom, not a blurred shape standing in for one: a real light
+       source has a small bright core and several progressively larger, dimmer
+       rings around it — three plain radial gradients (small/bright,
+       medium, wide/faint) get that directly, since each already fades to
+       transparent on its own terms. No blur, no clip-path needed — a shape
+       only needs blur to soften a hard edge it was first given; a gradient
+       that already ends in transparent never had one to soften. Centered at
+       the same 50% 66% .hero-glow-shape's own radial and .hero-glow-band both
+       use, so this reads as bleeding from the same implied sun rather than a
+       second, competing light source. */
+    background:
+      radial-gradient(ellipse 30% 16% at 50% 66%, color-mix(in oklab, var(--page-bg) 25%, var(--accent)) 0%, transparent 100%),
+      radial-gradient(ellipse 60% 32% at 50% 66%, color-mix(in oklab, transparent 60%, var(--glow-base-boost)) 0%, transparent 100%),
+      radial-gradient(ellipse 100% 52% at 50% 66%, color-mix(in oklab, transparent 82%, var(--glow-base-boost)) 0%, transparent 100%);
+  }
   /* Split across TWO elements (.hero-glow the wrapper, .hero-glow-shape the actual
      clipped/filled box below) because clip-path + filter:blur on the SAME element
      does not produce a soft edge — clip-path is a hard, binary cut applied AFTER
@@ -588,73 +652,60 @@
        color," full stop, regardless of backdrop. */
     filter: blur(clamp(24px, 3.5vw, 56px));
   }
-  /* One dome-plus-band glow, not an ellipse and not a separate horizontal-band
-     element. An ellipse has constant curvature everywhere, so widening it enough
-     to glow at the screen edges also flattened its curve enough to stop reading
-     as a dome — those two goals fought each other the whole time it was an
-     ellipse. This silhouette (see the clip-path below) is narrow at the apex,
-     widens through a curve, then — past the shoulder — runs flat/straight at the
-     full overshoot width down to the base, so the taper does the "reads as a
-     dome" job and the flat band does the "reaches past both edges" job (work a
-     separate .hero-glow-band used to do as its own element), without those two
-     goals pulling against each other the way they did as a plain ellipse.
-     Fill is a radial gradient now, not linear — a strict top-to-bottom fill made
-     every horizontal slice a single flat hue (the dome reading as pure indigo, the
-     base as pure accent, nothing blending across a row), which is backwards from
-     an actual sunrise sky: real dawn light rings outward from the sun's own
-     position, so color varies with distance from that point in every direction,
-     not just with altitude. Centered low, near the panel (50% 66%) — roughly
-     where a low sun would sit — with an elongated ellipse (90% 42%) so the rings
-     roughly track the cone's own tall, narrow proportions instead of blowing out
-     sideways faster than they climb. --accent (warmest) sits innermost and stays
-     the dominant read through most of the ring sequence; #6B3357 magenta and
-     #2B2352 indigo never reach full saturation on their own — every magenta/
-     indigo stop is a color-mix blended back toward --accent, so they read as
-     connective tinting along the journey outward rather than as their own
-     featured colors. Every stop, including the innermost --accent one, is also
-     mixed back toward #26304E by a growing percentage as it moves outward (30%
-     at center, up to 90% at the outer edge) — nothing in this gradient reaches
-     its own full, undiluted saturation anywhere, which is what keeps the whole
-     glow reading as subtle/restrained rather than any one hue popping out.
-     Darkest (near #26304E) lands at the ring's outer edge. Because the center
-     sits low and off to the
-     side of the apex, the apex (far from center, mostly vertical distance) and
-     the base's own far corners (far from center, mostly horizontal distance) both
-     land in the same cool outer rings — so neither the dome nor the base reads as
-     one flat hue anymore, they're just cool for different (vertical vs.
-     horizontal) reasons. One consequence: the base's own outer corners, near the
-     screen edges, now carry real indigo/dark presence again rather than a flat
-     resolve to page-bg — .hero-band::after's own safety net (unchanged) is still
-     what guarantees the true viewport edges beyond the cone's own reach fully
-     resolve, so nothing is left uncovered. */
+  /* Dome only now — apex to shoulder (see the clip-path below), not the flat
+     band beneath it too. That's .hero-glow-band, a separate unblurred
+     rectangle further below, specifically so its straight left/right edges
+     can reach the true screen edges crisp and full-bleed, instead of being
+     softened by this element's own blur the way they had to be when one
+     shape covered both the dome and the band and needed to overshoot past
+     both edges (-0.3/1.3) just to survive that shared blur radius.
+     Fill is a radial gradient, not linear — a strict top-to-bottom fill made
+     every horizontal slice a single flat hue (the dome reading as pure indigo),
+     which is backwards from an actual sunrise sky: real dawn light rings
+     outward from the sun's own position, so color varies with distance from
+     that point in every direction, not just with altitude. Centered low, near
+     the panel (50% 66%) — roughly where a low sun would sit — with an
+     elongated ellipse (90% 42%) so the rings roughly track the dome's own
+     tall, narrow proportions instead of blowing out sideways faster than they
+     climb. --accent (warmest) sits innermost and stays the dominant read
+     through most of the ring sequence; #6B3357 magenta and #2B2352 indigo
+     never reach full saturation on their own — every magenta/indigo stop is a
+     color-mix blended back toward --accent, so they read as connective
+     tinting along the journey outward rather than as their own featured
+     colors. Every stop, including the innermost --accent one, is also mixed
+     back toward #26304E by a growing percentage as it moves outward (30% at
+     center, up to 90% at the outer edge) — nothing in this gradient reaches
+     its own full, undiluted saturation anywhere, which is what keeps the dome
+     reading as subtle/restrained rather than any one hue popping out.
+     Darkest (near #26304E) lands at the ring's outer edge; because the center
+     sits low, at the shoulder itself, the apex (far from center, mostly
+     vertical distance) lands in those same cool outer rings, which is what
+     keeps the dome from reading as one flat hue top to bottom. */
   .hero-glow-shape {
     position: absolute; inset: 0;
     clip-path: url(#hero-glow-shape-clip);
-    /* Reflection boost, matching the reference sunset-over-water photo: the
-       richest, most saturated color there isn't the sun's own glow — it's the
-       water beneath it, which stays saturated (unlike the sky, it doesn't fade
-       toward a neutral/cool tone as it goes down). A single radial can't produce
-       that on its own — it only knows distance from its center, so it fades the
-       same way in every direction; it can't make "down" reintensify while "up"
-       keeps cooling. So this is layered as a second gradient, on top of the
-       radial below, opaque only near the shape's own base (72%, the same height
-       as the clip-path's own base) and fully transparent above 61% — ordinary
-       alpha compositing, not a blend mode (mix-blend-mode was dropped from this
-       whole system earlier for being unpredictable over a variable backdrop;
-       stacking two normal, fully-defined layers has none of that problem, since
-       each layer's own color is deliberate regardless of what's under it).
-       Also uniform across the full width at a given height, not tapered by x —
-       which incidentally also strengthens the base's far corners, undoing some
-       of the leftover dark/indigo tint noted as a tradeoff when the radial
-       gradient was first introduced. */
-    --glow-base-boost: color-mix(in oklab, #6B3357 70%, var(--accent));
+    /* Boost ramp, blending the dome's own color into .hero-glow-band's own
+       fill at the shoulder: transparent through 50%, reaching full strength
+       by 66% — the same height the dome's own clip-path ends at. Targets the
+       same near-pure-accent color .hero-glow-band's own gradient starts with
+       at its own top (see that rule) — not the general --glow-base-boost
+       blend used elsewhere — so the two are a genuine color match right at
+       the seam, not just visually close. Ordinary alpha compositing over the
+       radial gradient beneath it, not a blend mode (mix-blend-mode was
+       dropped from this whole system earlier for being unpredictable over a
+       variable backdrop; two normal, fully-defined layers stacked has none
+       of that problem). Because it reaches 100% uniformly across the full
+       width by 66% — not just at the radial's own center — the handoff to
+       the band below is a match everywhere along the shoulder, not just at
+       the midpoint. */
     background:
       linear-gradient(
         to bottom,
-        transparent 61%,
-        color-mix(in oklab, transparent 85%, var(--glow-base-boost)) 66%,
-        color-mix(in oklab, transparent 45%, var(--glow-base-boost)) 69%,
-        var(--glow-base-boost) 72%
+        transparent 50%,
+        color-mix(in oklab, transparent 80%, var(--glow-band-top)) 58%,
+        color-mix(in oklab, transparent 50%, var(--glow-band-top)) 62%,
+        color-mix(in oklab, transparent 20%, var(--glow-band-top)) 64%,
+        var(--glow-band-top) 66%
       ),
       radial-gradient(
         ellipse 90% 42% at 50% 66%,
@@ -666,6 +717,81 @@
         color-mix(in oklab, #26304E 70%, #2B2352) 92%,
         color-mix(in oklab, #26304E 90%, #2B2352) 100%
       );
+  }
+  /* Crisp-sided, full-bleed reflection stripe — a plain rectangle, not a
+     clipped shape, so it never needs the overshoot-past-both-edges trick the
+     old combined shape relied on to survive its own blur. No clip-path: spans
+     the band's own true 0%-100% width directly, landing exactly on both
+     screen edges instead of approximating them through a softened, overshot
+     silhouette. Base at 72% matches the dome's clip-path and the sky/fade
+     system elsewhere in this file, but the top no longer sits flush with the
+     dome's own shoulder (66%) — it starts at 59%, overlapping 7 points into
+     the dome's own territory (was 3, still not enough — see below), since
+     this element and the dome above it are independently blurred, and each
+     one's blur means its color tapers off approaching its own edge rather
+     than staying full-strength right up to it. Two edges meeting at exactly
+     the same height both taper into that line at once and read as a gap; the
+     overlap alone isn't the fix, though — it first overshot the other way
+     (both layers substantial at once, at the same overlap point, read as a
+     bright ridge instead of a gap) before this gradient's own alpha ramp
+     (below) was added to actually control it, and even then a gap was still
+     visible, because 3 points (roughly 21-27px on a typical hero height) is
+     smaller than the dome's own blur radius (clamp(24px, 3.5vw, 56px), often
+     45-50px at ordinary desktop widths) — the dome is measurably weakened
+     across a wider zone than a small overlap can reach past, so some of that
+     weak zone was left uncompensated regardless of how well-tuned this
+     gradient's own curve was. 7 points (~50-63px) is sized to actually clear
+     that radius instead of only reaching partway into it.
+     Does have blur (see #hero-glow-band-blur in the SVG defs above and the
+     filter: line below) — a vertical-only one, so it softens the top/bottom
+     edges into genuine haze without touching the crisp left/right edges this
+     whole element exists to keep sharp. But blur alone, stacked against the
+     dome's own separate, independent blur, produced an unpredictable
+     combined curve (that gap, then that ridge) — two Gaussian falloffs
+     designed apart don't reliably sum to something even. So this gradient
+     now carries its own explicit alpha ramp too, transparent at the very top
+     (0%) up to full opacity by 62% (roughly y=67%, still past where the dome
+     has mostly faded out, just reached via a longer, gentler climb now that
+     it has 7 points of box to work with instead of 3) — authored directly
+     rather than left entirely to blur diffusion, so the combined result can
+     actually be tuned instead of guessed at via position offsets alone.
+     That ramp is a smoothstep curve (5 stops sampling 3t²-2t³, not a plain
+     linear rise) rather than a straight line into the flat full-opacity
+     region that follows it — a linear ramp meeting a flat plateau has a
+     sudden change in slope right at the handoff, and human vision is
+     specifically sensitive to slope discontinuities like that (Mach bands):
+     even a transition with no actual hard edge in value can still read as a
+     visible band if its rate of change changes abruptly. Smoothstep has zero
+     slope at both ends by construction, so it flattens into the plateau with
+     no corner left to perceive, instead of relying on more blur to
+     physically smear a corner that's still there underneath.
+     Also not a flat single color — a solid, unvarying fill reads as a
+     printed block sitting in the scene regardless of which color it is,
+     since everything around it (the dome's rings, the bloom's falloff, the
+     fade below) does vary. So the same ramp that handles opacity also carries
+     the hue: --accent-dominant once fully opaque (matching the dome's own
+     boost ramp target) easing to magenta-dominant by the base — echoing the
+     reference photo's own logic, where the wider magenta halo surrounds the
+     sun and only the sun's own position itself turns golden, so accent
+     belongs closest to the implied light and magenta belongs further from
+     it. Slight opacity taper again in the last 10% (toward the base) softens
+     the hard bottom edge the same way the top now does. */
+  .hero-glow-band {
+    position: absolute; left: 0; right: 0; top: 59%; bottom: 28%; z-index: 2;
+    pointer-events: none;
+    filter: url(#hero-glow-band-blur);
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      color-mix(in oklab, transparent 90%, var(--glow-band-top)) 12%,
+      color-mix(in oklab, transparent 65%, var(--glow-band-top)) 25%,
+      color-mix(in oklab, transparent 35%, var(--glow-band-top)) 37%,
+      color-mix(in oklab, transparent 10%, var(--glow-band-top)) 50%,
+      var(--glow-band-top) 62%,
+      color-mix(in oklab, #6B3357 45%, var(--accent)) 79%,
+      color-mix(in oklab, #6B3357 70%, var(--accent)) 95%,
+      color-mix(in oklab, transparent 30%, color-mix(in oklab, #6B3357 70%, var(--accent))) 100%
+    );
   }
   /* .hero and .explorer only — NOT .site-nav, which sets its own
      position:fixed/z-index:5 for a different reason (escaping the band's
@@ -714,21 +840,21 @@
     .agents-pill { padding: 0.35rem 0.55rem; }
     .hero-band { padding-top: 3.75rem; }
     .hero { padding: 2.5rem 1.25rem 2rem; }
-    /* The dome+band glow's clip-path fractions are relative to .hero-glow's own
-       box, which stretches to match the band's real height — and on a narrow
-       viewport the panel's own content reflows to a single column and stacks
-       much taller, ballooning that height well past what the shape was tuned
-       for. Capping the glow's own box height doesn't fix this cleanly either:
-       the shape's base is tied to roughly where the panel sits, and a much
-       taller panel means the glow would end partway down the panel while the
+    /* All three glow layers (.hero-glow-bloom, .hero-glow, .hero-glow-band) are
+       positioned/clipped as fractions or percentages of the band's own real
+       height — and on a narrow viewport the panel's own content reflows to a
+       single column and stacks much taller, ballooning that height well past
+       what all three were tuned for. Capping their box height doesn't fix
+       this cleanly either: they're tied to roughly where the panel sits, and
+       a much taller panel means they'd end partway down the panel while the
        panel (and the plain dark background around it) kept going for a while
-       after — a mismatch no amount of reproportioning the shape alone fixes,
-       short of dynamically measuring the panel's actual rendered height in JS
-       just for a decorative effect. Simplest correct fix: drop the shape
-       entirely below this breakpoint. .hero-canvas (the starfield) and
+       after — a mismatch no amount of reproportioning alone fixes, short of
+       dynamically measuring the panel's actual rendered height in JS just for
+       a decorative effect. Simplest correct fix: drop all three entirely
+       below this breakpoint. .hero-canvas (the starfield) and
        .hero-band::after (the dark-to-page-bg fade) are unaffected and still
        carry the whole background on their own. */
-    .hero-glow { display: none; }
+    .hero-glow-bloom, .hero-glow, .hero-glow-band { display: none; }
   }
 
 
@@ -1015,42 +1141,66 @@
 </head>
 <body>
   <div class="hero-band">
-    <!-- Cone/bell silhouette for .hero-glow-shape below, defined once here and
+    <!-- Dome-only silhouette for .hero-glow-shape below, defined once here and
          referenced via clip-path:url(#...). clipPathUnits="objectBoundingBox" is what
          makes this responsive — coordinates are fractions (0-1) of whichever element
          references them, not fixed pixels, so the curve rescales with the hero band's
          own width/height instead of staying a fixed size. A plain SVG path string
          (bezier curves) draws an actual smooth curve directly, rather than
          approximating one from many straight clip-path:polygon() segments.
-         Two-part silhouette now, matching the reference sunset-over-water photo's
-         own two-part composition (a domed sky above a flat, constant-width strip
-         of water) rather than one continuous taper all the way down. Rounded apex
-         around y=0.28-0.31 (three close points, not one sharp corner — reads as a
-         soft peak once blurred) widens through a curve, same as before, but that
-         curve now finishes early — at y=0.66, the "shoulder" — already out to the
-         full -0.3/1.3 overshoot width (deliberately past both screen edges, since
-         this is what provides full-width glow presence in the margins, a job a
-         separate .hero-glow-band used to do as its own element). From that
-         shoulder down to the base at y=0.72, the sides run straight/vertical at
-         that same -0.3/1.3 width instead of continuing to taper — a genuine flat
-         band, not a slower curve, since the water in the reference photo doesn't
-         taper at all. This is also exactly the height range .hero-glow-shape's
-         own reflection-boost gradient (below) ramps in across, so the flat band
-         and the boosted color band line up as the same region rather than one
-         drifting relative to the other.
-         Base pinned to 0.72 — .hero-band::after's own dark-hold point now sits
-         earlier, at 0.66 (the shoulder), specifically so it's already partway
-         resolved toward page-bg by the time this base reveals it again; see
-         that rule's own comment for why they no longer share one height. -->
+         Just the dome now, apex to shoulder — the flat band beneath it (shoulder to
+         base) moved out to .hero-glow-band, a plain unclipped rectangle in the
+         markup below, since a straight-sided band never needed bezier path data or
+         a clip-path to begin with; splitting it out is also what lets it skip the
+         blur .hero-glow applies to this dome, so the band's own left/right edges
+         stay crisp and reach the true screen edges directly instead of needing to
+         overshoot past both (-0.3/1.3) to survive a shared blur radius.
+         Rounded apex around y=0.28-0.31 (three close points, not one sharp corner —
+         reads as a soft peak once blurred) widens through a curve down to the
+         shoulder at y=0.66, already out to the full -0.3/1.3 overshoot width by
+         then (this dome still needs that margin, since it's still blurred) — Z
+         closes straight across from (1.3,0.66) back to (-0.3,0.66). This clip
+         edge sits ABOVE .hero-glow-band's own top edge (59%, not 66%) on
+         purpose: this dome's blur means its color tapers off approaching 0.66
+         rather than staying full-strength right up to it, and the band's own
+         blur does the same fading in from its own top — two edges meeting at
+         exactly one height both taper into that line at once and read as a
+         gap. Overlapping them (band starts 7 points earlier, not 3 — see that
+         rule's own comment for why 3 wasn't enough) means both
+         layers are present in that shared zone, so their partial coverage
+         composites back up to full strength instead of both being weak at
+         the same line. -->
+
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <defs>
         <clipPath id="hero-glow-shape-clip" clipPathUnits="objectBoundingBox">
-          <path d="M -0.3,0.72 L -0.3,0.66 C 0.05,0.66 0.15,0.547 0.24,0.462 C 0.30,0.406 0.36,0.360 0.42,0.326 C 0.46,0.298 0.48,0.286 0.5,0.28 C 0.52,0.286 0.54,0.298 0.58,0.326 C 0.64,0.360 0.70,0.406 0.76,0.462 C 0.85,0.547 0.95,0.66 1.3,0.66 L 1.3,0.72 Z" />
+          <path d="M -0.3,0.66 C 0.05,0.66 0.15,0.547 0.24,0.462 C 0.30,0.406 0.36,0.360 0.42,0.326 C 0.46,0.298 0.48,0.286 0.5,0.28 C 0.52,0.286 0.54,0.298 0.58,0.326 C 0.64,0.360 0.70,0.406 0.76,0.462 C 0.85,0.547 0.95,0.66 1.3,0.66 Z" />
         </clipPath>
+        <!-- Vertical-only blur for .hero-glow-band: stdDeviation="0 18" means zero
+             horizontal deviation, so the kernel can't soften anything that varies
+             along x — the band's straight left/right edges (constant along y) stay
+             perfectly crisp and full-bleed. The top/bottom edges (constant along x,
+             varying along y) get genuinely diffused instead of just color-ramped,
+             which is what actually reads as glow rather than a gradient-painted
+             stripe. A plain CSS filter:blur() can't do this — it's isotropic, equal
+             in both directions — this only works because the band is a plain
+             rectangle: every one of its edges is purely horizontal or purely
+             vertical, so a directional blur has no diagonal edge to streak the way
+             it would on the dome's own curved silhouette. Filter region widened
+             well past the default (-10%/120%) vertically, since the band's own box
+             is short (6% of the hero band's height) and a 18px blur needs real
+             room on both sides to avoid being clipped by the region itself;
+             horizontal region left tight since there's no horizontal spread to
+             accommodate. -->
+        <filter id="hero-glow-band-blur" x="-5%" y="-300%" width="110%" height="700%">
+          <feGaussianBlur stdDeviation="0 18" />
+        </filter>
       </defs>
     </svg>
     <canvas class="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-glow-bloom" aria-hidden="true"></div>
     <div class="hero-glow" aria-hidden="true"><div class="hero-glow-shape"></div></div>
+    <div class="hero-glow-band" aria-hidden="true"></div>
     <nav class="site-nav" aria-label="Chordal">
       <span class="site-nav-pill is-instant" aria-hidden="true"></span>
       <a class="site-nav-item is-active nav-mark" href="index.html">
@@ -1240,9 +1390,10 @@ bind();</pre></div>
       // navy at the very top (0%) reads as "further into the sky," easing down
       // through the section's actual identity color (#26304E, 40%) into a
       // version of it eased toward --border (66%, matching .hero-band::after's
-      // own dark-hold point — NOT .hero-glow-shape's base at 72%, the two no
-      // longer share one height, see that rule's comment) — not warm yet, just
-      // less saturated. Keeping this in sync with .hero-band::after matters:
+      // own dark-hold point and, now, .hero-glow-shape's own dome base too —
+      // NOT .hero-glow-band's base at 72%, which stays a separate height) —
+      // not warm yet, just less saturated. Keeping this in sync with
+      // .hero-band::after matters:
       // that layer mixes toward transparent through much of its own early
       // range, so wherever it's not yet opaque, this canvas shows through — if
       // this stayed dark until 72% while .hero-band::after started lightening
